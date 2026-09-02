@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PT. SHABAR TOUR - Sistem Manajemen Jemaah Umroh</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SheetJS Excel Library -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Firebase SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-12">
+
+  <!-- HEADER BRANDING PT. SHABAR TOUR -->
+  <header class="bg-emerald-800 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="bg-white p-1.5 rounded-xl shadow-inner flex items-center justify-center">
+          <img src="logo.png" alt="Logo PT. SHABAR TOUR" onerror="this.src='https://via.placeholder.com/40?text=ST'" class="h-9 w-auto object-contain">
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg leading-tight tracking-wide">PT. SHABAR TOUR</h1>
+          <p class="text-xs text-emerald-200">Sistem Manajemen & Pendataan Jemaah Umroh</p>
+        </div>
+      </div>
+      <div id="userInfo" class="hidden flex items-center gap-3">
+        <span id="userBadge" class="text-xs bg-emerald-700 px-3 py-1 rounded-full border border-emerald-500 font-medium"></span>
+        <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1">
+          <i class="fa-solid fa-right-from-bracket"></i> Keluar
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HALAMAN LOGIN STAF PT. SHABAR TOUR -->
+  <div id="authSection" class="max-w-md mx-auto my-12 px-4">
+    <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
+      <div class="text-center mb-6">
+        <img src="logo.png" alt="Logo PT. SHABAR TOUR" onerror="this.src='https://via.placeholder.com/80?text=SHABAR+TOUR'" class="h-20 w-auto mx-auto mb-3 object-contain">
+        <h2 class="text-2xl font-black text-emerald-900 tracking-wide">PT. SHABAR TOUR</h2>
+        <p class="text-xs text-slate-500 mt-1 font-medium">Sistem Informasi & Pendataan Jemaah Umroh</p>
+      </div>
+
+      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Username Staf *</label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i>
+            <input type="text" id="authUsername" required class="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Masukkan username">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Password *</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i>
+            <input type="password" id="authPassword" required class="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Masukkan password">
+          </div>
+        </div>
+
+        <button type="submit" id="authBtn" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-md flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i> Masuk Aplikasi
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- HALAMAN UTAMA (Aplikasi Data Jemaah) -->
+  <main id="mainApp" class="hidden max-w-7xl mx-auto px-4 py-6">
+    
+    <!-- TABS NAVIGASI UTAMA -->
+    <div class="flex flex-wrap border-b border-slate-200 mb-6 bg-white rounded-xl p-1 shadow-sm gap-1">
+      <button id="tabDashboardBtn" onclick="switchTab('dashboard')" class="flex-1 min-w-[120px] py-2.5 text-center text-sm font-semibold rounded-lg bg-emerald-700 text-white transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-chart-pie"></i> Dashboard
+      </button>
+      <button id="tabFormBtn" onclick="switchTab('form')" class="flex-1 min-w-[120px] py-2.5 text-center text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-user-plus"></i> Form Input Jemaah
+      </button>
+      <button id="tabDataBtn" onclick="switchTab('data')" class="flex-1 min-w-[120px] py-2.5 text-center text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-users text-sm"></i> Data Jemaah (<span id="totalCountBadge">0</span>)
+      </button>
+    </div>
+
+    <!-- SEKSI 1: DASHBOARD RINGKASAN -->
+    <section id="dashboardTabSection" class="space-y-6">
+      
+      <!-- CARDS METRICS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Jemaah -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Jemaah</p>
+            <h3 id="dashTotalJemaah" class="text-2xl font-black text-slate-800 mt-1">0</h3>
+            <p class="text-[11px] text-emerald-600 font-medium mt-1"><i class="fa-solid fa-check-circle mr-1"></i>Terdaftar di sistem</p>
+          </div>
+          <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+            <i class="fa-solid fa-users"></i>
+          </div>
+        </div>
+
+        <!-- Total Paket/Group -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Group Umroh</p>
+            <h3 id="dashTotalPaket" class="text-2xl font-black text-slate-800 mt-1">0</h3>
+            <p class="text-[11px] text-blue-600 font-medium mt-1"><i class="fa-solid fa-layer-group mr-1"></i>Paket keberangkatan</p>
+          </div>
+          <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+            <i class="fa-solid fa-kaaba"></i>
+          </div>
+        </div>
+
+        <!-- Gender Ratio -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Gender (L / P)</p>
+            <h3 id="dashGenderRatio" class="text-2xl font-black text-slate-800 mt-1">0 / 0</h3>
+            <p class="text-[11px] text-purple-600 font-medium mt-1"><i class="fa-solid fa-venus-mars mr-1"></i>Laki / Perempuan</p>
+          </div>
+          <div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+            <i class="fa-solid fa-people-group"></i>
+          </div>
+        </div>
+
+        <!-- Kelengkapan Berkas -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Berkas Lengkap</p>
+            <h3 id="dashBerkasLengkap" class="text-2xl font-black text-slate-800 mt-1">0</h3>
+            <p class="text-[11px] text-amber-600 font-medium mt-1"><i class="fa-solid fa-id-card mr-1"></i>Foto & KTP Terupload</p>
+          </div>
+          <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+            <i class="fa-solid fa-folder-check"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- RINGKASAN PER GROUP/PAKET -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-chart-bar text-emerald-700"></i> Distribusi Jemaah Per Group Umroh
+        </h3>
+        <div id="dashboardGroupList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Terisi via JS -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SEKSI 2: FORM INPUT / EDIT JEMAAH -->
+    <section id="formTabSection" class="hidden bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+      <h2 id="formTitle" class="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+        <span class="flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-emerald-700"></i>Tambah Jemaah Baru</span>
+        <button id="cancelEditBtn" onclick="resetForm()" class="hidden text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1.5 rounded-md text-slate-700 transition">Batal Edit</button>
+      </h2>
+
+      <form id="jemaahForm" onsubmit="simpanJemaah(event)" class="space-y-4">
+        <input type="hidden" id="editDocId" value="">
+
+        <!-- PAKET / GROUP UMROH (DENGAN TOMBOL TAMBAH PAKET BARU) -->
+        <div class="bg-emerald-50/60 p-4 rounded-xl border border-emerald-100">
+          <label class="block text-xs font-semibold text-emerald-900 mb-1">Paket / Group Umroh *</label>
+          <div class="flex gap-2">
+            <select id="paketSelect" required class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+              <option value="">-- Pilih Paket / Group --</option>
+            </select>
+            <button type="button" onclick="openModalTambahPaket()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold shadow transition flex items-center justify-center gap-1" title="Tambah Group Baru">
+              <i class="fa-solid fa-plus"></i> Baru
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">Pilih paket yang tersedia atau klik tombol <strong>+ Baru</strong> untuk menambahkan nama paket keberangkatan baru.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap (Sesuai Paspor/KTP) *</label>
+            <input type="text" id="nama" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Contoh: Ahmad Dahlan">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">NIK / No. KTP *</label>
+            <input type="text" id="nik" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="16 digit angka NIK">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Tempat Lahir *</label>
+            <input type="text" id="tempatLahir" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Kota kelahiran">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Lahir *</label>
+            <input type="date" id="tanggalLahir" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Jenis Kelamin *</label>
+            <select id="jenisKelamin" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+              <option value="">-- Pilih --</option>
+              <option value="Laki-laki">Laki-laki</option>
+              <option value="Perempuan">Perempuan</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- NO WA / HP (OPSIONAL) -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">No. WhatsApp / HP <span class="text-slate-400 font-normal">(Opsional)</span></label>
+          <input type="tel" id="telepon" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="081234567890 (Kosongkan jika tidak ada)">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Alamat Lengkap</label>
+          <textarea id="alamat" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Jl. Raya No. 123..."></textarea>
+        </div>
+
+        <!-- PEMISAHAN UPLOAD FOTO & UPLOAD KTP -->
+        <div class="border-t border-slate-200 pt-4 mt-2">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3"><i class="fa-solid fa-paperclip text-emerald-700 mr-1"></i> Lampiran Berkas Dokumen</h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- LAMPIRAN FOTO JEMAAH -->
+            <div class="p-3 border border-slate-200 rounded-xl bg-slate-50">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">1. Lampiran Pasfoto (Background Putih)</label>
+              <input type="file" id="fotoFile" accept="image/*" onchange="previewImage(event, 'foto')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-800 hover:file:bg-emerald-200">
+              
+              <div id="fotoPreviewContainer" class="mt-3 hidden">
+                <p class="text-[11px] text-slate-500 mb-1">Pratinjau Pasfoto:</p>
+                <div class="relative inline-block">
+                  <img id="fotoPreview" src="" alt="Pratinjau Foto" class="w-24 h-32 object-cover rounded-lg border-2 border-emerald-600 shadow-sm">
+                  <button type="button" onclick="clearImage('foto')" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow hover:bg-red-700">&times;</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- LAMPIRAN FOTO KTP -->
+            <div class="p-3 border border-slate-200 rounded-xl bg-slate-50">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">2. Lampiran Foto KTP</label>
+              <input type="file" id="ktpFile" accept="image/*" onchange="previewImage(event, 'ktp')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-800 hover:file:bg-blue-200">
+              
+              <div id="ktpPreviewContainer" class="mt-3 hidden">
+                <p class="text-[11px] text-slate-500 mb-1">Pratinjau KTP:</p>
+                <div class="relative inline-block">
+                  <img id="ktpPreview" src="" alt="Pratinjau KTP" class="w-40 h-28 object-cover rounded-lg border-2 border-blue-600 shadow-sm">
+                  <button type="button" onclick="clearImage('ktp')" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow hover:bg-red-700">&times;</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-3 rounded-lg text-sm transition shadow-md flex items-center justify-center gap-2">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Jemaah ke Cloud
+        </button>
+      </form>
+    </section>
+
+    <!-- SEKSI 3: DAFTAR DATA JEMAAH (GROUPED BY PAKET) -->
+    <section id="dataTabSection" class="hidden bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+      
+      <!-- TOOLBAR PENCARIAN & FILTER -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-layer-group text-emerald-700"></i>Daftar Group Jemaah Umroh</h2>
+          <p class="text-xs text-slate-500">Data dikelompokkan berdasarkan Paket / Group Keberangkatan.</p>
+        </div>
+        
+        <div class="flex flex-wrap md:flex-nowrap gap-2 items-center">
+          <!-- Filter Paket -->
+          <select id="filterPaketSelect" onchange="renderGroupedData()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+            <option value="ALL">-- Semua Group Umroh --</option>
+          </select>
+
+          <!-- Input Search -->
+          <input type="text" id="searchInput" onkeyup="renderGroupedData()" placeholder="Cari Nama / NIK..." class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-48">
+          
+          <!-- Tombol Ekspor -->
+          <button onclick="eksporExcel()" class="bg-emerald-800 hover:bg-emerald-900 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow transition">
+            <i class="fa-solid fa-file-excel"></i> Unduh Excel
+          </button>
+        </div>
+      </div>
+
+      <!-- CONTAINER GROUPED ACCORDION / LIST -->
+      <div id="groupedJemaahContainer" class="space-y-4">
+        <p class="text-center p-8 text-slate-400">Memuat data jemaah dari cloud...</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODAL TAMBAH PAKET BARU -->
+  <div id="modalTambahPaket" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+      <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-kaaba text-emerald-700"></i> Buat Group Umroh Baru
+      </h3>
+      <p class="text-xs text-slate-500 mb-4">Masukkan nama paket keberangkatan baru untuk mendaftarkan jemaah.</p>
+      
+      <form onsubmit="simpanPaketBaru(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Paket / Group *</label>
+          <input type="text" id="namaPaketBaru" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Contoh: Umroh Reguler Syawal 2026">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModalTambahPaket()" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+          <button type="submit" class="px-4 py-1.5 text-xs bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-lg shadow">Simpan & Pilih</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DETAIL JEMAAH -->
+  <div id="detailModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <h3 class="text-base font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
+        <i class="fa-solid fa-id-card text-emerald-700"></i> Detail Jemaah - PT. SHABAR TOUR
+      </h3>
+      <div id="modalContent" class="space-y-4 text-xs">
+        <!-- Terisi via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT & FIREBASE LOGIC -->
+  <script>
+    // Konfigurasi Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDPlhnzrH-RXtZSscQcyGOHkf4fMJ19o4o",
+      authDomain: "umroh-app-database.firebaseapp.com",
+      projectId: "umroh-app-database",
+      storageBucket: "umroh-app-database.firebasestorage.app",
+      messagingSenderId: "79698174177",
+      appId: "1:79698174177:web:367b1f7e6f369ddabe17a0",
+      measurementId: "G-PJ60DD79G6"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // State Lokal
+    let currentFotoBase64 = "";
+    let currentKtpBase64 = "";
+    let jemaahCache = [];
+    let paketCache = [];
+
+    // Check Sesi User saat awal
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedUser = localStorage.getItem("umroh_user");
+      if (savedUser) {
+        showMainApp(savedUser);
+      }
+    });
+
+    // Otentikasi Login Staf
+    async function handleAuth(e) {
+      e.preventDefault();
+      const username = document.getElementById("authUsername").value.trim().toLowerCase();
+      const password = document.getElementById("authPassword").value;
+
+      if (!username || !password) return alert("Harap isi username dan password!");
+
+      try {
+        const userRef = db.collection("users").doc(username);
+        const doc = await userRef.get();
+
+        if (doc.exists && doc.data().password === password) {
+          localStorage.setItem("umroh_user", username);
+          showMainApp(username);
+        } else {
+          alert("Username atau Password salah!");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Gagal terhubung ke database. Pastikan koneksi internet aktif.");
+      }
+    }
+
+    function showMainApp(username) {
+      document.getElementById("authSection").classList.add("hidden");
+      document.getElementById("mainApp").classList.remove("hidden");
+      document.getElementById("userInfo").classList.remove("hidden");
+      document.getElementById("userBadge").innerText = "Staf: " + username;
+      mulaiListenerRealtime();
+    }
+
+    function logout() {
+      localStorage.removeItem("umroh_user");
+      location.reload();
+    }
+
+    // Switch Tab Navigasi
+    function switchTab(tab) {
+      const dashboardSection = document.getElementById("dashboardTabSection");
+      const formSection = document.getElementById("formTabSection");
+      const dataSection = document.getElementById("dataTabSection");
+
+      const tabDashboardBtn = document.getElementById("tabDashboardBtn");
+      const tabFormBtn = document.getElementById("tabFormBtn");
+      const tabDataBtn = document.getElementById("tabDataBtn");
+
+      // Reset style tombol
+      [tabDashboardBtn, tabFormBtn, tabDataBtn].forEach(btn => {
+        btn.className = "flex-1 min-w-[120px] py-2.5 text-center text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition flex items-center justify-center gap-2";
+      });
+
+      // Hide all sections
+      dashboardSection.classList.add("hidden");
+      formSection.classList.add("hidden");
+      dataSection.classList.add("hidden");
+
+      if (tab === 'dashboard') {
+        dashboardSection.classList.remove("hidden");
+        tabDashboardBtn.className = "flex-1 min-w-[120px] py-2.5 text-center text-sm font-semibold rounded-lg bg-emerald-700 text-white transition flex items-center justify-center gap-2";
+      } else if (tab === 'form') {
+        formSection.classList.remove("hidden");
+        tabFormBtn.className = "flex-1 min-w-[120px] py-2.5 text-center text-sm font-semibold rounded-lg bg-emerald-700 text-white transition flex items-center justify-center gap-2";
+      } else {
+        dataSection.classList.remove("hidden");
+        tabDataBtn.className = "flex-1 min-w-[120px] py-2.5 text-center text-sm font-semibold rounded-lg bg-emerald-700 text-white transition flex items-center justify-center gap-2";
+      }
+    }
+
+    // Convert Image File to Compressed Base64 String
+    function previewImage(event, type) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = function() {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 600;
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+
+          if (type === 'foto') {
+            currentFotoBase64 = compressedBase64;
+            document.getElementById("fotoPreview").src = compressedBase64;
+            document.getElementById("fotoPreviewContainer").classList.remove("hidden");
+          } else if (type === 'ktp') {
+            currentKtpBase64 = compressedBase64;
+            document.getElementById("ktpPreview").src = compressedBase64;
+            document.getElementById("ktpPreviewContainer").classList.remove("hidden");
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearImage(type) {
+      if (type === 'foto') {
+        currentFotoBase64 = "";
+        document.getElementById("fotoFile").value = "";
+        document.getElementById("fotoPreviewContainer").classList.add("hidden");
+      } else if (type === 'ktp') {
+        currentKtpBase64 = "";
+        document.getElementById("ktpFile").value = "";
+        document.getElementById("ktpPreviewContainer").classList.add("hidden");
+      }
+    }
+
+    // Listener Real-time Firestore Sync (Data Jemaah & Paket)
+    function mulaiListenerRealtime() {
+      db.collection("jemaah").orderBy("updatedAt", "desc").onSnapshot(snapshot => {
+        jemaahCache = [];
+        snapshot.forEach(doc => {
+          jemaahCache.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Ekstrak daftar paket unik dari data jemaah
+        updateDaftarPaket();
+        
+        // Update statistik dashboard
+        updateDashboard();
+
+        // Render tabel grouped
+        renderGroupedData();
+
+      }, err => console.error("Realtime Listener Error:", err));
+    }
+
+    // Kelola Daftar Paket Dinamis
+    function updateDaftarPaket() {
+      // Ambil paket unik dari jemaah dan tambahkan paket default jika ada
+      const setPaket = new Set(paketCache);
+      
+      // Tambahkan paket yang ada dari jemaah yang tersimpan
+      jemaahCache.forEach(j => {
+        if (j.paket) setPaket.add(j.paket.trim());
+      });
+
+      paketCache = Array.from(setPaket).sort();
+
+      // Render ke dropdown select di Form
+      const selectForm = document.getElementById("paketSelect");
+      const currentSelected = selectForm.value;
+      selectForm.innerHTML = `<option value="">-- Pilih Paket / Group --</option>` + 
+        paketCache.map(p => `<option value="${p}">${p}</option>`).join("");
+
+      if (currentSelected && paketCache.includes(currentSelected)) {
+        selectForm.value = currentSelected;
+      }
+
+      // Render ke dropdown Filter di Tab Data
+      const selectFilter = document.getElementById("filterPaketSelect");
+      const currentFilter = selectFilter.value;
+      selectFilter.innerHTML = `<option value="ALL">-- Semua Group Umroh --</option>` + 
+        paketCache.map(p => `<option value="${p}">${p}</option>`).join("");
+      
+      selectFilter.value = currentFilter || "ALL";
+    }
+
+    // Modal Tambah Paket Baru
+    function openModalTambahPaket() {
+      document.getElementById("namaPaketBaru").value = "";
+      document.getElementById("modalTambahPaket").classList.remove("hidden");
+    }
+
+    function closeModalTambahPaket() {
+      document.getElementById("modalTambahPaket").classList.add("hidden");
+    }
+
+    function simpanPaketBaru(e) {
+      e.preventDefault();
+      const paketBaru = document.getElementById("namaPaketBaru").value.trim();
+      if (!paketBaru) return;
+
+      if (!paketCache.includes(paketBaru)) {
+        paketCache.push(paketBaru);
+        updateDaftarPaket();
+      }
+
+      // Otomatis set value dropdown ke paket baru
+      document.getElementById("paketSelect").value = paketBaru;
+      closeModalTambahPaket();
+    }
+
+    // Simpan / Update Jemaah ke Firestore
+    async function simpanJemaah(e) {
+      e.preventDefault();
+      const docId = document.getElementById("editDocId").value;
+      const paket = document.getElementById("paketSelect").value;
+
+      if (!paket) {
+        alert("Harap pilih Paket / Group Umroh!");
+        return;
+      }
+
+      const submitBtn = document.getElementById("submitBtn");
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan data...`;
+
+      const payload = {
+        nama: document.getElementById("nama").value.trim(),
+        nik: document.getElementById("nik").value.trim(),
+        tempatLahir: document.getElementById("tempatLahir").value.trim(),
+        tanggalLahir: document.getElementById("tanggalLahir").value,
+        jenisKelamin: document.getElementById("jenisKelamin").value,
+        telepon: document.getElementById("telepon").value.trim() || "-",
+        paket: paket,
+        alamat: document.getElementById("alamat").value.trim(),
+        foto: currentFotoBase64,
+        ktpFoto: currentKtpBase64,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        if (docId) {
+          await db.collection("jemaah").doc(docId).update(payload);
+          alert("Data jemaah berhasil diperbarui!");
+        } else {
+          await db.collection("jemaah").add(payload);
+          alert("Jemaah baru berhasil ditambahkan!");
+        }
+        resetForm();
+        switchTab('data');
+      } catch (err) {
+        console.error(err);
+        alert("Gagal menyimpan data jemaah!");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Jemaah ke Cloud`;
+      }
+    }
+
+    // Update Dashboard Metrics
+    function updateDashboard() {
+      const total = jemaahCache.length;
+      document.getElementById("dashTotalJemaah").innerText = total;
+      document.getElementById("totalCountBadge").innerText = total;
+
+      const setPaket = new Set(jemaahCache.map(j => j.paket));
+      document.getElementById("dashTotalPaket").innerText = setPaket.size;
+
+      const laki = jemaahCache.filter(j => j.jenisKelamin === 'Laki-laki').length;
+      const perempuan = jemaahCache.filter(j => j.jenisKelamin === 'Perempuan').length;
+      document.getElementById("dashGenderRatio").innerText = `${laki} / ${perempuan}`;
+
+      // Berkas lengkap apabila ada Foto dan KTP
+      const berkasLengkap = jemaahCache.filter(j => j.foto && j.ktpFoto).length;
+      document.getElementById("dashBerkasLengkap").innerText = berkasLengkap;
+
+      // Render Ringkasan Group di Dashboard
+      const dashGroupList = document.getElementById("dashboardGroupList");
+      if (setPaket.size === 0) {
+        dashGroupList.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Belum ada group umroh yang dibuat.</p>`;
+        return;
+      }
+
+      const countsByPaket = {};
+      jemaahCache.forEach(j => {
+        countsByPaket[j.paket] = (countsByPaket[j.paket] || 0) + 1;
+      });
+
+      dashGroupList.innerHTML = Object.keys(countsByPaket).map(p => `
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
+          <div>
+            <h4 class="font-bold text-slate-800 text-xs">${p}</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">${countsByPaket[p]} Jemaah Terdaftar</p>
+          </div>
+          <button onclick="filterByGroupDash('${p}')" class="text-xs text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2.5 py-1 rounded-lg font-medium transition">
+            Lihat Data
+          </button>
+        </div>
+      `).join("");
+    }
+
+    function filterByGroupDash(paketName) {
+      document.getElementById("filterPaketSelect").value = paketName;
+      switchTab('data');
+      renderGroupedData();
+    }
+
+    // Render Data Jemaah Terkelompok (Grouped List / Accordion)
+    function renderGroupedData() {
+      const container = document.getElementById("groupedJemaahContainer");
+      const filterPaket = document.getElementById("filterPaketSelect").value;
+      const query = document.getElementById("searchInput").value.toLowerCase().trim();
+
+      // Filter Data
+      let filteredData = jemaahCache.filter(j => {
+        const matchPaket = (filterPaket === "ALL" || j.paket === filterPaket);
+        const matchQuery = !query || (j.nama && j.nama.toLowerCase().includes(query)) || (j.nik && j.nik.toLowerCase().includes(query));
+        return matchPaket && matchQuery;
+      });
+
+      if (filteredData.length === 0) {
+        container.innerHTML = `
+          <div class="text-center p-8 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+            <i class="fa-solid fa-users-slash text-3xl text-slate-300 mb-2"></i>
+            <p class="text-xs text-slate-500">Tidak ada data jemaah yang sesuai dengan pencarian/filter.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Grouping Data Berdasarkan Paket
+      const grouped = {};
+      filteredData.forEach(j => {
+        const key = j.paket || "Tanpa Group";
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(j);
+      });
+
+      // Render Html Per Group
+      container.innerHTML = Object.keys(grouped).map((groupName, index) => {
+        const jemaahList = grouped[groupName];
+        return `
+          <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
+            
+            <!-- GROUP HEADER / ACCORDION TOGGLE -->
+            <div onclick="toggleAccordion('acc-${index}')" class="bg-emerald-900 text-white p-3.5 px-4 flex justify-between items-center cursor-pointer select-none">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-kaaba text-emerald-300 text-base"></i>
+                <div>
+                  <h3 class="font-bold text-sm tracking-wide">${groupName}</h3>
+                  <p class="text-[11px] text-emerald-200 font-normal">Total: ${jemaahList.length} Jemaah</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="event.stopPropagation(); eksporExcelGroup('${groupName}')" title="Ekspor Group Ini ke Excel" class="bg-emerald-700 hover:bg-emerald-600 text-xs px-2.5 py-1 rounded border border-emerald-500 flex items-center gap-1">
+                  <i class="fa-solid fa-file-excel"></i> Excel Group
+                </button>
+                <i id="icon-acc-${index}" class="fa-solid fa-chevron-down text-xs transition-transform duration-200"></i>
+              </div>
+            </div>
+
+            <!-- GROUP CONTENT TABLE -->
+            <div id="acc-${index}" class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                    <th class="p-3">Foto / KTP</th>
+                    <th class="p-3">Nama Lengkap</th>
+                    <th class="p-3">NIK</th>
+                    <th class="p-3">TTL</th>
+                    <th class="p-3">No. WhatsApp</th>
+                    <th class="p-3">Kelengkapan</th>
+                    <th class="p-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${jemaahList.map(item => `
+                    <tr class="hover:bg-slate-50/80 transition">
+                      <td class="p-3">
+                        <div class="flex items-center gap-1">
+                          ${item.foto 
+                            ? `<img src="${item.foto}" class="w-8 h-10 object-cover rounded shadow-sm border border-slate-300" title="Pasfoto">` 
+                            : `<div class="w-8 h-10 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs" title="Tidak ada foto"><i class="fa-solid fa-user"></i></div>`}
+                          
+                          ${item.ktpFoto 
+                            ? `<img src="${item.ktpFoto}" class="w-10 h-7 object-cover rounded shadow-sm border border-slate-300" title="KTP">` 
+                            : `<div class="w-10 h-7 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-[10px]" title="Tidak ada KTP"><i class="fa-solid fa-id-card"></i></div>`}
+                        </div>
+                      </td>
+                      <td class="p-3 font-semibold text-slate-800">${item.nama}</td>
+                      <td class="p-3 text-slate-600 font-mono">${item.nik}</td>
+                      <td class="p-3 text-slate-600">${item.tempatLahir || '-'}, ${item.tanggalLahir || '-'}</td>
+                      <td class="p-3 text-slate-600">${item.telepon || '-'}</td>
+                      <td class="p-3">
+                        ${(item.foto && item.ktpFoto) 
+                          ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-medium">Lengkap</span>` 
+                          : `<span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-medium">Belum Lengkap</span>`}
+                      </td>
+                      <td class="p-3 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                          <button onclick="viewDetail('${item.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Detail"><i class="fa-solid fa-eye"></i></button>
+                          <button onclick="editJemaah('${item.id}')" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                          <button onclick="hapusJemaah('${item.id}')" class="p-1.5 text-red-600 hover:bg-red-50 rounded transition" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        `;
+      }).join("");
+    }
+
+    function toggleAccordion(id) {
+      const el = document.getElementById(id);
+      const icon = document.getElementById(`icon-${id}`);
+      if (el.classList.contains("hidden")) {
+        el.classList.remove("hidden");
+        if (icon) icon.classList.add("rotate-180");
+      } else {
+        el.classList.add("hidden");
+        if (icon) icon.classList.remove("rotate-180");
+      }
+    }
+
+    // Edit Data Jemaah
+    function editJemaah(id) {
+      const item = jemaahCache.find(j => j.id === id);
+      if (!item) return;
+
+      document.getElementById("editDocId").value = item.id;
+      document.getElementById("nama").value = item.nama || "";
+      document.getElementById("nik").value = item.nik || "";
+      document.getElementById("tempatLahir").value = item.tempatLahir || "";
+      document.getElementById("tanggalLahir").value = item.tanggalLahir || "";
+      document.getElementById("jenisKelamin").value = item.jenisKelamin || "";
+      document.getElementById("telepon").value = (item.telepon && item.telepon !== '-') ? item.telepon : "";
+      document.getElementById("paketSelect").value = item.paket || "";
+      document.getElementById("alamat").value = item.alamat || "";
+
+      // Preview Foto
+      if (item.foto) {
+        currentFotoBase64 = item.foto;
+        document.getElementById("fotoPreview").src = item.foto;
+        document.getElementById("fotoPreviewContainer").classList.remove("hidden");
+      } else {
+        clearImage('foto');
+      }
+
+      // Preview KTP
+      if (item.ktpFoto) {
+        currentKtpBase64 = item.ktpFoto;
+        document.getElementById("ktpPreview").src = item.ktpFoto;
+        document.getElementById("ktpPreviewContainer").classList.remove("hidden");
+      } else {
+        clearImage('ktp');
+      }
+
+      document.getElementById("formTitle").innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-pen text-amber-600"></i>Edit Data Jemaah</span>`;
+      document.getElementById("cancelEditBtn").classList.remove("hidden");
+      switchTab('form');
+    }
+
+    function resetForm() {
+      document.getElementById("jemaahForm").reset();
+      document.getElementById("editDocId").value = "";
+      clearImage('foto');
+      clearImage('ktp');
+      document.getElementById("formTitle").innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-user-plus text-emerald-700"></i>Tambah Jemaah Baru</span>`;
+      document.getElementById("cancelEditBtn").classList.add("hidden");
+    }
+
+    // Hapus Jemaah
+    async function hapusJemaah(id) {
+      if (confirm("Apakah Anda yakin ingin menghapus data jemaah ini dari database?")) {
+        try {
+          await db.collection("jemaah").doc(id).delete();
+          alert("Data berhasil dihapus.");
+        } catch (err) {
+          console.error(err);
+          alert("Gagal menghapus data.");
+        }
+      }
+    }
+
+    // Modal Detail Jemaah (Dengan Pemisahan Tampilan Gambar Foto & KTP)
+    function viewDetail(id) {
+      const item = jemaahCache.find(j => j.id === id);
+      if (!item) return;
+
+      const content = `
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="text-center">
+            <p class="text-[10px] text-slate-500 mb-1 font-semibold">Pasfoto Jemaah</p>
+            ${item.foto 
+              ? `<img src="${item.foto}" class="w-24 h-32 object-cover rounded-lg border-2 border-emerald-600 mx-auto shadow">` 
+              : `<div class="w-24 h-32 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 mx-auto border border-dashed"><i class="fa-solid fa-user text-2xl"></i></div>`}
+          </div>
+          <div class="text-center">
+            <p class="text-[10px] text-slate-500 mb-1 font-semibold">Foto KTP Jemaah</p>
+            ${item.ktpFoto 
+              ? `<img src="${item.ktpFoto}" class="w-36 h-24 object-cover rounded-lg border-2 border-blue-600 mx-auto shadow mt-4">` 
+              : `<div class="w-36 h-24 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 mx-auto border border-dashed mt-4"><i class="fa-solid fa-id-card text-2xl"></i></div>`}
+          </div>
+        </div>
+
+        <div class="space-y-2 border-t border-slate-100 pt-3">
+          <p class="flex justify-between border-b border-slate-50 pb-1">
+            <span class="text-slate-500">Group Umroh:</span> 
+            <span class="font-bold text-emerald-800">${item.paket}</span>
+          </p>
+          <p class="flex justify-between border-b border-slate-50 pb-1">
+            <span class="text-slate-500">Nama Lengkap:</span> 
+            <span class="font-semibold text-slate-800">${item.nama}</span>
+          </p>
+          <p class="flex justify-between border-b border-slate-50 pb-1">
+            <span class="text-slate-500">NIK:</span> 
+            <span class="font-mono text-slate-800">${item.nik}</span>
+          </p>
+          <p class="flex justify-between border-b border-slate-50 pb-1">
+            <span class="text-slate-500">TTL:</span> 
+            <span class="text-slate-800">${item.tempatLahir || '-'}, ${item.tanggalLahir || '-'}</span>
+          </p>
+          <p class="flex justify-between border-b border-slate-50 pb-1">
+            <span class="text-slate-500">Jenis Kelamin:</span> 
+            <span class="text-slate-800">${item.jenisKelamin}</span>
+          </p>
+          <p class="flex justify-between border-b border-slate-50 pb-1">
+            <span class="text-slate-500">No. WA / HP:</span> 
+            <span class="text-slate-800">${item.telepon || '-'}</span>
+          </p>
+          <div>
+            <span class="text-slate-500 block mb-0.5">Alamat:</span> 
+            <p class="text-slate-700 bg-slate-50 p-2 rounded border border-slate-200">${item.alamat || '-'}</p>
+          </div>
+        </div>
+      `;
+      document.getElementById("modalContent").innerHTML = content;
+      document.getElementById("detailModal").classList.remove("hidden");
+    }
+
+    function closeModal() {
+      document.getElementById("detailModal").classList.add("hidden");
+    }
+
+    // Ekspor Seluruh Data ke Excel
+    function eksporExcel() {
+      if (jemaahCache.length === 0) return alert("Belum ada data untuk diunduh!");
+      prosesDownloadExcel(jemaahCache, "Semua_Group");
+    }
+
+    // Ekspor Data Khusus Satu Group
+    function eksporExcelGroup(namaGroup) {
+      const filtered = jemaahCache.filter(j => j.paket === namaGroup);
+      if (filtered.length === 0) return alert("Belum ada data pada group ini!");
+      prosesDownloadExcel(filtered, namaGroup.replace(/[^a-zA-Z0-9]/g, "_"));
+    }
+
+    function prosesDownloadExcel(dataList, suffixFileName) {
+      const cleanData = dataList.map((j, idx) => ({
+        "No": idx + 1,
+        "Paket Umroh": j.paket || "",
+        "Nama Lengkap": j.nama,
+        "NIK": j.nik,
+        "Tempat Lahir": j.tempatLahir || "",
+        "Tanggal Lahir": j.tanggalLahir || "",
+        "Jenis Kelamin": j.jenisKelamin || "",
+        "No. WhatsApp": j.telepon || "",
+        "Alamat": j.alamat || "",
+        "Pasfoto Uploaded": j.foto ? "Ya" : "Tidak",
+        "KTP Uploaded": j.ktpFoto ? "Ya" : "Tidak"
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(cleanData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Jemaah");
+      XLSX.writeFile(workbook, `Jemaah_ShabarTour_${suffixFileName}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+  </script>
+</body>
+</html>
