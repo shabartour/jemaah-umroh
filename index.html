@@ -445,7 +445,9 @@
 
   <!-- JAVASCRIPT & FIREBASE LOGIC -->
   <script>
-    // Konfigurasi Firebase
+    // Konfigurasi API Wilayah Indonesia & Firebase
+    const API_WILAYAH = 'https://www.emsifa.com/api-wilayah-indonesia/api';
+
     const firebaseConfig = {
       apiKey: "AIzaSyDPlhnzrH-RXtZSscQcyGOHkf4fMJ19o4o",
       authDomain: "umroh-app-database.firebaseapp.com",
@@ -481,10 +483,10 @@
       fetchProvinces();
     });
 
-    // Fetch Wilayah Indonesia dari API EMSIFA (With Offline Fallback)
+    // Fetch Wilayah Indonesia (Dengan API Resmi EMSIFA & Fallback Offline)
     async function fetchProvinces() {
       try {
-        const res = await fetch("https://www.emsifa.github.io/api-wilayah-indonesia/api/provinces.json");
+        const res = await fetch(`${API_WILAYAH}/provinces.json`);
         provincesData = await res.json();
       } catch (e) {
         // Fallback jika offline/gagal
@@ -512,7 +514,7 @@
     async function onProvinsiChange() {
       const provSelect = document.getElementById("provinsiSelect");
       const selectedOption = provSelect.options[provSelect.selectedIndex];
-      const provId = selectedOption.getAttribute("data-id");
+      const provId = selectedOption ? selectedOption.getAttribute("data-id") : null;
       
       const kabSelect = document.getElementById("kabupatenSelect");
       const kecSelect = document.getElementById("kecamatanSelect");
@@ -529,7 +531,7 @@
 
       try {
         if (!regenciesData[provId]) {
-          const res = await fetch(`https://www.emsifa.github.io/api-wilayah-indonesia/api/regencies/${provId}.json`);
+          const res = await fetch(`${API_WILAYAH}/regencies/${provId}.json`);
           regenciesData[provId] = await res.json();
         }
         
@@ -544,7 +546,7 @@
     async function onKabupatenChange() {
       const kabSelect = document.getElementById("kabupatenSelect");
       const selectedOption = kabSelect.options[kabSelect.selectedIndex];
-      const kabId = selectedOption.getAttribute("data-id");
+      const kabId = selectedOption ? selectedOption.getAttribute("data-id") : null;
       
       const kecSelect = document.getElementById("kecamatanSelect");
       kecSelect.innerHTML = `<option value="">-- Memuat Kecamatan... --</option>`;
@@ -557,7 +559,7 @@
 
       try {
         if (!districtsData[kabId]) {
-          const res = await fetch(`https://www.emsifa.github.io/api-wilayah-indonesia/api/districts/${kabId}.json`);
+          const res = await fetch(`${API_WILAYAH}/districts/${kabId}.json`);
           districtsData[kabId] = await res.json();
         }
         
@@ -1044,7 +1046,7 @@
       activeDetailGroup = "";
     }
 
-    // Edit Jemaah
+    // Edit Jemaah (Dengan Async/Await Berurutan Memuat Wilayah)
     async function editJemaah(id) {
       const item = jemaahCache.find(j => j.id === id);
       if (!item) return;
@@ -1059,15 +1061,36 @@
       document.getElementById("paketSelect").value = item.paket || "";
       document.getElementById("alamat").value = item.alamat || "";
 
-      // Populasikan Dropdown Alamat Berjenjang
+      // Pastikan data daftar provinsi sudah siap
+      if (provincesData.length === 0) {
+        await fetchProvinces();
+      }
+
+      // Populasikan Dropdown Alamat Berjenjang secara async
       if (item.provinsi) {
-        document.getElementById("provinsiSelect").value = item.provinsi;
-        await onProvinsiChange();
-        if (item.kabupaten) {
-          document.getElementById("kabupatenSelect").value = item.kabupaten;
-          await onKabupatenChange();
-          if (item.kecamatan) {
-            document.getElementById("kecamatanSelect").value = item.kecamatan;
+        const provSelect = document.getElementById("provinsiSelect");
+        const provOpt = Array.from(provSelect.options).find(opt => opt.value.toUpperCase() === item.provinsi.toUpperCase());
+        
+        if (provOpt) {
+          provSelect.value = provOpt.value;
+          await onProvinsiChange();
+
+          if (item.kabupaten) {
+            const kabSelect = document.getElementById("kabupatenSelect");
+            const kabOpt = Array.from(kabSelect.options).find(opt => opt.value.toUpperCase() === item.kabupaten.toUpperCase());
+            
+            if (kabOpt) {
+              kabSelect.value = kabOpt.value;
+              await onKabupatenChange();
+
+              if (item.kecamatan) {
+                const kecSelect = document.getElementById("kecamatanSelect");
+                const kecOpt = Array.from(kecSelect.options).find(opt => opt.value.toUpperCase() === item.kecamatan.toUpperCase());
+                if (kecOpt) {
+                  kecSelect.value = kecOpt.value;
+                }
+              }
+            }
           }
         }
       }
