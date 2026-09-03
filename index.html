@@ -15,10 +15,13 @@
   <!-- Firebase SDK (Compat Version) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- JSZip for downloading multiple KTPs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- FileSaver for saving zip file -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-24">
 
-  <!-- HEADER BRANDING PT. SHABAR TOUR -->
   <header class="bg-emerald-800 text-white shadow-md sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
       <div class="flex items-center gap-3">
@@ -366,24 +369,31 @@
 
   <!-- MODAL DETAIL KEANGGOTAAN GROUP (DAMPINGAN DARI KLIK DETAIL PER GROUP) -->
   <div id="groupDetailModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+    <div class="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
         <div>
           <h3 id="groupDetailTitle" class="text-base font-bold text-slate-800 flex items-center gap-2">
             <i class="fa-solid fa-kaaba text-emerald-700"></i> Detail Group Jemaah
           </h3>
           <p id="groupDetailSubtitle" class="text-xs text-slate-500 mt-0.5">Daftar seluruh jemaah terdaftar pada group ini.</p>
         </div>
-        <button onclick="closeGroupDetailModal()" class="text-slate-400 hover:text-slate-600 text-xl w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <div class="flex items-center gap-3">
+            <!-- Menambahkan kolom pencarian di sebelah kanan -->
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2 text-xs text-slate-400"></i>
+                <input type="text" id="searchGroupDetailInput" onkeyup="renderGroupDetailRows()" placeholder="Cari Jemaah..." class="w-48 pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50">
+            </div>
+            <button onclick="closeGroupDetailModal()" class="text-slate-400 hover:text-slate-600 text-xl w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100">
+            <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
       </div>
 
       <div class="overflow-y-auto flex-1 border border-slate-200 rounded-xl">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
             <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 sticky top-0">
-              <th class="p-3">Foto / KTP</th>
+              <th class="p-3">KTP</th>
               <th class="p-3">Nama Lengkap</th>
               <th class="p-3">NIK</th>
               <th class="p-3">TTL</th>
@@ -400,9 +410,15 @@
 
       <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
         <span id="groupDetailTotalCount" class="text-xs text-slate-500 font-medium">Total: 0 Jemaah</span>
-        <button id="groupDetailExportBtn" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-4 py-2 rounded-lg font-medium flex items-center gap-1.5 shadow">
-          <i class="fa-solid fa-file-excel"></i> Unduh Excel Group Ini
-        </button>
+        <div class="flex gap-2">
+            <!-- Menambahkan tombol Unduh KTP -->
+            <button id="groupDetailDownloadKtpBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded-lg font-medium flex items-center gap-1.5 shadow">
+                <i class="fa-solid fa-id-card"></i> Unduh KTP Group
+            </button>
+            <button id="groupDetailExportBtn" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-4 py-2 rounded-lg font-medium flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-file-excel"></i> Unduh Excel Group Ini
+            </button>
+        </div>
       </div>
     </div>
   </div>
@@ -468,6 +484,7 @@
     let paketCache = [];
     let chartInstance = null;
     let activeDetailGroup = "";
+    let activeGroupDetailList = []; // Untuk pencarian di dalam modal detail grup
 
     // Cache Data Wilayah Indonesia
     let provincesData = [];
@@ -658,7 +675,7 @@
 
         // Refresh group detail modal jika sedang terbuka
         if (!document.getElementById("groupDetailModal").classList.contains("hidden") && activeDetailGroup) {
-          openGroupDetailModal(activeDetailGroup);
+          openGroupDetailModal(activeDetailGroup, false); // false to not reset search input
         }
 
       }, err => console.error("Realtime Listener Error:", err));
@@ -986,64 +1003,94 @@
     }
 
     // Open Group Detail Modal (Menampilkan Seluruh Member dari Group Tersebut)
-    function openGroupDetailModal(groupName) {
+    function openGroupDetailModal(groupName, resetSearch = true) {
       activeDetailGroup = groupName;
-      const list = jemaahCache.filter(j => (j.paket || "Tanpa Group") === groupName);
+      activeGroupDetailList = jemaahCache.filter(j => (j.paket || "Tanpa Group") === groupName);
 
       document.getElementById("groupDetailTitle").innerHTML = `<i class="fa-solid fa-kaaba text-emerald-700"></i> Detail Group: ${groupName}`;
-      document.getElementById("groupDetailSubtitle").innerText = `Daftar seluruh jemaah terdaftar (${list.length} Orang)`;
-      document.getElementById("groupDetailTotalCount").innerText = `Total: ${list.length} Jemaah`;
+      document.getElementById("groupDetailSubtitle").innerText = `Daftar seluruh jemaah terdaftar (${activeGroupDetailList.length} Orang)`;
+      
       document.getElementById("groupDetailExportBtn").onclick = () => eksporExcelGroup(groupName);
+      document.getElementById("groupDetailDownloadKtpBtn").onclick = () => unduhKtpGrup(groupName);
 
-      const tbody = document.getElementById("groupDetailTableBody");
-
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Tidak ada anggota jemaah di group ini.</td></tr>`;
-      } else {
-        tbody.innerHTML = list.map(item => {
-          const alamatLengkap = [
-            item.alamat,
-            item.kecamatan ? `Kec. ${item.kecamatan}` : '',
-            item.kabupaten ? item.kabupaten : '',
-            item.provinsi ? item.provinsi : ''
-          ].filter(Boolean).join(", ");
-
-          return `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="p-3">
-                <div class="flex items-center gap-1">
-                  ${item.foto 
-                    ? `<img src="${item.foto}" class="w-8 h-10 object-cover rounded shadow-sm border border-slate-300" title="Pasfoto">` 
-                    : `<div class="w-8 h-10 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs" title="Tidak ada foto"><i class="fa-solid fa-user"></i></div>`}
-                  
-                  ${item.ktpFoto 
-                    ? `<img src="${item.ktpFoto}" class="w-10 h-7 object-cover rounded shadow-sm border border-slate-300" title="KTP">` 
-                    : `<div class="w-10 h-7 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-[10px]" title="Tidak ada KTP"><i class="fa-solid fa-id-card"></i></div>`}
-                </div>
-              </td>
-              <td class="p-3 font-semibold text-slate-800">${item.nama}</td>
-              <td class="p-3 text-slate-600 font-mono">${item.nik}</td>
-              <td class="p-3 text-slate-600">${item.tempatLahir || '-'}, ${item.tanggalLahir || '-'}</td>
-              <td class="p-3 text-slate-600 max-w-xs truncate" title="${alamatLengkap}">${alamatLengkap || '-'}</td>
-              <td class="p-3 text-slate-600">${item.telepon || '-'}</td>
-              <td class="p-3 text-center">
-                <div class="flex items-center justify-center gap-1">
-                  <button onclick="viewDetail('${item.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Lihat Detail"><i class="fa-solid fa-eye"></i></button>
-                  <button onclick="editJemaah('${item.id}')" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition" title="Edit Jemaah"><i class="fa-solid fa-pen"></i></button>
-                  <button onclick="hapusJemaah('${item.id}')" class="p-1.5 text-red-600 hover:bg-red-50 rounded transition" title="Hapus Jemaah"><i class="fa-solid fa-trash"></i></button>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join("");
+      if (resetSearch) {
+          document.getElementById("searchGroupDetailInput").value = "";
       }
+
+      renderGroupDetailRows();
 
       document.getElementById("groupDetailModal").classList.remove("hidden");
     }
 
+    function renderGroupDetailRows() {
+        const tbody = document.getElementById("groupDetailTableBody");
+        const query = document.getElementById("searchGroupDetailInput").value.toLowerCase().trim();
+
+        const list = activeGroupDetailList.filter(j => 
+            j.nama.toLowerCase().includes(query) || 
+            (j.nik && j.nik.toLowerCase().includes(query))
+        );
+
+        document.getElementById("groupDetailTotalCount").innerText = `Menampilkan ${list.length} Jemaah`;
+
+        if (list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Tidak ada anggota jemaah yang sesuai pencarian.</td></tr>`;
+        } else {
+            tbody.innerHTML = list.map(item => {
+            const alamatLengkap = [
+                item.alamat,
+                item.kecamatan ? `Kec. ${item.kecamatan}` : '',
+                item.kabupaten ? item.kabupaten : '',
+                item.provinsi ? item.provinsi : ''
+            ].filter(Boolean).join(", ");
+
+            // Kolom foto dihapus, hanya menampilkan KTP
+            return `
+                <tr class="hover:bg-slate-50 transition">
+                <td class="p-3 text-center">
+                    ${item.ktpFoto 
+                        ? `<img src="${item.ktpFoto}" class="w-12 h-8 object-cover rounded shadow-sm border border-slate-300 mx-auto cursor-pointer hover:opacity-80" title="Klik untuk lihat KTP" onclick="viewKtpModal('${item.ktpFoto}')">` 
+                        : `<div class="w-12 h-8 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-[10px] mx-auto" title="Tidak ada KTP"><i class="fa-solid fa-id-card"></i></div>`}
+                </td>
+                <td class="p-3 font-semibold text-slate-800">${item.nama}</td>
+                <td class="p-3 text-slate-600 font-mono">${item.nik}</td>
+                <td class="p-3 text-slate-600">${item.tempatLahir || '-'}, <br> <span class="text-[10px] text-slate-500">${item.tanggalLahir || '-'}</span></td>
+                <td class="p-3 text-slate-600 max-w-xs truncate" title="${alamatLengkap}">${alamatLengkap || '-'}</td>
+                <td class="p-3 text-slate-600">${item.telepon || '-'}</td>
+                <td class="p-3 text-center">
+                    <div class="flex items-center justify-center gap-1">
+                    <button onclick="viewDetail('${item.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Lihat Detail"><i class="fa-solid fa-eye"></i></button>
+                    <button onclick="editJemaah('${item.id}')" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition" title="Edit Jemaah"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="hapusJemaah('${item.id}')" class="p-1.5 text-red-600 hover:bg-red-50 rounded transition" title="Hapus Jemaah"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </td>
+                </tr>
+            `;
+            }).join("");
+        }
+    }
+
+
     function closeGroupDetailModal() {
       document.getElementById("groupDetailModal").classList.add("hidden");
       activeDetailGroup = "";
+      activeGroupDetailList = [];
+    }
+
+    // Modal view KTP specifically (optional enhancement based on UI logic)
+    function viewKtpModal(ktpSrc) {
+        if(!ktpSrc) return;
+        
+        const content = `
+            <div class="text-center">
+                <img src="${ktpSrc}" class="max-w-full h-auto object-contain rounded-lg shadow-lg border-2 border-blue-600 mx-auto">
+                <a href="${ktpSrc}" download="KTP.jpg" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow">
+                   <i class="fa-solid fa-download"></i> Unduh KTP Ini
+                </a>
+            </div>
+        `;
+        document.getElementById("modalContent").innerHTML = content;
+        document.getElementById("detailModal").classList.remove("hidden");
     }
 
     // Edit Jemaah (Dengan Async/Await Berurutan Memuat Wilayah)
@@ -1167,7 +1214,7 @@
           <div class="text-center">
             <p class="text-[10px] text-slate-500 mb-1 font-semibold">Foto KTP Jemaah</p>
             ${item.ktpFoto 
-              ? `<img src="${item.ktpFoto}" class="w-36 h-24 object-cover rounded-lg border-2 border-blue-600 mx-auto shadow mt-4">` 
+              ? `<img src="${item.ktpFoto}" class="w-36 h-24 object-cover rounded-lg border-2 border-blue-600 mx-auto shadow mt-4 cursor-pointer hover:opacity-80" onclick="viewKtpModal('${item.ktpFoto}')" title="Klik untuk unduh/perbesar">` 
               : `<div class="w-36 h-24 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 mx-auto border border-dashed mt-4"><i class="fa-solid fa-id-card text-2xl"></i></div>`}
           </div>
         </div>
@@ -1246,6 +1293,45 @@
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Data Jemaah");
       XLSX.writeFile(workbook, `Jemaah_ShabarTour_${suffixFileName}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    // Fungsi Unduh KTP Group (ZIP)
+    async function unduhKtpGrup(namaGroup) {
+        const btn = document.getElementById("groupDetailDownloadKtpBtn");
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyiapkan...`;
+        btn.disabled = true;
+
+        try {
+            const list = jemaahCache.filter(j => j.paket === namaGroup && j.ktpFoto);
+            
+            if (list.length === 0) {
+                alert("Tidak ada data KTP yang tersedia di group ini untuk diunduh.");
+                return;
+            }
+
+            const zip = new JSZip();
+            const folder = zip.folder(`KTP_${namaGroup.replace(/[^a-zA-Z0-9]/g, "_")}`);
+
+            list.forEach(j => {
+                // Ekstrak base64 data (menghilangkan 'data:image/jpeg;base64,')
+                const base64Data = j.ktpFoto.split(',')[1];
+                if(base64Data) {
+                    const fileName = `${j.nama.replace(/[^a-zA-Z0-9]/g, "_")}_${j.nik}.jpg`;
+                    folder.file(fileName, base64Data, {base64: true});
+                }
+            });
+
+            const content = await zip.generateAsync({type: "blob"});
+            saveAs(content, `KTP_Group_${namaGroup.replace(/[^a-zA-Z0-9]/g, "_")}.zip`);
+
+        } catch (error) {
+            console.error("Gagal membuat zip KTP:", error);
+            alert("Terjadi kesalahan saat menyiapkan file unduhan.");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
   </script>
 </body>
