@@ -775,11 +775,22 @@
       e.preventDefault();
       const docId = document.getElementById("editDocId").value;
       const paket = document.getElementById("paketSelect").value;
+      const nikInput = document.getElementById("nik").value.trim();
 
       if (!paket) {
         alert("Harap pilih Paket / Group Umroh!");
         return;
       }
+
+      // --- VALIDASI NIK GANDA ---
+      // Mengecek apakah NIK sudah ada di jemaahCache, abaikan pengecekan jika sedang mengedit dokumen yang sama
+      const isDuplicate = jemaahCache.some(jemaah => jemaah.nik === nikInput && jemaah.id !== docId);
+      
+      if (isDuplicate) {
+        alert(`Peringatan: Gagal menyimpan! Jemaah dengan NIK ${nikInput} sudah pernah didaftarkan.`);
+        return; // Menghentikan proses simpan
+      }
+      // --------------------------
 
       const submitBtn = document.getElementById("submitBtn");
       submitBtn.disabled = true;
@@ -787,7 +798,7 @@
 
       const payload = {
         nama: document.getElementById("nama").value.trim(),
-        nik: document.getElementById("nik").value.trim(),
+        nik: nikInput,
         tempatLahir: document.getElementById("tempatLahir").value.trim(),
         tanggalLahir: document.getElementById("tanggalLahir").value,
         jenisKelamin: document.getElementById("jenisKelamin").value,
