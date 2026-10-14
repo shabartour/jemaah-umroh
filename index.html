@@ -612,6 +612,7 @@
     // Pilihan dropdown Provider Visa dan Asuransi.
     // Daftar Provider Visa bersumber dari file daftar B2C yang diberikan.
     const PROVIDER_VISA_OPTIONS = [
+      "B2C",
       "PT. AERO GLOBE INDONESIA",
       "PT. AFLAHA CAHAYA WISATA",
       "PT. AFRAH DIYANI MANDIRI",
@@ -1062,11 +1063,9 @@
       const providerSelect = document.getElementById("providerVisa");
       const insuranceSelect = document.getElementById("asuransi");
       if (providerSelect) {
-        providerSelect.replaceChildren(new Option("-- Pilih Provider Visa (B2C) --", ""));
-        const b2cGroup = document.createElement("optgroup");
-        b2cGroup.label = "B2C";
-        PROVIDER_VISA_OPTIONS.forEach((name) => b2cGroup.appendChild(new Option(name, name)));
-        providerSelect.appendChild(b2cGroup);
+        providerSelect.replaceChildren(new Option("-- Pilih Provider Visa --", ""));
+        // Semua entri adalah pilihan Provider Visa biasa, termasuk "B2C".
+        PROVIDER_VISA_OPTIONS.forEach((name) => providerSelect.add(new Option(name, name)));
       }
       if (insuranceSelect) {
         insuranceSelect.replaceChildren(new Option("-- Pilih Asuransi --", ""));
