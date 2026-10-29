@@ -663,13 +663,23 @@
       onSnapshot(collection(db, "paket"), (snapshot) => {
         window.state.pakets = [];
         snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          // Fleksibilitas membaca variasi nama field dari Firestore
           window.state.pakets.push({
             id: docSnap.id,
-            ...docSnap.data()
+            namaPaket: data.namaPaket || data.nama_paket || data.nama || 'Paket Tanpa Nama',
+            tglKeberangkatan: data.tglKeberangkatan || data.tanggal_keberangkatan || data.tgl || '',
+            muthawwif: data.muthawwif || data.pembimbing || '-',
+            ...data
           });
         });
 
-        window.state.pakets.sort((a, b) => new Date(a.tglKeberangkatan) - new Date(b.tglKeberangkatan));
+        // Urutkan paket berdasarkan tanggal keberangkatan jika ada
+        window.state.pakets.sort((a, b) => {
+          if (!a.tglKeberangkatan) return 1;
+          if (!b.tglKeberangkatan) return -1;
+          return new Date(a.tglKeberangkatan) - new Date(b.tglKeberangkatan);
+        });
 
         populatePaketDropdowns();
         renderPaketTable();
@@ -679,7 +689,7 @@
         console.error("Error snapshot paket:", error);
         if (error.code === 'permission-denied') {
           updateFirebaseStatusUI(false, "Akses Firestore Ditolak (Periksa Rules)");
-          showAlert("Akses Firestore ditolak! Silakan perbarui Security Rules di Firebase Console.", "error");
+          showAlert("Akses Firestore ditolak untuk koleksi paket!", "error");
         }
       });
 
@@ -687,14 +697,19 @@
       onSnapshot(collection(db, "jemaah"), (snapshot) => {
         window.state.jemaahs = [];
         snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
           window.state.jemaahs.push({
             id: docSnap.id,
-            ...docSnap.data()
+            namaLengkap: data.namaLengkap || data.nama || '-',
+            nik: data.nik || '-',
+            paketId: data.paketId || data.paket || '',
+            ...data
           });
         });
 
         renderDashboard();
         renderJemaahTable();
+        renderPaketTable();
       }, (error) => {
         console.error("Error snapshot jemaah:", error);
         if (error.code === 'permission-denied') {
@@ -902,16 +917,28 @@
       filterSelect.innerHTML = '<option value="">-- Semua Paket --</option>';
       exportSelect.innerHTML = '<option value="">-- Pilih Paket Umroh --</option>';
 
+      if (window.state.pakets.length === 0) {
+        // Fallback opsi jika di Firestore koleksi paket belum terisi
+        const defaultOption = '<option value="" disabled>Belum ada paket di Firestore</option>';
+        formSelect.innerHTML += defaultOption;
+        return;
+      }
+
       window.state.pakets.forEach(p => {
-        const optionText = `${p.namaPaket} (${formatDateIndo(p.tglKeberangkatan)})`;
-        formSelect.innerHTML += `<option value="${p.id}">${optionText}</option>`;
-        filterSelect.innerHTML += `<option value="${p.id}">${p.namaPaket}</option>`;
-        exportSelect.innerHTML += `<option value="${p.id}">${p.namaPaket}</option>`;
+        const tglText = p.tglKeberangkatan ? ` (${formatDateIndo(p.tglKeberangkatan)})` : '';
+        const optionText = `${p.namaPaket}${tglText}`;
+        
+        // Gunakan ID dokumen atau namaPaket sebagai value
+        const optionValue = p.id;
+        
+        formSelect.innerHTML += `<option value="${optionValue}">${escapeHtml(optionText)}</option>`;
+        filterSelect.innerHTML += `<option value="${optionValue}">${escapeHtml(p.namaPaket)}</option>`;
+        exportSelect.innerHTML += `<option value="${optionValue}">${escapeHtml(p.namaPaket)}</option>`;
       });
 
-      formSelect.value = prevFormVal;
-      filterSelect.value = prevFilterVal;
-      exportSelect.value = prevExportVal;
+      if (prevFormVal) formSelect.value = prevFormVal;
+      if (prevFilterVal) filterSelect.value = prevFilterVal;
+      if (prevExportVal) exportSelect.value = prevExportVal;
     }
 
     function renderPaketTable() {
@@ -920,24 +947,28 @@
       if (!tbody) return;
 
       tbody.innerHTML = '';
-      countEl.textContent = window.state.pakets.length;
+      if (countEl) countEl.textContent = window.state.pakets.length;
 
       if (window.state.pakets.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada paket umroh di Firestore.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada paket umroh di database. Silakan tambah paket baru di form sebelah kiri.</td></tr>`;
         return;
       }
 
       window.state.pakets.forEach(p => {
-        const jemaahCount = window.state.jemaahs.filter(j => j.paketId === p.id).length;
+        // Hitung jemaah yang cocok baik berdasarkan ID dokumen paket maupun Nama Paket
+        const jemaahCount = window.state.jemaahs.filter(j => 
+          (j.paketId === p.id) || (j.paket === p.id) || 
+          (j.paketId === p.namaPaket) || (j.paket === p.namaPaket)
+        ).length;
         
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition">
             <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(p.namaPaket)}</td>
-            <td class="px-4 py-3">${formatDateIndo(p.tglKeberangkatan)}</td>
+            <td class="px-4 py-3">${p.tglKeberangkatan ? formatDateIndo(p.tglKeberangkatan) : '-'}</td>
             <td class="px-4 py-3">${escapeHtml(p.muthawwif)}</td>
             <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">${jemaahCount} Jemaah</span></td>
             <td class="px-4 py-3 text-center">
-              <button onclick="deletePaket('${p.id}')" class="text-red-500 hover:text-red-700 p-1">
+              <button onclick="deletePaket('${p.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus Paket">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </td>
@@ -961,7 +992,9 @@
         const matchSearch = nama.toLowerCase().includes(search) || 
                             (j.nik || '').toLowerCase().includes(search) || 
                             (j.noPaspor && j.noPaspor.toLowerCase().includes(search));
-        const matchPaket = !filterPaket || j.paketId === filterPaket || j.paket === filterPaket;
+        
+        const jPaketVal = j.paketId || j.paket || '';
+        const matchPaket = !filterPaket || jPaketVal === filterPaket;
         const matchGender = !filterGender || j.jenisKelamin === filterGender;
 
         return matchSearch && matchPaket && matchGender;
@@ -976,8 +1009,10 @@
       }
 
       filtered.forEach((j, index) => {
-        const paketObj = window.state.pakets.find(p => p.id === (j.paketId || j.paket));
-        const namaPaket = paketObj ? paketObj.namaPaket : (j.paketId || j.paket || 'Tanpa Paket');
+        // Cari nama paket berdasarkan paketId / paket
+        const jPaketKey = j.paketId || j.paket;
+        const paketObj = window.state.pakets.find(p => p.id === jPaketKey || p.namaPaket === jPaketKey);
+        const namaPaket = paketObj ? paketObj.namaPaket : (jPaketKey || 'Tanpa Paket');
         const nama = j.namaLengkap || j.nama || '-';
 
         tbody.innerHTML += `
