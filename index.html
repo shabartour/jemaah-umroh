@@ -41,7 +41,7 @@
 
   <style>
     body { font-family: 'Inter', sans-serif; }
-    /* Custom Scrollbar for tables */
+    /* Custom Scrollbar */
     .custom-scrollbar::-webkit-scrollbar {
       height: 6px;
       width: 6px;
@@ -86,8 +86,8 @@
           </div>
 
           <div id="firebaseStatusBadge" class="flex items-center px-3 py-1 rounded-full text-xs bg-emerald-950 text-emerald-400 border border-emerald-800">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-2"></span>
-            <span id="firebaseStatusText">Simulasi Storage (Aktif)</span>
+            <span id="firebaseStatusDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-2"></span>
+            <span id="firebaseStatusText">Firebase Firestore (Terhubung)</span>
           </div>
         </div>
 
@@ -158,7 +158,7 @@
         </div>
         <div class="relative z-10 max-w-2xl">
           <h2 class="text-2xl font-bold text-amber-400 mb-1">Selamat Datang di Portal Admin Shabar Tour</h2>
-          <p class="text-sm text-slate-200 mb-4">Kelola pendaftaran jemaah, manifest rombongan, serta rekapitulasi data umroh dengan praktis dan cepat.</p>
+          <p class="text-sm text-slate-200 mb-4">Kelola pendaftaran jemaah, manifest rombongan, serta rekapitulasi data umroh secara terpusat dan aman di Firestore.</p>
           <div class="flex flex-wrap gap-3">
             <button onclick="switchTab('tambahJemaah')" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs transition flex items-center shadow">
               <i class="fa-solid fa-user-plus mr-2"></i>Tambah Jemaah Baru
@@ -180,7 +180,7 @@
           <div>
             <p class="text-xs font-medium text-slate-500">Total Jemaah Terdaftar</p>
             <h3 id="statTotalJemaah" class="text-2xl font-bold text-slate-800">0</h3>
-            <p class="text-[10px] text-emerald-600 mt-0.5"><i class="fa-solid fa-check-circle mr-1"></i>Terdata di sistem</p>
+            <p class="text-[10px] text-emerald-600 mt-0.5"><i class="fa-solid fa-cloud-arrow-up mr-1"></i>Terdata di Firestore</p>
           </div>
         </div>
 
@@ -274,7 +274,9 @@
               </tr>
             </thead>
             <tbody id="recentJemaahTable" class="divide-y divide-slate-200">
-              <!-- Dynamically Populated -->
+              <tr>
+                <td colspan="5" class="text-center py-4 text-slate-400">Memuat data terbaru...</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -346,7 +348,9 @@
               </tr>
             </thead>
             <tbody id="mainJemaahTableBody" class="divide-y divide-slate-200">
-              <!-- Dynamically Populated -->
+              <tr>
+                <td colspan="10" class="text-center py-8 text-slate-400">Memuat data dari Firestore...</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -544,7 +548,9 @@
                   </tr>
                 </thead>
                 <tbody id="paketTableBody" class="divide-y divide-slate-200">
-                  <!-- Populated dynamically -->
+                  <tr>
+                    <td colspan="5" class="text-center py-6 text-slate-400">Memuat paket...</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -617,71 +623,80 @@
   <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-12">
     <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
       <p class="font-medium text-slate-300">&copy; 2026 PT. SHABAR TOUR. Hak Cipta Dilindungi Undang-Undang.</p>
-      <p class="text-slate-500 text-[11px]">Sistem Manajemen Jemaah Umroh terintegrasi Firebase Real-time Database.</p>
+      <p class="text-slate-500 text-[11px]">Sistem Manajemen Jemaah Umroh terintegrasi Google Firebase Cloud Database.</p>
     </div>
   </footer>
 
-  <!-- ==================== JAVASCRIPT LOGIC & FIREBASE SIMULATION ==================== -->
-  <script>
-    /* ==========================================================================
-       1. INITIAL STATE & MOCK DATA (LocalStorage / In-Memory Fallback)
-       ========================================================================== */
-    
-    // Sample Initial Packages
-    const DEFAULT_PAKETS = [
-      { id: 'pkt_01', namaPaket: 'Umroh Regular Syawal 1447H', tglKeberangkatan: '2026-04-15', muthawwif: 'Ust. Abdul Halim' },
-      { id: 'pkt_02', namaPaket: 'Umroh VIP Awal Musim 2026', tglKeberangkatan: '2026-08-20', muthawwif: 'Ust. Salman Al-Farisi' },
-      { id: 'pkt_03', namaPaket: 'Umroh Ramadhan Lailatul Qadr', tglKeberangkatan: '2026-03-10', muthawwif: 'Ust. M. Syukri' }
-    ];
+  <!-- ==================== JAVASCRIPT LOGIC & FIREBASE SDK INTEGRATION ==================== -->
+  <script type="module">
+    // 1. Import Module Firebase SDK v10
+    // Handle Form Submit: Tambah atau Update Jemaah
+    window.handleSaveJemaah = async function(event) {
+      event.preventDefault();
 
-    // Sample Initial Jemaah Data
-    const DEFAULT_JEMAAHS = [
-      {
-        id: 'jem_101',
-        paketId: 'pkt_01',
-        namaLengkap: 'H. Ahmad Subagja',
-        nik: '3201121505850001',
-        tempatLahir: 'Bandung',
-        tanggalLahir: '1985-05-15',
-        jenisKelamin: 'L',
-        noHp: '081234567890',
-        noPaspor: 'A9823124',
-        alamat: 'Jl. Merdeka No. 45 RT 02/RW 05, Kel. Pasirkaliki, Kec. Cicendo, Kota Bandung',
-        catatan: 'Ukuran Baju XL, membutuhkan kursi roda di Makkah',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'jem_102',
-        paketId: 'pkt_01',
-        namaLengkap: 'Hj. Siti Rahmawati',
-        nik: '3201125208880002',
-        tempatLahir: 'Sumedang',
-        tanggalLahir: '1988-08-12',
-        jenisKelamin: 'P',
-        noHp: '081987654321',
-        noPaspor: 'A9823125',
-        alamat: 'Jl. Merdeka No. 45 RT 02/RW 05, Kel. Pasirkaliki, Kec. Cicendo, Kota Bandung',
-        catatan: 'Ukuran Baju L',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'jem_103',
-        paketId: 'pkt_02',
-        namaLengkap: 'Budi Santoso',
-        nik: '3174051010780003',
-        tempatLahir: 'Jakarta',
-        tanggalLahir: '1978-10-10',
-        jenisKelamin: 'L',
-        noHp: '085678901234',
-        noPaspor: 'B1290384',
-        alamat: 'Komp. Pondok Indah Blok B3 No. 12, Jakarta Selatan',
-        catatan: 'Kamar Double',
-        createdAt: new Date().toISOString()
+      const editId = document.getElementById('editJemaahId').value;
+      const paketId = document.getElementById('inputPaketId').value;
+      const namaLengkap = document.getElementById('inputNamaLengkap').value.trim();
+      const nik = document.getElementById('inputNik').value.trim();
+      const tempatLahir = document.getElementById('inputTempatLahir').value.trim();
+      const tanggalLahir = document.getElementById('inputTanggalLahir').value;
+      const jenisKelamin = document.getElementById('inputJenisKelamin').value;
+      const noHp = document.getElementById('inputNoHp').value.trim();
+      const noPaspor = document.getElementById('inputNoPaspor').value.trim();
+      const alamat = document.getElementById('inputAlamat').value.trim();
+      const catatan = document.getElementById('inputCatatan').value.trim();
+
+      if (!paketId || !namaLengkap || !nik) {
+        showAlert('Harap isi Paket, Nama Lengkap, dan NIK jemaah!', 'error');
+        return;
       }
-    ];
 
-    // Application Local State
-    let state = {
+      // Payload disesuaikan agar sesuai dengan validasi Security Rules
+      const jemaahPayload = {
+        paketId: paketId,
+        namaLengkap: namaLengkap,
+        nik: nik,
+        tempatLahir: tempatLahir,
+        tanggalLahir: tanggalLahir,
+        jenisKelamin: jenisKelamin,
+        noHp: noHp,
+        noPaspor: noPaspor,
+        alamat: alamat,
+        catatan: catatan || '-',
+        updatedAt: serverTimestamp()
+      };
+
+      try {
+        if (editId) {
+          // Update Data Jemaah Existing
+          await updateDoc(doc(db, "jemaah", editId), jemaahPayload);
+          showAlert('Data jemaah berhasil diperbarui di Firestore!', 'success');
+        } else {
+          // Tambah Jemaah Baru
+          jemaahPayload.createdAt = serverTimestamp();
+          await addDoc(collection(db, "jemaah"), jemaahPayload);
+          showAlert('Jemaah baru berhasil ditambahkan ke Firestore!', 'success');
+        }
+
+        resetJemaahForm();
+        switchTab('dataJemaah');
+      } catch (error) {
+        console.error("Gagal menyimpan jemaah:", error);
+        showAlert(`Gagal menyimpan data: ${error.message}`, 'error');
+      }
+    };
+
+    // Inisialisasi Firebase & Firestore
+    let app, db;
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+    } catch (e) {
+      console.error("Gagal menginisialisasi Firebase SDK:", e);
+    }
+
+    // Application State
+    window.state = {
       pakets: [],
       jemaahs: [],
       chartPaketInstance: null,
@@ -689,69 +704,70 @@
     };
 
     /* ==========================================================================
-       2. INITIALIZATION & STORAGE LOAD
+       REAL-TIME LISTENERS (FIRESTORE SYNC)
        ========================================================================== */
-    window.onload = function() {
-      loadDataFromStorage();
-      populatePaketDropdowns();
-      renderDashboard();
-      renderJemaahTable();
-      renderPaketTable();
-    };
+    function initRealtimeListeners() {
+      if (!db) return;
 
-    function loadDataFromStorage() {
-      const storedPakets = localStorage.getItem('shabar_pakets');
-      const storedJemaahs = localStorage.getItem('shabar_jemaahs');
+      // Realtime listener untuk koleksi "paket"
+      onSnapshot(collection(db, "paket"), (snapshot) => {
+        window.state.pakets = [];
+        snapshot.forEach((docSnap) => {
+          window.state.pakets.push({
+            id: docSnap.id,
+            ...docSnap.data()
+          });
+        });
 
-      if (storedPakets) {
-        state.pakets = JSON.parse(storedPakets);
-      } else {
-        state.pakets = DEFAULT_PAKETS;
-        savePaketsToStorage();
-      }
+        // Urutkan paket berdasarkan tanggal keberangkatan
+        window.state.pakets.sort((a, b) => new Date(a.tglKeberangkatan) - new Date(b.tglKeberangkatan));
 
-      if (storedJemaahs) {
-        state.jemaahs = JSON.parse(storedJemaahs);
-      } else {
-        state.jemaahs = DEFAULT_JEMAAHS;
-        saveJemaahsToStorage();
-      }
-    }
-
-    function savePaketsToStorage() {
-      localStorage.setItem('shabar_pakets', JSON.stringify(state.pakets));
-    }
-
-    function saveJemaahsToStorage() {
-      localStorage.setItem('shabar_jemaahs', JSON.stringify(state.jemaahs));
-    }
-
-    /* ==========================================================================
-       3. NAVIGATION & UI SWITCHING
-       ========================================================================== */
-    function switchTab(tabName) {
-      const views = ['dashboard', 'dataJemaah', 'tambahJemaah', 'kelolaPaket', 'eksporData'];
-      views.forEach(view => {
-        const el = document.getElementById(`view-${view}`);
-        const tabBtn = document.getElementById(`tab-${view}`);
-        if (view === tabName) {
-          el.classList.remove('hidden');
-          if (tabBtn) {
-            tabBtn.classList.add('border-amber-400', 'text-amber-400');
-            tabBtn.classList.remove('border-transparent', 'text-slate-300');
-          }
-        } else {
-          el.classList.add('hidden');
-          if (tabBtn) {
-            tabBtn.classList.remove('border-amber-400', 'text-amber-400');
-            tabBtn.classList.add('border-transparent', 'text-slate-300');
-          }
+        populatePaketDropdowns();
+        renderPaketTable();
+        renderDashboard();
+        renderJemaahTable();
+      }, (error) => {
+        console.error("Error snapshot paket:", error);
+        if (error.code === 'permission-denied') {
+          updateFirebaseStatusUI(false, "Akses Firestore Ditolak (Periksa Rules)");
+          showAlert("Akses Firestore ditolak! Silakan perbarui Security Rules di Firebase Console.", "error");
         }
       });
 
-      // Refresh charts if switching to dashboard
-      if (tabName === 'dashboard') {
+      // Realtime listener untuk koleksi "jemaah"
+      onSnapshot(collection(db, "jemaah"), (snapshot) => {
+        window.state.jemaahs = [];
+        snapshot.forEach((docSnap) => {
+          window.state.jemaahs.push({
+            id: docSnap.id,
+            ...docSnap.data()
+          });
+        });
+
         renderDashboard();
+        renderJemaahTable();
+      }, (error) => {
+        console.error("Error snapshot jemaah:", error);
+        if (error.code === 'permission-denied') {
+          updateFirebaseStatusUI(false, "Akses Firestore Ditolak");
+        }
+      });
+    }
+
+    function updateFirebaseStatusUI(isConnected, customText) {
+      const badge = document.getElementById('firebaseStatusBadge');
+      const dot = document.getElementById('firebaseStatusDot');
+      const text = document.getElementById('firebaseStatusText');
+      if (!badge || !text) return;
+
+      if (isConnected) {
+        badge.className = "flex items-center px-3 py-1 rounded-full text-xs bg-emerald-950 text-emerald-400 border border-emerald-800";
+        dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-2";
+        text.textContent = customText || "Firebase Firestore (Terhubung)";
+      } else {
+        badge.className = "flex items-center px-3 py-1 rounded-full text-xs bg-red-950 text-red-400 border border-red-800";
+        dot.className = "w-2 h-2 rounded-full bg-red-500 mr-2";
+        text.textContent = customText || "Koneksi Terkendala";
       }
     }
 
@@ -787,15 +803,13 @@
       }, 4000);
     }
 
-    /* ==========================================================================
-       4. DROPDOWN POPULATION LOGIC
-       ========================================================================== */
     function populatePaketDropdowns() {
       const formSelect = document.getElementById('inputPaketId');
       const filterSelect = document.getElementById('tableFilterPaket');
       const exportSelect = document.getElementById('exportSelectPaket');
 
-      // Save previous selections
+      if (!formSelect) return;
+
       const prevFormVal = formSelect.value;
       const prevFilterVal = filterSelect.value;
       const prevExportVal = exportSelect.value;
@@ -804,7 +818,7 @@
       filterSelect.innerHTML = '<option value="">-- Semua Paket --</option>';
       exportSelect.innerHTML = '<option value="">-- Pilih Paket Umroh --</option>';
 
-      state.pakets.forEach(p => {
+      window.state.pakets.forEach(p => {
         const optionText = `${p.namaPaket} (${formatDateIndo(p.tglKeberangkatan)})`;
         
         formSelect.innerHTML += `<option value="${p.id}">${optionText}</option>`;
@@ -817,147 +831,21 @@
       exportSelect.value = prevExportVal;
     }
 
-    /* ==========================================================================
-       5. JEMAAH FORM MANAGEMENT (ADD / EDIT)
-       ========================================================================== */
-    function handleSaveJemaah(e) {
-      e.preventDefault();
-
-      const editId = document.getElementById('editJemaahId').value;
-      const jemaahData = {
-        id: editId || 'jem_' + Date.now(),
-        paketId: document.getElementById('inputPaketId').value,
-        namaLengkap: document.getElementById('inputNamaLengkap').value.trim(),
-        nik: document.getElementById('inputNik').value.trim(),
-        tempatLahir: document.getElementById('inputTempatLahir').value.trim(),
-        tanggalLahir: document.getElementById('inputTanggalLahir').value,
-        jenisKelamin: document.getElementById('inputJenisKelamin').value,
-        noHp: document.getElementById('inputNoHp').value.trim(),
-        noPaspor: document.getElementById('inputNoPaspor').value.trim(),
-        alamat: document.getElementById('inputAlamat').value.trim(),
-        catatan: document.getElementById('inputCatatan').value.trim(),
-        createdAt: new Date().toISOString()
-      };
-
-      if (editId) {
-        // Update
-        const index = state.jemaahs.findIndex(j => j.id === editId);
-        if (index !== -1) {
-          state.jemaahs[index] = jemaahData;
-          showAlert('Data jemaah berhasil diperbarui!', 'success');
-        }
-      } else {
-        // Add
-        state.jemaahs.unshift(jemaahData);
-        showAlert('Jemaah baru berhasil ditambahkan!', 'success');
-      }
-
-      saveJemaahsToStorage();
-      resetJemaahForm();
-      renderDashboard();
-      renderJemaahTable();
-      switchTab('dataJemaah');
-    }
-
-    function editJemaah(id) {
-      const jemaah = state.jemaahs.find(j => j.id === id);
-      if (!jemaah) return;
-
-      document.getElementById('editJemaahId').value = jemaah.id;
-      document.getElementById('inputPaketId').value = jemaah.paketId;
-      document.getElementById('inputNamaLengkap').value = jemaah.namaLengkap;
-      document.getElementById('inputNik').value = jemaah.nik;
-      document.getElementById('inputTempatLahir').value = jemaah.tempatLahir;
-      document.getElementById('inputTanggalLahir').value = jemaah.tanggalLahir;
-      document.getElementById('inputJenisKelamin').value = jemaah.jenisKelamin;
-      document.getElementById('inputNoHp').value = jemaah.noHp;
-      document.getElementById('inputNoPaspor').value = jemaah.noPaspor || '';
-      document.getElementById('inputAlamat').value = jemaah.alamat;
-      document.getElementById('inputCatatan').value = jemaah.catatan || '';
-
-      document.getElementById('formTitleText').textContent = 'Edit Data Jemaah';
-      document.getElementById('btnSubmitText').textContent = 'Perbarui Data Jemaah';
-      document.getElementById('btnCancelEdit').classList.remove('hidden');
-
-      switchTab('tambahJemaah');
-    }
-
-    function cancelEditMode() {
-      resetJemaahForm();
-    }
-
-    function resetJemaahForm() {
-      document.getElementById('formJemaahSederhana').reset();
-      document.getElementById('editJemaahId').value = '';
-      document.getElementById('formTitleText').textContent = 'Formulir Tambah Data Jemaah';
-      document.getElementById('btnSubmitText').textContent = 'Simpan Data Jemaah';
-      document.getElementById('btnCancelEdit').classList.add('hidden');
-    }
-
-    function deleteJemaah(id) {
-      if (confirm('Apakah Anda yakin ingin menghapus data jemaah ini?')) {
-        state.jemaahs = state.jemaahs.filter(j => j.id !== id);
-        saveJemaahsToStorage();
-        renderDashboard();
-        renderJemaahTable();
-        showAlert('Data jemaah berhasil dihapus.', 'success');
-      }
-    }
-
-    /* ==========================================================================
-       6. PAKET MANAGEMENT (ADD / DELETE)
-       ========================================================================== */
-    function handleSavePaket(e) {
-      e.preventDefault();
-
-      const newPaket = {
-        id: 'pkt_' + Date.now(),
-        namaPaket: document.getElementById('inputNamaPaket').value.trim(),
-        tglKeberangkatan: document.getElementById('inputTglKeberangkatan').value,
-        muthawwif: document.getElementById('inputMuthawwif').value.trim() || '-'
-      };
-
-      state.pakets.push(newPaket);
-      savePaketsToStorage();
-      populatePaketDropdowns();
-      renderPaketTable();
-      renderDashboard();
-
-      document.getElementById('formTambahPaket').reset();
-      showAlert('Paket umroh baru berhasil dibuat!', 'success');
-    }
-
-    function deletePaket(id) {
-      const countAssigned = state.jemaahs.filter(j => j.paketId === id).length;
-      if (countAssigned > 0) {
-        alert(`Tidak dapat menghapus paket ini karena masih terhubung dengan ${countAssigned} jemaah.`);
-        return;
-      }
-
-      if (confirm('Apakah Anda yakin ingin menghapus paket umroh ini?')) {
-        state.pakets = state.pakets.filter(p => p.id !== id);
-        savePaketsToStorage();
-        populatePaketDropdowns();
-        renderPaketTable();
-        renderDashboard();
-        showAlert('Paket berhasil dihapus.', 'success');
-      }
-    }
-
     function renderPaketTable() {
       const tbody = document.getElementById('paketTableBody');
       const countEl = document.getElementById('paketCountText');
+      if (!tbody) return;
+
       tbody.innerHTML = '';
+      countEl.textContent = window.state.pakets.length;
 
-      countEl.textContent = state.pakets.length;
-
-      if (state.pakets.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada paket umroh.</td></tr>`;
+      if (window.state.pakets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada paket umroh di Firestore.</td></tr>`;
         return;
       }
 
-      state.pakets.forEach(p => {
-        const jemaahCount = state.jemaahs.filter(j => j.paketId === p.id).length;
+      window.state.pakets.forEach(p => {
+        const jemaahCount = window.state.jemaahs.filter(j => j.paketId === p.id).length;
         
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition">
@@ -975,20 +863,19 @@
       });
     }
 
-    /* ==========================================================================
-       7. TABLE RENDERING & FILTERING
-       ========================================================================== */
     function renderJemaahTable() {
       const tbody = document.getElementById('mainJemaahTableBody');
+      if (!tbody) return;
+
       const search = document.getElementById('tableSearchInput').value.toLowerCase();
       const filterPaket = document.getElementById('tableFilterPaket').value;
       const filterGender = document.getElementById('tableFilterGender').value;
 
       tbody.innerHTML = '';
 
-      const filtered = state.jemaahs.filter(j => {
-        const matchSearch = j.namaLengkap.toLowerCase().includes(search) || 
-                            j.nik.toLowerCase().includes(search) || 
+      const filtered = window.state.jemaahs.filter(j => {
+        const matchSearch = (j.namaLengkap || '').toLowerCase().includes(search) || 
+                            (j.nik || '').toLowerCase().includes(search) || 
                             (j.noPaspor && j.noPaspor.toLowerCase().includes(search));
         const matchPaket = !filterPaket || j.paketId === filterPaket;
         const matchGender = !filterGender || j.jenisKelamin === filterGender;
@@ -996,7 +883,7 @@
         return matchSearch && matchPaket && matchGender;
       });
 
-      document.getElementById('jemaahCountInfo').textContent = `Menampilkan ${filtered.length} dari ${state.jemaahs.length} data`;
+      document.getElementById('jemaahCountInfo').textContent = `Menampilkan ${filtered.length} dari ${window.state.jemaahs.length} data`;
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400">Data jemaah tidak ditemukan.</td></tr>`;
@@ -1004,24 +891,24 @@
       }
 
       filtered.forEach((j, index) => {
-        const paketObj = state.pakets.find(p => p.id === j.paketId);
+        const paketObj = window.state.pakets.find(p => p.id === j.paketId);
         const namaPaket = paketObj ? paketObj.namaPaket : 'Tanpa Paket';
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition">
             <td class="px-4 py-3 text-slate-400">${index + 1}</td>
-            <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(j.namaLengkap)}</td>
-            <td class="px-4 py-3 text-slate-500">${escapeHtml(j.nik)}</td>
+            <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(j.namaLengkap || '-')}</td>
+            <td class="px-4 py-3 text-slate-500">${escapeHtml(j.nik || '-')}</td>
             <td class="px-4 py-3">
               <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${j.jenisKelamin === 'L' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}">
-                ${j.jenisKelamin}
+                ${j.jenisKelamin || '-'}
               </span>
             </td>
-            <td class="px-4 py-3 text-slate-500">${escapeHtml(j.tempatLahir)}, ${formatDateIndo(j.tanggalLahir)}</td>
-            <td class="px-4 py-3 text-slate-600">${escapeHtml(j.noHp)}</td>
+            <td class="px-4 py-3 text-slate-500">${escapeHtml(j.tempatLahir || '')}, ${formatDateIndo(j.tanggalLahir)}</td>
+            <td class="px-4 py-3 text-slate-600">${escapeHtml(j.noHp || '-')}</td>
             <td class="px-4 py-3 text-slate-600">${j.noPaspor ? escapeHtml(j.noPaspor) : '<span class="text-slate-300">-</span>'}</td>
             <td class="px-4 py-3 font-medium text-emerald-700">${escapeHtml(namaPaket)}</td>
-            <td class="px-4 py-3 text-slate-500 max-w-xs truncate" title="${escapeHtml(j.alamat)}">${escapeHtml(j.alamat)}</td>
+            <td class="px-4 py-3 text-slate-500 max-w-xs truncate" title="${escapeHtml(j.alamat)}">${escapeHtml(j.alamat || '-')}</td>
             <td class="px-4 py-3 text-center space-x-1">
               <button onclick="editJemaah('${j.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="Edit">
                 <i class="fa-solid fa-pen-to-square"></i>
@@ -1042,15 +929,11 @@
       renderJemaahTable();
     }
 
-    /* ==========================================================================
-       8. DASHBOARD STATS & CHARTS
-       ========================================================================== */
     function renderDashboard() {
-      // 1. Stats Counter
-      const totalJemaah = state.jemaahs.length;
-      const totalPaket = state.pakets.length;
-      const priaCount = state.jemaahs.filter(j => j.jenisKelamin === 'L').length;
-      const wanitaCount = state.jemaahs.filter(j => j.jenisKelamin === 'P').length;
+      const totalJemaah = window.state.jemaahs.length;
+      const totalPaket = window.state.pakets.length;
+      const priaCount = window.state.jemaahs.filter(j => j.jenisKelamin === 'L').length;
+      const wanitaCount = window.state.jemaahs.filter(j => j.jenisKelamin === 'P').length;
 
       document.getElementById('statTotalJemaah').textContent = totalJemaah;
       document.getElementById('statTotalPaket').textContent = totalPaket;
@@ -1063,78 +946,81 @@
       document.getElementById('statPriaPersen').textContent = `${priaPct}% dari total jemaah`;
       document.getElementById('statWanitaPersen').textContent = `${wanitaPct}% dari total jemaah`;
 
-      // 2. Recent Jemaah Preview Table
+      // Tabel Preview Jemaah Terbaru
       const recentTbody = document.getElementById('recentJemaahTable');
-      recentTbody.innerHTML = '';
-      const recentList = state.jemaahs.slice(0, 5);
+      if (recentTbody) {
+        recentTbody.innerHTML = '';
+        const recentList = window.state.jemaahs.slice(0, 5);
 
-      if (recentList.length === 0) {
-        recentTbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">Belum ada data jemaah.</td></tr>`;
-      } else {
-        recentList.forEach(j => {
-          const paketObj = state.pakets.find(p => p.id === j.paketId);
-          recentTbody.innerHTML += `
-            <tr class="hover:bg-slate-50">
-              <td class="px-4 py-2.5 font-semibold text-slate-800">${escapeHtml(j.namaLengkap)}</td>
-              <td class="px-4 py-2.5 text-emerald-700">${paketObj ? escapeHtml(paketObj.namaPaket) : '-'}</td>
-              <td class="px-4 py-2.5">${escapeHtml(j.noHp)}</td>
-              <td class="px-4 py-2.5">${j.noPaspor || '-'}</td>
-              <td class="px-4 py-2.5">${formatDateIndo(j.tanggalLahir)}</td>
-            </tr>
-          `;
+        if (recentList.length === 0) {
+          recentTbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">Belum ada data jemaah.</td></tr>`;
+        } else {
+          recentList.forEach(j => {
+            const paketObj = window.state.pakets.find(p => p.id === j.paketId);
+            recentTbody.innerHTML += `
+              <tr class="hover:bg-slate-50">
+                <td class="px-4 py-2.5 font-semibold text-slate-800">${escapeHtml(j.namaLengkap)}</td>
+                <td class="px-4 py-2.5 text-emerald-700">${paketObj ? escapeHtml(paketObj.namaPaket) : '-'}</td>
+                <td class="px-4 py-2.5">${escapeHtml(j.noHp)}</td>
+                <td class="px-4 py-2.5">${j.noPaspor || '-'}</td>
+                <td class="px-4 py-2.5">${formatDateIndo(j.tanggalLahir)}</td>
+              </tr>
+            `;
+          });
+        }
+      }
+
+      // Render Chart Paket
+      const paketLabels = window.state.pakets.map(p => p.namaPaket);
+      const paketDataCounts = window.state.pakets.map(p => window.state.jemaahs.filter(j => j.paketId === p.id).length);
+
+      const ctxPaket = document.getElementById('chartPaket');
+      if (ctxPaket) {
+        if (window.state.chartPaketInstance) window.state.chartPaketInstance.destroy();
+
+        window.state.chartPaketInstance = new Chart(ctxPaket.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: paketLabels,
+            datasets: [{
+              label: 'Jumlah Jemaah',
+              data: paketDataCounts,
+              backgroundColor: '#16a34a',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
         });
       }
 
-      // 3. Render Chart Paket
-      const paketLabels = state.pakets.map(p => p.namaPaket);
-      const paketDataCounts = state.pakets.map(p => state.jemaahs.filter(j => j.paketId === p.id).length);
+      // Render Chart Gender
+      const ctxGender = document.getElementById('chartGender');
+      if (ctxGender) {
+        if (window.state.chartGenderInstance) window.state.chartGenderInstance.destroy();
 
-      const ctxPaket = document.getElementById('chartPaket').getContext('2d');
-      if (state.chartPaketInstance) state.chartPaketInstance.destroy();
-
-      state.chartPaketInstance = new Chart(ctxPaket, {
-        type: 'bar',
-        data: {
-          labels: paketLabels,
-          datasets: [{
-            label: 'Jumlah Jemaah',
-            data: paketDataCounts,
-            backgroundColor: '#16a34a',
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-        }
-      });
-
-      // 4. Render Chart Gender
-      const ctxGender = document.getElementById('chartGender').getContext('2d');
-      if (state.chartGenderInstance) state.chartGenderInstance.destroy();
-
-      state.chartGenderInstance = new Chart(ctxGender, {
-        type: 'doughnut',
-        data: {
-          labels: ['Laki-Laki', 'Perempuan'],
-          datasets: [{
-            data: [priaCount, wanitaCount],
-            backgroundColor: ['#2563eb', '#ec4899']
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom' } }
-        }
-      });
+        window.state.chartGenderInstance = new Chart(ctxGender.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: ['Laki-Laki', 'Perempuan'],
+            datasets: [{
+              data: [priaCount, wanitaCount],
+              backgroundColor: ['#2563eb', '#ec4899']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
     }
 
-    /* ==========================================================================
-       9. EXPORT LOGIC (CSV / EXCEL DOWNLOADER)
-       ========================================================================== */
     function executeExport(type) {
       let dataToExport = [];
       let filename = 'Manifest_Jemaah_ShabarTour.csv';
@@ -1145,11 +1031,11 @@
           alert('Silakan pilih paket umroh yang akan diekspor.');
           return;
         }
-        const paketObj = state.pakets.find(p => p.id === paketId);
-        dataToExport = state.jemaahs.filter(j => j.paketId === paketId);
+        const paketObj = window.state.pakets.find(p => p.id === paketId);
+        dataToExport = window.state.jemaahs.filter(j => j.paketId === paketId);
         filename = `Manifest_${paketObj ? paketObj.namaPaket.replace(/[^a-zA-Z0-9]/g, '_') : 'Paket'}.csv`;
       } else {
-        dataToExport = state.jemaahs;
+        dataToExport = window.state.jemaahs;
       }
 
       if (dataToExport.length === 0) {
@@ -1157,31 +1043,29 @@
         return;
       }
 
-      // Build CSV Content
       let csvContent = 'No,Nama Lengkap,NIK,Jenis Kelamin,Tempat Lahir,Tanggal Lahir,No HP/WA,No Paspor,Paket,Alamat,Catatan\n';
 
       dataToExport.forEach((j, index) => {
-        const paketObj = state.pakets.find(p => p.id === j.paketId);
+        const paketObj = window.state.pakets.find(p => p.id === j.paketId);
         const namaPaket = paketObj ? paketObj.namaPaket : '';
 
         const row = [
           index + 1,
-          `"${j.namaLengkap.replace(/"/g, '""')}"`,
-          `"${j.nik}"`,
+          `"${(j.namaLengkap || '').replace(/"/g, '""')}"`,
+          `"${j.nik || ''}"`,
           j.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
-          `"${j.tempatLahir}"`,
-          j.tanggalLahir,
-          `"${j.noHp}"`,
+          `"${j.tempatLahir || ''}"`,
+          j.tanggalLahir || '',
+          `"${j.noHp || ''}"`,
           `"${j.noPaspor || ''}"`,
           `"${namaPaket}"`,
-          `"${j.alamat.replace(/"/g, '""')}"`,
+          `"${(j.alamat || '').replace(/"/g, '""')}"`,
           `"${(j.catatan || '').replace(/"/g, '""')}"`
         ];
 
         csvContent += row.join(',') + '\n';
       });
 
-      // Trigger Download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -1195,9 +1079,6 @@
       showAlert(`Berhasil mengunduh ${dataToExport.length} data jemaah.`, 'success');
     }
 
-    /* ==========================================================================
-       10. HELPER UTILITIES
-       ========================================================================== */
     function formatDateIndo(dateStr) {
       if (!dateStr) return '-';
       const parts = dateStr.split('-');
