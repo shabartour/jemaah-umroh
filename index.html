@@ -3,1934 +3,1216 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PT. SHABAR TOUR - Sistem Manajemen Jemaah Umroh</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- SheetJS Excel Library -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- Chart.js Library -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Firebase SDK (Compat Version) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-</head>
-<body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-24">
+  <title>Sistem Manajemen Jemaah Umroh - PT. SHABAR TOUR</title>
 
-  <!-- HEADER BRANDING PT. SHABAR TOUR -->
-  <header class="bg-emerald-800 text-white shadow-md sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center gap-3">
-        <div class="bg-white p-1.5 rounded-xl shadow-inner flex items-center justify-center">
-          <img src="logo.png" alt="Logo PT. SHABAR TOUR" onerror="this.src='https://via.placeholder.com/40?text=ST'" class="h-9 w-auto object-contain">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+              gold: '#D4AF37',
+              golddark: '#AA820A'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    /* Custom Scrollbar for tables */
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- TOP HEADER / NAVBAR -->
+  <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Branding -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-emerald-600 to-amber-400 flex items-center justify-center font-bold text-white shadow-lg text-xl">
+            <i class="fa-solid font-bold fa-kaaba text-amber-100"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-lg leading-tight tracking-wide text-amber-400">PT. SHABAR TOUR</h1>
+            <p class="text-xs text-slate-400 font-medium">Sistem Manajemen Jemaah Umroh</p>
+          </div>
         </div>
-        <div>
-          <h1 class="font-extrabold text-lg leading-tight tracking-wide">PT. SHABAR TOUR</h1>
-          <p class="text-xs text-emerald-200">Sistem Manajemen & Pendataan Jemaah Umroh</p>
+
+        <!-- Global Quick Search & Firebase Status Badge -->
+        <div class="hidden md:flex items-center space-x-4">
+          <div class="relative">
+            <input type="text" id="globalSearchInput" placeholder="Cari nama / NIK jemaah..." 
+                   oninput="handleGlobalSearch(this.value)"
+                   class="bg-slate-800 text-xs text-white placeholder-slate-400 rounded-full pl-9 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+          </div>
+
+          <div id="firebaseStatusBadge" class="flex items-center px-3 py-1 rounded-full text-xs bg-emerald-950 text-emerald-400 border border-emerald-800">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-2"></span>
+            <span id="firebaseStatusText">Simulasi Storage (Aktif)</span>
+          </div>
+        </div>
+
+        <!-- Mobile Menu Toggle Button -->
+        <div class="flex md:hidden">
+          <button id="mobileMenuBtn" onclick="toggleMobileMenu()" class="text-slate-300 hover:text-white focus:outline-none p-2">
+            <i class="fa-solid fa-bars text-xl"></i>
+          </button>
         </div>
       </div>
-      <div id="userInfo" class="hidden flex items-center gap-3">
-        <span id="userBadge" class="text-xs bg-emerald-700 px-3 py-1 rounded-full border border-emerald-500 font-medium"></span>
-        <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1">
-          <i class="fa-solid fa-right-from-bracket"></i> Keluar
-        </button>
+    </div>
+
+    <!-- MAIN NAVIGATION TABS (Desktop) -->
+    <nav class="hidden md:block bg-slate-800 border-t border-slate-700/50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex space-x-1">
+          <button id="tab-dashboard" onclick="switchTab('dashboard')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-amber-400 text-amber-400 flex items-center space-x-2">
+            <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
+          </button>
+          <button id="tab-dataJemaah" onclick="switchTab('dataJemaah')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
+            <i class="fa-solid fa-users"></i><span>Data Jemaah</span>
+          </button>
+          <button id="tab-tambahJemaah" onclick="switchTab('tambahJemaah')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
+            <i class="fa-solid fa-user-plus"></i><span>Tambah / Edit Jemaah</span>
+          </button>
+          <button id="tab-kelolaPaket" onclick="switchTab('kelolaPaket')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
+            <i class="fa-solid fa-box-archive"></i><span>Kelola Paket/Grup</span>
+          </button>
+          <button id="tab-eksporData" onclick="switchTab('eksporData')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
+            <i class="fa-solid fa-file-excel"></i><span>Ekspor Data</span>
+          </button>
+        </div>
       </div>
+    </nav>
+
+    <!-- MOBILE MENU DROPDOWN -->
+    <div id="mobileMenu" class="hidden md:hidden bg-slate-800 border-t border-slate-700 px-4 pt-2 pb-4 space-y-2">
+      <button onclick="switchTab('dashboard'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-amber-400 hover:bg-slate-700">
+        <i class="fa-solid fa-chart-pie mr-2"></i>Dashboard
+      </button>
+      <button onclick="switchTab('dataJemaah'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
+        <i class="fa-solid fa-users mr-2"></i>Data Jemaah
+      </button>
+      <button onclick="switchTab('tambahJemaah'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
+        <i class="fa-solid fa-user-plus mr-2"></i>Tambah / Edit Jemaah
+      </button>
+      <button onclick="switchTab('kelolaPaket'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
+        <i class="fa-solid fa-box-archive mr-2"></i>Kelola Paket/Grup
+      </button>
+      <button onclick="switchTab('eksporData'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
+        <i class="fa-solid fa-file-excel mr-2"></i>Ekspor Data
+      </button>
     </div>
   </header>
 
-  <!-- HALAMAN LOGIN STAF PT. SHABAR TOUR -->
-  <div id="authSection" class="max-w-md mx-auto my-12 px-4">
-    <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
-      <div class="text-center mb-6">
-        <img src="logo.png" alt="Logo PT. SHABAR TOUR" onerror="this.src='https://via.placeholder.com/80?text=SHABAR+TOUR'" class="h-20 w-auto mx-auto mb-3 object-contain">
-        <h2 class="text-2xl font-black text-emerald-900 tracking-wide">PT. SHABAR TOUR</h2>
-        <p class="text-xs text-slate-500 mt-1 font-medium">Sistem Informasi & Pendataan Jemaah Umroh</p>
+  <!-- ALERT NOTIFICATION CONTAINER -->
+  <div id="alertContainer" class="fixed top-20 right-4 z-50 max-w-md w-full space-y-2 pointer-events-none"></div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ==================== VIEW 1: DASHBOARD ==================== -->
+    <section id="view-dashboard" class="space-y-6">
+      <!-- Welcome Banner -->
+      <div class="bg-gradient-to-r from-emerald-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+        <div class="absolute right-0 top-0 bottom-0 opacity-10 flex items-center pr-10 pointer-events-none">
+          <i class="fa-solid fa-kaaba text-9xl"></i>
+        </div>
+        <div class="relative z-10 max-w-2xl">
+          <h2 class="text-2xl font-bold text-amber-400 mb-1">Selamat Datang di Portal Admin Shabar Tour</h2>
+          <p class="text-sm text-slate-200 mb-4">Kelola pendaftaran jemaah, manifest rombongan, serta rekapitulasi data umroh dengan praktis dan cepat.</p>
+          <div class="flex flex-wrap gap-3">
+            <button onclick="switchTab('tambahJemaah')" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs transition flex items-center shadow">
+              <i class="fa-solid fa-user-plus mr-2"></i>Tambah Jemaah Baru
+            </button>
+            <button onclick="switchTab('dataJemaah')" class="bg-slate-800 hover:bg-slate-700 text-white font-medium px-4 py-2 rounded-lg text-xs border border-slate-600 transition flex items-center">
+              <i class="fa-solid fa-list mr-2"></i>Lihat Semua Jemaah
+            </button>
+          </div>
+        </div>
       </div>
 
-      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Username Staf *</label>
-          <div class="relative">
-            <i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i>
-            <input type="text" id="authUsername" required class="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Masukkan username">
-          </div>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Password *</label>
-          <div class="relative">
-            <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i>
-            <input type="password" id="authPassword" required class="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Masukkan password">
-          </div>
-        </div>
-
-        <button type="submit" id="authBtn" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-md flex items-center justify-center gap-2">
-          <i class="fa-solid fa-right-to-bracket"></i> Masuk Aplikasi
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- HALAMAN UTAMA (Aplikasi Data Jemaah) -->
-  <main id="mainApp" class="hidden max-w-7xl mx-auto px-4 py-6">
-    
-    <!-- TABS NAVIGASI UTAMA -->
-    <div class="flex border-b border-slate-200 mb-6 bg-white rounded-xl p-1 shadow-sm gap-2">
-      <button id="tabDashboardBtn" onclick="switchTab('dashboard')" class="flex-1 py-2.5 text-center text-sm font-bold rounded-lg bg-emerald-700 text-white transition flex items-center justify-center gap-2">
-        <i class="fa-solid fa-chart-pie"></i> Dashboard
-      </button>
-      <button id="tabDataBtn" onclick="switchTab('data')" class="flex-1 py-2.5 text-center text-sm font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition flex items-center justify-center gap-2">
-        <i class="fa-solid fa-layer-group text-sm"></i> Group Jemaah Umroh (<span id="totalGroupBadge">0</span>)
-      </button>
-    </div>
-
-    <!-- SEKSI 1: DASHBOARD RINGKASAN & DIAGRAM -->
-    <section id="dashboardTabSection" class="space-y-6">
-      
-      <!-- CARDS METRICS -->
+      <!-- Stats Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Total Jemaah -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-          <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Jemaah</p>
-            <h3 id="dashTotalJemaah" class="text-2xl font-black text-slate-800 mt-1">0</h3>
-            <p class="text-[11px] text-emerald-600 font-medium mt-1"><i class="fa-solid fa-check-circle mr-1"></i>Terdaftar di sistem</p>
-          </div>
-          <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+        <!-- Total Jemaah Card -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl shrink-0">
             <i class="fa-solid fa-users"></i>
           </div>
-        </div>
-
-        <!-- Total Paket/Group -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
           <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Group Umroh</p>
-            <h3 id="dashTotalPaket" class="text-2xl font-black text-slate-800 mt-1">0</h3>
-            <p class="text-[11px] text-blue-600 font-medium mt-1"><i class="fa-solid fa-layer-group mr-1"></i>Paket keberangkatan</p>
-          </div>
-          <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center text-xl shadow-inner">
-            <i class="fa-solid fa-kaaba"></i>
+            <p class="text-xs font-medium text-slate-500">Total Jemaah Terdaftar</p>
+            <h3 id="statTotalJemaah" class="text-2xl font-bold text-slate-800">0</h3>
+            <p class="text-[10px] text-emerald-600 mt-0.5"><i class="fa-solid fa-check-circle mr-1"></i>Terdata di sistem</p>
           </div>
         </div>
 
-        <!-- Gender Ratio -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-          <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Gender (L / P)</p>
-            <h3 id="dashGenderRatio" class="text-2xl font-black text-slate-800 mt-1">0 / 0</h3>
-            <p class="text-[11px] text-purple-600 font-medium mt-1"><i class="fa-solid fa-venus-mars mr-1"></i>Laki / Perempuan</p>
+        <!-- Total Paket Aktif Card -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-box-archive"></i>
           </div>
-          <div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center text-xl shadow-inner">
-            <i class="fa-solid fa-people-group"></i>
+          <div>
+            <p class="text-xs font-medium text-slate-500">Paket / Rombongan Aktif</p>
+            <h3 id="statTotalPaket" class="text-2xl font-bold text-slate-800">0</h3>
+            <p class="text-[10px] text-amber-600 mt-0.5"><i class="fa-solid fa-plane-departure mr-1"></i>Keberangkatan Siap</p>
           </div>
         </div>
 
-        <!-- Kelengkapan Berkas -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-          <div>
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Berkas Lengkap</p>
-            <h3 id="dashBerkasLengkap" class="text-2xl font-black text-slate-800 mt-1">0</h3>
-            <p class="text-[11px] text-amber-600 font-medium mt-1"><i class="fa-solid fa-id-card mr-1"></i>Pasfoto & Identitas Terupload</p>
+        <!-- Demografi Pria Card -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-person"></i>
           </div>
-          <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center text-xl shadow-inner">
-            <i class="fa-solid fa-folder-check"></i>
+          <div>
+            <p class="text-xs font-medium text-slate-500">Jemaah Laki-Laki</p>
+            <h3 id="statPria" class="text-2xl font-bold text-slate-800">0</h3>
+            <p id="statPriaPersen" class="text-[10px] text-slate-400 mt-0.5">0% dari total</p>
+          </div>
+        </div>
+
+        <!-- Demografi Wanita Card -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-person-dress"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">Jemaah Perempuan</p>
+            <h3 id="statWanita" class="text-2xl font-bold text-slate-800">0</h3>
+            <p id="statWanitaPersen" class="text-[10px] text-slate-400 mt-0.5">0% dari total</p>
           </div>
         </div>
       </div>
 
-      <!-- DIAGRAM JEMAAH PER GROUP UMROH -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i class="fa-solid fa-chart-column text-emerald-700"></i> Diagram Jemaah Per Group Umroh
+      <!-- Charts Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Paket Distribution Chart -->
+        <div class="lg:col-span-2 bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center">
+              <i class="fa-solid fa-chart-bar text-emerald-600 mr-2"></i>Distribusi Jemaah Per Paket Umroh
+            </h3>
+            <span class="text-xs text-slate-400">Real-time</span>
+          </div>
+          <div class="h-64 relative">
+            <canvas id="chartPaket"></canvas>
+          </div>
+        </div>
+
+        <!-- Gender Pie Chart -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center">
+              <i class="fa-solid fa-chart-pie text-amber-500 mr-2"></i>Komposisi Gender
+            </h3>
+            <div class="h-48 relative">
+              <canvas id="chartGender"></canvas>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 text-center">
+            Perbandingan Rasio Jemaah Pria & Wanita
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Added Table Preview -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <h3 class="font-bold text-slate-800 text-sm flex items-center">
+            <i class="fa-solid fa-clock-rotate-left text-slate-500 mr-2"></i>Jemaah Terbaru Mendaftar
           </h3>
-          <span class="text-xs text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-full border">Statistik Keberangkatan</span>
+          <button onclick="switchTab('dataJemaah')" class="text-xs font-semibold text-emerald-700 hover:text-emerald-800">
+            Lihat Semua <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
         </div>
-        <div class="relative w-full max-h-[350px]">
-          <canvas id="jemaahGroupChart"></canvas>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs text-slate-600">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold text-[11px]">
+              <tr>
+                <th class="px-4 py-3">Nama Lengkap</th>
+                <th class="px-4 py-3">Paket</th>
+                <th class="px-4 py-3">No. HP/WA</th>
+                <th class="px-4 py-3">No. Paspor</th>
+                <th class="px-4 py-3">Tanggal Lahir</th>
+              </tr>
+            </thead>
+            <tbody id="recentJemaahTable" class="divide-y divide-slate-200">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
         </div>
       </div>
-
-      <!-- RINGKASAN REGISTRATION PER GROUP -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <i class="fa-solid fa-list-check text-emerald-700"></i> Ringkasan Status Group Umroh
-        </h3>
-        <div id="dashboardGroupList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Terisi via JS -->
-        </div>
-      </div>
-
     </section>
 
-    <!-- SEKSI 2: DAFTAR DATA GROUP JEMAAH UMROH -->
-    <section id="dataTabSection" class="hidden bg-white p-6 rounded-2xl shadow-md border border-slate-200">
-      
-      <!-- TOOLBAR PENCARIAN & FITUR -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <!-- ==================== VIEW 2: DATA JEMAAH ==================== -->
+    <section id="view-dataJemaah" class="hidden space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div>
-          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-layer-group text-emerald-700"></i>Daftar Group Jemaah Umroh</h2>
-          <p class="text-xs text-slate-500">Klik <strong>Detail</strong> untuk melihat daftar anggota jemaah lengkap atau <strong>Unduh Excel</strong> untuk mengunduh berkas group.</p>
+          <h2 class="text-lg font-bold text-slate-800">Daftar Seluruh Jemaah</h2>
+          <p class="text-xs text-slate-500">Filter, cari, serta kelola data rinci jemaah PT. SHABAR TOUR.</p>
         </div>
         
-        <div class="flex flex-wrap md:flex-nowrap gap-2 items-center">
-          <!-- Input Search -->
-          <div class="relative w-full sm:w-64">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
-            <input type="text" id="searchInput" onkeyup="renderGroupRows()" placeholder="Cari Nama Group..." class="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          </div>
-          
-          <!-- Tombol Unduh Semua Excel -->
-          <button onclick="eksporExcelSemua()" class="bg-emerald-800 hover:bg-emerald-900 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow transition shrink-0">
-            <i class="fa-solid fa-file-excel"></i> Unduh Semua Data
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="switchTab('tambahJemaah')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-plus mr-1.5"></i>Tambah Jemaah
+          </button>
+          <button onclick="switchTab('eksporData')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-file-excel mr-1.5 text-emerald-400"></i>Ekspor
           </button>
         </div>
       </div>
 
-      <!-- TABEL DAFTAR GROUP JEMAAH (PER BARIS GROUP UMROH) -->
-      <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr class="bg-emerald-900 text-white font-bold">
-              <th class="p-3.5">No</th>
-              <th class="p-3.5">Nama Group Umroh</th>
-              <th class="p-3.5 text-center">Jumlah Jemaah</th>
-              <th class="p-3.5 text-center">Gender (L / P)</th>
-              <th class="p-3.5 text-center">Status Berkas</th>
-              <th class="p-3.5 text-center">Aksi Group</th>
-            </tr>
-          </thead>
-          <tbody id="groupTableBody" class="divide-y divide-slate-200 bg-white">
-            <tr>
-              <td colspan="6" class="p-8 text-center text-slate-400">Memuat data group dari cloud...</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Filters & Search Bar -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Cari Nama / NIK / Paspor</label>
+          <div class="relative">
+            <input type="text" id="tableSearchInput" oninput="renderJemaahTable()" placeholder="Ketik kata kunci..." 
+                   class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <i class="fa-solid fa-search absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Filter Paket Umroh</label>
+          <select id="tableFilterPaket" onchange="renderJemaahTable()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="">-- Semua Paket --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Filter Jenis Kelamin</label>
+          <select id="tableFilterGender" onchange="renderJemaahTable()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="">-- Semua Gender --</option>
+            <option value="L">Laki-laki</option>
+            <option value="P">Perempuan</option>
+          </select>
+        </div>
       </div>
 
+      <!-- Main Data Table Card -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs text-slate-600">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[11px] border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">No</th>
+                <th class="px-4 py-3">Nama Lengkap</th>
+                <th class="px-4 py-3">NIK</th>
+                <th class="px-4 py-3">L/P</th>
+                <th class="px-4 py-3">TTL</th>
+                <th class="px-4 py-3">No. HP/WA</th>
+                <th class="px-4 py-3">No. Paspor</th>
+                <th class="px-4 py-3">Paket</th>
+                <th class="px-4 py-3">Alamat</th>
+                <th class="px-4 py-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="mainJemaahTableBody" class="divide-y divide-slate-200">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+        <!-- Table Footer / Count Info -->
+        <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+          <span id="jemaahCountInfo">Menampilkan 0 dari 0 data</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: TAMBAH / EDIT JEMAAH (SIMPLIFIED) ==================== -->
+    <section id="view-tambahJemaah" class="hidden space-y-4 max-w-4xl mx-auto">
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <h2 id="formTitleText" class="text-lg font-bold text-slate-800">Formulir Tambah Data Jemaah</h2>
+          <p class="text-xs text-slate-500">Isi data jemaah secara rinci dan sederhana sesuai identitas KTP/Paspor.</p>
+        </div>
+        <button id="btnCancelEdit" onclick="cancelEditMode()" class="hidden text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg font-semibold">
+          <i class="fa-solid fa-xmark mr-1"></i>Batal Edit
+        </button>
+      </div>
+
+      <form id="formJemaahSederhana" onsubmit="handleSaveJemaah(event)" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <input type="hidden" id="editJemaahId" value="">
+
+        <!-- Section 1: Pilihan Paket -->
+        <div class="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 space-y-3">
+          <h3 class="text-xs font-bold uppercase text-emerald-800 tracking-wider flex items-center">
+            <i class="fa-solid fa-box-archive mr-2"></i>1. Pilihan Paket & Keberangkatan
+          </h3>
+          <div>
+            <label for="inputPaketId" class="block text-xs font-semibold text-slate-700 mb-1">Paket Umroh / Kelompok <span class="text-red-500">*</span></label>
+            <select id="inputPaketId" required class="w-full text-xs bg-white border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <option value="">-- Pilih Paket Umroh --</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Section 2: Data Diri Jemaah -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center border-b pb-2">
+            <i class="fa-solid fa-id-card mr-2 text-emerald-600"></i>2. Identitas Diri Jemaah
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Nama Lengkap -->
+            <div>
+              <label for="inputNamaLengkap" class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap (Sesuai KTP/Paspor) <span class="text-red-500">*</span></label>
+              <input type="text" id="inputNamaLengkap" required placeholder="Contoh: Ahmad Subagja" 
+                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <!-- NIK -->
+            <div>
+              <label for="inputNik" class="block text-xs font-semibold text-slate-700 mb-1">Nomor NIK / KTP <span class="text-red-500">*</span></label>
+              <input type="text" id="inputNik" required placeholder="16 Digit Angka NIK" maxlength="16"
+                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Tempat Lahir -->
+            <div>
+              <label for="inputTempatLahir" class="block text-xs font-semibold text-slate-700 mb-1">Tempat Lahir <span class="text-red-500">*</span></label>
+              <input type="text" id="inputTempatLahir" required placeholder="Contoh: Bandung" 
+                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <!-- Tanggal Lahir -->
+            <div>
+              <label for="inputTanggalLahir" class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Lahir <span class="text-red-500">*</span></label>
+              <input type="date" id="inputTanggalLahir" required 
+                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <!-- Jenis Kelamin -->
+            <div>
+              <label for="inputJenisKelamin" class="block text-xs font-semibold text-slate-700 mb-1">Jenis Kelamin <span class="text-red-500">*</span></label>
+              <select id="inputJenisKelamin" required class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Kontak & Paspor -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center border-b pb-2">
+            <i class="fa-solid fa-passport mr-2 text-emerald-600"></i>3. Kontak & Dokumen Paspor
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- No HP/WA -->
+            <div>
+              <label for="inputNoHp" class="block text-xs font-semibold text-slate-700 mb-1">Nomor HP / WhatsApp <span class="text-red-500">*</span></label>
+              <input type="tel" id="inputNoHp" required placeholder="081234567890" 
+                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <!-- No Paspor -->
+            <div>
+              <label for="inputNoPaspor" class="block text-xs font-semibold text-slate-700 mb-1">Nomor Paspor <span class="text-slate-400 font-normal">(Opsional jika belum ada)</span></label>
+              <input type="text" id="inputNoPaspor" placeholder="Contoh: A12345678" 
+                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Alamat & Catatan -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center border-b pb-2">
+            <i class="fa-solid fa-map-location-dot mr-2 text-emerald-600"></i>4. Alamat Lengkap & Catatan
+          </h3>
+
+          <!-- Alamat Lengkap (Single Textarea) -->
+          <div>
+            <label for="inputAlamat" class="block text-xs font-semibold text-slate-700 mb-1">Alamat Lengkap <span class="text-red-500">*</span></label>
+            <textarea id="inputAlamat" required rows="3" placeholder="Masukkan Jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten, dan Provinsi" 
+                      class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+          </div>
+
+          <!-- Status / Catatan Khusus -->
+          <div>
+            <label for="inputCatatan" class="block text-xs font-semibold text-slate-700 mb-1">Status / Catatan Khusus <span class="text-slate-400 font-normal">(Ukuran Baju, Riwayat Penyakit, dll)</span></label>
+            <input type="text" id="inputCatatan" placeholder="Contoh: Ukuran Baju XL, Membutuhkan Kursi Roda" 
+                   class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="pt-4 border-t border-slate-200 flex justify-end space-x-3">
+          <button type="button" onclick="resetJemaahForm()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+            Reset Form
+          </button>
+          <button type="submit" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-md flex items-center">
+            <i class="fa-solid fa-floppy-disk mr-2"></i><span id="btnSubmitText">Simpan Data Jemaah</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ==================== VIEW 4: KELOLA PAKET/GRUP ==================== -->
+    <section id="view-kelolaPaket" class="hidden space-y-6 max-w-5xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Form Tambah Paket Baru -->
+        <div class="md:col-span-1 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div>
+            <h2 class="text-md font-bold text-slate-800">Tambah Paket Baru</h2>
+            <p class="text-xs text-slate-500">Buat grup / rombongan keberangkatan umroh.</p>
+          </div>
+
+          <form id="formTambahPaket" onsubmit="handleSavePaket(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Paket / Program</label>
+              <input type="text" id="inputNamaPaket" required placeholder="Umroh Ramadhan 2026" 
+                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Keberangkatan</label>
+              <input type="date" id="inputTglKeberangkatan" required 
+                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Pembimbing / Muthawwif</label>
+              <input type="text" id="inputMuthawwif" placeholder="Ust. Ahmad Fauzi" 
+                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <button type="submit" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-xs transition shadow-sm">
+              <i class="fa-solid fa-plus-circle mr-1.5"></i>Simpan Paket Baru
+            </button>
+          </form>
+        </div>
+
+        <!-- Daftar Paket Table -->
+        <div class="md:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div>
+            <div class="p-4 border-b border-slate-200 bg-slate-50">
+              <h3 class="font-bold text-slate-800 text-sm">Daftar Paket Umroh Aktif</h3>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-100 text-slate-700 uppercase font-semibold text-[11px]">
+                  <tr>
+                    <th class="px-4 py-3">Nama Paket</th>
+                    <th class="px-4 py-3">Keberangkatan</th>
+                    <th class="px-4 py-3">Muthawwif</th>
+                    <th class="px-4 py-3">Jumlah Jemaah</th>
+                    <th class="px-4 py-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="paketTableBody" class="divide-y divide-slate-200">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 text-right">
+            Total Paket: <span id="paketCountText" class="font-bold text-slate-700">0</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 5: EKSPOR DATA ==================== -->
+    <section id="view-eksporData" class="hidden space-y-6 max-w-4xl mx-auto">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">Ekspor Laporan & Manifest Jemaah</h2>
+          <p class="text-xs text-slate-500">Unduh data jemaah dalam format file CSV / Excel untuk kebutuhan penerbangan, hotel, atau laporan internal.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Option 1: Ekspor Berdasarkan Paket -->
+          <div class="p-5 border border-slate-200 rounded-xl bg-slate-50 space-y-4 hover:border-emerald-300 transition">
+            <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">
+              <i class="fa-solid fa-filter"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-800 text-sm">Ekspor Per Paket / Rombongan</h3>
+              <p class="text-xs text-slate-500 mt-1">Unduh manifest khusus untuk 1 grup keberangkatan tertentu.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Paket</label>
+              <select id="exportSelectPaket" class="w-full text-xs bg-white border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="">-- Pilih Paket Umroh --</option>
+              </select>
+            </div>
+            <button onclick="executeExport('paket')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-xs shadow transition flex items-center justify-center">
+              <i class="fa-solid fa-file-excel mr-2"></i>Unduh Excel/CSV Paket
+            </button>
+          </div>
+
+          <!-- Option 2: Ekspor Semua Data -->
+          <div class="p-5 border border-slate-200 rounded-xl bg-slate-50 space-y-4 hover:border-emerald-300 transition">
+            <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-lg">
+              <i class="fa-solid fa-database"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-800 text-sm">Ekspor Seluruh Database Jemaah</h3>
+              <p class="text-xs text-slate-500 mt-1">Unduh seluruh rekaman data jemaah yang ada di dalam sistem.</p>
+            </div>
+            <div class="pt-6"></div>
+            <button onclick="executeExport('all')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg text-xs shadow transition flex items-center justify-center">
+              <i class="fa-solid fa-download mr-2"></i>Unduh Seluruh Database
+            </button>
+          </div>
+        </div>
+      </div>
     </section>
 
   </main>
 
-  <!-- FLOATING ACTION BUTTON (FAB) FOR FORM INPUT JEMAAH -->
-  <div id="fabContainer" class="hidden fixed bottom-6 right-6 z-40 flex items-center gap-2 group">
-    <span class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition duration-200 pointer-events-none font-medium">
-      Tambah Jemaah Baru
-    </span>
-    <button onclick="openFormModal()" class="w-14 h-14 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl border-2 border-emerald-400 transition-all duration-300 transform hover:rotate-90">
-      <i class="fa-solid fa-plus"></i>
+  <!-- FLOATING ACTION BUTTON (FAB) FOR MOBILE -->
+  <div class="fixed bottom-6 right-6 md:hidden z-30">
+    <button onclick="switchTab('tambahJemaah')" class="w-14 h-14 bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center text-xl hover:bg-emerald-700 transition">
+      <i class="fa-solid fa-user-plus"></i>
     </button>
   </div>
 
-  <!-- MODAL FORM INPUT / EDIT JEMAAH -->
-  <div id="formModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto">
-      <button onclick="closeFormModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <h2 id="formTitle" class="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between pr-8">
-        <span class="flex items-center gap-2"><i class="fa-solid fa-user-plus text-emerald-700"></i>Tambah Data Jemaah</span>
-      </h2>
-
-      <form id="jemaahForm" onsubmit="simpanJemaah(event)" class="space-y-4">
-        <input type="hidden" id="editDocId" value="">
-
-        <!-- PAKET / GROUP UMROH -->
-        <div class="bg-emerald-50/60 p-4 rounded-xl border border-emerald-100">
-          <label class="block text-xs font-semibold text-emerald-900 mb-1">Paket / Group Umroh *</label>
-          <div class="flex gap-2">
-            <select id="paketSelect" required class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
-              <option value="">-- Pilih Paket / Group --</option>
-            </select>
-            <button type="button" onclick="openModalTambahPaket()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold shadow transition flex items-center justify-center gap-1 shrink-0" title="Tambah Group Baru">
-              <i class="fa-solid fa-plus"></i> Baru
-            </button>
-          </div>
-          <p class="text-[11px] text-slate-500 mt-1">Pilih paket yang tersedia atau klik <strong>+ Baru</strong> untuk menambahkan nama paket keberangkatan baru.</p>
-        </div>
-
-        <!-- IDENTITAS DAN BIODATA JEMAAH -->
-        <section class="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-id-card text-emerald-700 mr-1"></i> Identitas Jemaah</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="titleJemaah" class="block text-xs font-semibold text-slate-600 mb-1">Title *</label>
-              <select id="titleJemaah" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="">-- Pilih Title --</option>
-                <option value="TUAN">TUAN</option>
-                <option value="NONA">NONA</option>
-                <option value="NYONYA">NYONYA</option>
-              </select>
-            </div>
-            <div>
-              <label for="nama" class="block text-xs font-semibold text-slate-600 mb-1">Nama (Sesuai Dengan Nama pada Kartu Vaksin) *</label>
-              <input type="text" id="nama" required autocomplete="name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Nama sesuai kartu vaksin">
-            </div>
-            <div>
-              <label for="namaAyah" class="block text-xs font-semibold text-slate-600 mb-1">Nama Ayah</label>
-              <input type="text" id="namaAyah" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Nama ayah kandung">
-            </div>
-            <div>
-              <label for="jenisIdentitas" class="block text-xs font-semibold text-slate-600 mb-1">Jenis Identitas *</label>
-              <select id="jenisIdentitas" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="">-- Pilih Jenis Identitas --</option>
-                <option value="NIK">NIK</option>
-                <option value="KITAP">KITAP</option>
-                <option value="KITAS">KITAS</option>
-                <option value="PASPOR">PASPOR</option>
-              </select>
-            </div>
-            <div class="md:col-span-2">
-              <label for="noIdentitas" class="block text-xs font-semibold text-slate-600 mb-1">No Identitas *</label>
-              <input type="text" id="noIdentitas" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Masukkan nomor identitas">
-            </div>
-          </div>
-        </section>
-
-        <!-- INFORMASI PASPOR -->
-        <section class="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-passport text-emerald-700 mr-1"></i> Informasi Paspor</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="namaPaspor" class="block text-xs font-semibold text-slate-600 mb-1">Nama Paspor</label>
-              <input type="text" id="namaPaspor" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Nama yang tercetak pada paspor">
-            </div>
-            <div>
-              <label for="noPaspor" class="block text-xs font-semibold text-slate-600 mb-1">No Paspor</label>
-              <input type="text" id="noPaspor" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Nomor paspor">
-            </div>
-            <div>
-              <label for="tanggalDikeluarkanPaspor" class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Dikeluarkan Paspor</label>
-              <input type="date" id="tanggalDikeluarkanPaspor" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
-            <div>
-              <label for="kotaPaspor" class="block text-xs font-semibold text-slate-600 mb-1">Kota Paspor</label>
-              <input type="text" id="kotaPaspor" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Kota penerbitan paspor">
-            </div>
-          </div>
-        </section>
-
-        <!-- BIODATA DAN ALAMAT -->
-        <section class="border border-slate-200 rounded-xl p-4 space-y-4 bg-slate-50">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-user text-emerald-700 mr-1"></i> Biodata dan Alamat</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="tempatLahir" class="block text-xs font-semibold text-slate-600 mb-1">Tempat Lahir *</label>
-              <input type="text" id="tempatLahir" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Kota kelahiran">
-            </div>
-            <div>
-              <label for="tanggalLahir" class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Lahir *</label>
-              <input type="date" id="tanggalLahir" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
-          </div>
-          <div>
-            <label for="alamat" class="block text-xs font-semibold text-slate-600 mb-1">Alamat *</label>
-            <textarea id="alamat" rows="2" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white" placeholder="Jalan, RT/RW, nomor rumah, dan detail alamat"></textarea>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            <div>
-              <label for="provinsiSelect" class="block text-xs font-semibold text-slate-600 mb-1">Provinsi *</label>
-              <select id="provinsiSelect" onchange="onProvinsiChange()" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="">-- Pilih Provinsi --</option>
-              </select>
-            </div>
-            <div>
-              <label for="kabupatenSelect" class="block text-xs font-semibold text-slate-600 mb-1">Kabupaten/Kota *</label>
-              <select id="kabupatenSelect" onchange="onKabupatenChange()" required disabled class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed">
-                <option value="">-- Pilih Kabupaten/Kota --</option>
-              </select>
-            </div>
-            <div>
-              <label for="kecamatanSelect" class="block text-xs font-semibold text-slate-600 mb-1">Kecamatan *</label>
-              <select id="kecamatanSelect" onchange="onKecamatanChange()" required disabled class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed">
-                <option value="">-- Pilih Kecamatan --</option>
-              </select>
-            </div>
-            <div>
-              <label for="kelurahanSelect" class="block text-xs font-semibold text-slate-600 mb-1">Kelurahan/Desa *</label>
-              <select id="kelurahanSelect" required disabled class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed">
-                <option value="">-- Pilih Kelurahan/Desa --</option>
-              </select>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="noTelepon" class="block text-xs font-semibold text-slate-600 mb-1">No. Telepon</label>
-              <input type="tel" inputmode="numeric" id="noTelepon" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Kode area dan nomor telepon">
-            </div>
-            <div>
-              <label for="noHp" class="block text-xs font-semibold text-slate-600 mb-1">No HP</label>
-              <input type="tel" inputmode="numeric" id="noHp" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Contoh: 081234567890">
-            </div>
-          </div>
-        </section>
-
-        <!-- DATA PRIBADI TAMBAHAN -->
-        <section class="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-list-check text-emerald-700 mr-1"></i> Data Pribadi Tambahan</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="kewarganegaraan" class="block text-xs font-semibold text-slate-600 mb-1">Kewarganegaraan</label>
-              <select id="kewarganegaraan" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="">-- Pilih Kewarganegaraan --</option><option value="WNI">WNI</option><option value="WNA">WNA</option>
-              </select>
-            </div>
-            <div>
-              <label for="statusPernikahan" class="block text-xs font-semibold text-slate-600 mb-1">Status Pernikahan</label>
-              <select id="statusPernikahan" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="">-- Pilih Status Pernikahan --</option><option value="BELUM MENIKAH">BELUM MENIKAH</option><option value="MENIKAH">MENIKAH</option><option value="JANDA / DUDA">JANDA / DUDA</option>
-              </select>
-            </div>
-            <div>
-              <label for="pendidikan" class="block text-xs font-semibold text-slate-600 mb-1">Pendidikan</label>
-              <select id="pendidikan" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="">-- Pilih Pendidikan --</option><option value="TIDAK SEKOLAH">TIDAK SEKOLAH</option><option value="SD/MI">SD/MI</option><option value="SMP/MTS">SMP/MTS</option><option value="SMA/MA">SMA/MA</option><option value="D1">D1</option><option value="D2">D2</option><option value="D3">D3</option><option value="D4/S1">D4/S1</option><option value="S2">S2</option><option value="S3">S3</option>
-              </select>
-            </div>
-            <div>
-              <label for="pekerjaan" class="block text-xs font-semibold text-slate-600 mb-1">Pekerjaan</label>
-              <select id="pekerjaan" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="">-- Pilih Pekerjaan --</option><option value="PNS">PNS</option><option value="PEG. SWASTA">PEG. SWASTA</option><option value="WIRAUSAHA">WIRAUSAHA</option><option value="TNI / POLRI">TNI / POLRI</option><option value="PETANI">PETANI</option><option value="NELAYAN">NELAYAN</option><option value="LAINNYA">LAINNYA</option><option value="TIDAK BEKERJA">TIDAK BEKERJA</option>
-              </select>
-            </div>
-          </div>
-        </section>
-
-        <!-- DATA VISA DAN ASURANSI -->
-        <section class="border border-slate-200 rounded-xl p-4 space-y-4 bg-amber-50/40">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-plane-departure text-emerald-700 mr-1"></i> Data Visa</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="providerVisa" class="block text-xs font-semibold text-slate-600 mb-1">Provider Visa</label>
-              <select id="providerVisa" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="">-- Pilih Provider Visa (B2C) --</option>
-              </select>
-            </div>
-            <div>
-              <label for="noVisa" class="block text-xs font-semibold text-slate-600 mb-1">No Visa</label>
-              <input type="text" id="noVisa" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Nomor visa">
-            </div>
-            <div>
-              <label for="tanggalBerlakuVisa" class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Berlaku Visa</label>
-              <input type="date" id="tanggalBerlakuVisa" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
-            <div>
-              <label for="tanggalAkhirVisa" class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Akhir Visa</label>
-              <input type="date" id="tanggalAkhirVisa" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
-          </div>
-          <div class="border-t border-amber-200 pt-4 space-y-3">
-            <h4 class="text-xs font-bold text-slate-700">Data Asuransi</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label for="asuransi" class="block text-xs font-semibold text-slate-600 mb-1">Asuransi</label>
-                <select id="asuransi" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                  <option value="">-- Pilih Asuransi --</option>
-                </select>
-              </div>
-              <div>
-                <label for="noPolis" class="block text-xs font-semibold text-slate-600 mb-1">No Polis</label>
-                <input type="text" inputmode="numeric" id="noPolis" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Nomor polis">
-              </div>
-              <div>
-                <label for="tanggalInputPolis" class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Input Polis</label>
-                <input type="date" id="tanggalInputPolis" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              </div>
-              <div>
-                <label for="tanggalAwalPolis" class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Awal Polis</label>
-                <input type="date" id="tanggalAwalPolis" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              </div>
-              <div>
-                <label for="tanggalAkhirPolis" class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Akhir Polis</label>
-                <input type="date" id="tanggalAkhirPolis" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-              </div>
-              <div>
-                <label for="noBPJS" class="block text-xs font-semibold text-slate-600 mb-1">No BPJS</label>
-                <input type="text" inputmode="numeric" id="noBPJS" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Nomor BPJS">
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- PEMISAHAN UPLOAD FOTO & UPLOAD KTP -->
-        <div class="border-t border-slate-200 pt-4 mt-2">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3"><i class="fa-solid fa-paperclip text-emerald-700 mr-1"></i> Lampiran Berkas Dokumen</h3>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- LAMPIRAN FOTO JEMAAH -->
-            <div class="p-3 border border-slate-200 rounded-xl bg-slate-50">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">1. Pasfoto (Background Putih)</label>
-              <input type="file" id="fotoFile" accept="image/*" onchange="previewImage(event, 'foto')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-800 hover:file:bg-emerald-200">
-              
-              <div id="fotoPreviewContainer" class="mt-3 hidden">
-                <p class="text-[11px] text-slate-500 mb-1">Pratinjau Pasfoto:</p>
-                <div class="relative inline-block">
-                  <img id="fotoPreview" src="" alt="Pratinjau Foto" class="w-24 h-32 object-cover rounded-lg border-2 border-emerald-600 shadow-sm">
-                  <button type="button" onclick="clearImage('foto')" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow hover:bg-red-700">&times;</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- LAMPIRAN FOTO KTP -->
-            <div class="p-3 border border-slate-200 rounded-xl bg-slate-50">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">2. Foto Identitas (KTP/Paspor/KITAS/KITAP)</label>
-              <input type="file" id="ktpFile" accept="image/*" onchange="previewImage(event, 'ktp')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-800 hover:file:bg-blue-200">
-              
-              <div id="ktpPreviewContainer" class="mt-3 hidden">
-                <p class="text-[11px] text-slate-500 mb-1">Pratinjau Identitas:</p>
-                <div class="relative inline-block">
-                  <img id="ktpPreview" src="" alt="Pratinjau Identitas" class="w-40 h-28 object-cover rounded-lg border-2 border-blue-600 shadow-sm">
-                  <button type="button" onclick="clearImage('ktp')" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow hover:bg-red-700">&times;</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="pt-2 flex justify-end gap-2">
-          <button type="button" onclick="closeFormModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
-          <button type="submit" id="submitBtn" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition shadow-md flex items-center justify-center gap-2">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Jemaah
-          </button>
-        </div>
-      </form>
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-12">
+    <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+      <p class="font-medium text-slate-300">&copy; 2026 PT. SHABAR TOUR. Hak Cipta Dilindungi Undang-Undang.</p>
+      <p class="text-slate-500 text-[11px]">Sistem Manajemen Jemaah Umroh terintegrasi Firebase Real-time Database.</p>
     </div>
-  </div>
+  </footer>
 
-  <!-- MODAL DETAIL KEANGGOTAAN GROUP (DAMPINGAN DARI KLIK DETAIL PER GROUP) -->
-  <div id="groupDetailModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
-        <div>
-          <h3 id="groupDetailTitle" class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i class="fa-solid fa-kaaba text-emerald-700"></i> Detail Group Jemaah
-          </h3>
-          <p id="groupDetailSubtitle" class="text-xs text-slate-500 mt-0.5">Daftar seluruh jemaah terdaftar pada group ini.</p>
-        </div>
-        <button onclick="closeGroupDetailModal()" class="text-slate-400 hover:text-slate-600 text-xl w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="overflow-y-auto flex-1 border border-slate-200 rounded-xl">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 sticky top-0">
-              <th class="p-3">Foto / Identitas</th>
-              <th class="p-3">Nama Lengkap</th>
-              <th class="p-3">Jenis / No Identitas</th>
-              <th class="p-3">TTL</th>
-              <th class="p-3">Alamat Lengkap</th>
-              <th class="p-3">No. WA</th>
-              <th class="p-3 text-center">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="groupDetailTableBody" class="divide-y divide-slate-100">
-            <!-- Terisi via JS -->
-          </tbody>
-        </table>
-      </div>
-
-      <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
-        <span id="groupDetailTotalCount" class="text-xs text-slate-500 font-medium">Total: 0 Jemaah</span>
-        <button id="groupDetailExportBtn" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-4 py-2 rounded-lg font-medium flex items-center gap-1.5 shadow">
-          <i class="fa-solid fa-file-excel"></i> Unduh Excel Group Ini
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL DETAIL SINGLE JEMAAH -->
-  <div id="detailModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-      <h3 class="text-base font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
-        <i class="fa-solid fa-id-card text-emerald-700"></i> Detail Jemaah - PT. SHABAR TOUR
-      </h3>
-      <div id="modalContent" class="space-y-4 text-xs">
-        <!-- Terisi via JS -->
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL TAMBAH PAKET BARU -->
-  <div id="modalTambahPaket" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
-      <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
-        <i class="fa-solid fa-kaaba text-emerald-700"></i> Buat Group Umroh Baru
-      </h3>
-      <p class="text-xs text-slate-500 mb-4">Masukkan nama paket keberangkatan baru untuk mendaftarkan jemaah.</p>
-      
-      <form onsubmit="simpanPaketBaru(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Paket / Group *</label>
-          <input type="text" id="namaPaketBaru" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Contoh: Umroh Reguler Syawal 2026">
-        </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" onclick="closeModalTambahPaket()" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
-          <button type="submit" class="px-4 py-1.5 text-xs bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-lg shadow">Simpan & Pilih</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- JAVASCRIPT & FIREBASE LOGIC -->
+  <!-- ==================== JAVASCRIPT LOGIC & FIREBASE SIMULATION ==================== -->
   <script>
-    // Konfigurasi API Wilayah Indonesia & Firebase
-    const API_WILAYAH = 'https://www.emsifa.com/api-wilayah-indonesia/v2';
+    /* ==========================================================================
+       1. INITIAL STATE & MOCK DATA (LocalStorage / In-Memory Fallback)
+       ========================================================================== */
+    
+    // Sample Initial Packages
+    const DEFAULT_PAKETS = [
+      { id: 'pkt_01', namaPaket: 'Umroh Regular Syawal 1447H', tglKeberangkatan: '2026-04-15', muthawwif: 'Ust. Abdul Halim' },
+      { id: 'pkt_02', namaPaket: 'Umroh VIP Awal Musim 2026', tglKeberangkatan: '2026-08-20', muthawwif: 'Ust. Salman Al-Farisi' },
+      { id: 'pkt_03', namaPaket: 'Umroh Ramadhan Lailatul Qadr', tglKeberangkatan: '2026-03-10', muthawwif: 'Ust. M. Syukri' }
+    ];
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDPlhnzrH-RXtZSscQcyGOHkf4fMJ19o4o",
-      authDomain: "umroh-app-database.firebaseapp.com",
-      projectId: "umroh-app-database",
-      storageBucket: "umroh-app-database.firebasestorage.app",
-      messagingSenderId: "79698174177",
-      appId: "1:79698174177:web:367b1f7e6f369ddabe17a0",
-      measurementId: "G-PJ60DD79G6"
+    // Sample Initial Jemaah Data
+    const DEFAULT_JEMAAHS = [
+      {
+        id: 'jem_101',
+        paketId: 'pkt_01',
+        namaLengkap: 'H. Ahmad Subagja',
+        nik: '3201121505850001',
+        tempatLahir: 'Bandung',
+        tanggalLahir: '1985-05-15',
+        jenisKelamin: 'L',
+        noHp: '081234567890',
+        noPaspor: 'A9823124',
+        alamat: 'Jl. Merdeka No. 45 RT 02/RW 05, Kel. Pasirkaliki, Kec. Cicendo, Kota Bandung',
+        catatan: 'Ukuran Baju XL, membutuhkan kursi roda di Makkah',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'jem_102',
+        paketId: 'pkt_01',
+        namaLengkap: 'Hj. Siti Rahmawati',
+        nik: '3201125208880002',
+        tempatLahir: 'Sumedang',
+        tanggalLahir: '1988-08-12',
+        jenisKelamin: 'P',
+        noHp: '081987654321',
+        noPaspor: 'A9823125',
+        alamat: 'Jl. Merdeka No. 45 RT 02/RW 05, Kel. Pasirkaliki, Kec. Cicendo, Kota Bandung',
+        catatan: 'Ukuran Baju L',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'jem_103',
+        paketId: 'pkt_02',
+        namaLengkap: 'Budi Santoso',
+        nik: '3174051010780003',
+        tempatLahir: 'Jakarta',
+        tanggalLahir: '1978-10-10',
+        jenisKelamin: 'L',
+        noHp: '085678901234',
+        noPaspor: 'B1290384',
+        alamat: 'Komp. Pondok Indah Blok B3 No. 12, Jakarta Selatan',
+        catatan: 'Kamar Double',
+        createdAt: new Date().toISOString()
+      }
+    ];
+
+    // Application Local State
+    let state = {
+      pakets: [],
+      jemaahs: [],
+      chartPaketInstance: null,
+      chartGenderInstance: null
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    /* ==========================================================================
+       2. INITIALIZATION & STORAGE LOAD
+       ========================================================================== */
+    window.onload = function() {
+      loadDataFromStorage();
+      populatePaketDropdowns();
+      renderDashboard();
+      renderJemaahTable();
+      renderPaketTable();
+    };
 
-    // State Lokal
-    let currentFotoBase64 = "";
-    let currentKtpBase64 = "";
-    let jemaahCache = [];
-    let paketCache = [];
-    let chartInstance = null;
-    let activeDetailGroup = "";
+    function loadDataFromStorage() {
+      const storedPakets = localStorage.getItem('shabar_pakets');
+      const storedJemaahs = localStorage.getItem('shabar_jemaahs');
 
-    // Cache Data Wilayah Indonesia
-    let provincesData = [];
-    let regenciesData = {};
-    let districtsData = {};
-    let villagesData = {};
-
-    // Pilihan dropdown Provider Visa dan Asuransi.
-    // Daftar Provider Visa bersumber dari file daftar B2C yang diberikan.
-    const PROVIDER_VISA_OPTIONS = [
-      "B2C",
-      "PT. AERO GLOBE INDONESIA",
-      "PT. AFLAHA CAHAYA WISATA",
-      "PT. AFRAH DIYANI MANDIRI",
-      "PT. AGUNG AL-BADR WISATA",
-      "PT. AIDA TOURINDO WISATA",
-      "PT. AIRMARK INDO WISATA/AIR MARINDO",
-      "PT. AJIB ELSAMAA GROUP",
-      "PT. AL AHRAM SARANA WISATA",
-      "PT. ALAMIN AHSAN TRAVEL",
-      "PT. ALAMIN MIFTAH PRATAMA",
-      "PT. ALAMIR TOUR & TRAVEL",
-      "PT. AL AQSHA JISRU DAKWAH",
-      "PT. ALAZIZ TOUR AND TRAVEL",
-      "PT. AL BAYT WISATA UNIVERSAL",
-      "PT. ALBILAD UNIVERSAL",
-      "PT. ALBIS NUSA WISATA",
-      "PT. ALFAJR SARANA WISATA",
-      "PT. ALFA KAZA MUSTIKA",
-      "PT. ALFIDA TOUR AND TRAVEL",
-      "PT. ALFIR WISATA UTAMA",
-      "PT. ALGAFF SENIOR MANDIRI",
-      "PT. ALHAKU CITA MULIA",
-      "PT. ALHAMRA RIHLAH INDONESIA",
-      "PT. ALHIJAZ INDOWISATATOUR & TRAVEL",
-      "PT. ALIA INDAH WISATA",
-      "PT. ALINDRA MUTIARA HATI",
-      "PT. ALKHALID KUSUMA WARDANI",
-      "PT. ALKISAI BINA INSANI CITRA WISATA",
-      "PT. AL MADINAH MUTIARA SUNNAH",
-      "PT. ALMARHAMAH KARUNIA UTAMA",
-      "PT. ALMIQAT INDONESIA SOLUTIONS",
-      "PT. AL MUCHTAR TOUR & TRAVEL",
-      "PT. ALMUNA INDAH WISATA TOUR & TRAVEL",
-      "PT. ALSEGGAF TRAVEL UMRAH",
-      "PT. AL-SHAFWAH WISATA MANDIRI",
-      "PT. ALSHA MUTIARA PERSADA",
-      "PT. ALWAN MIFTAH PRATAMA",
-      "PT. AMANAH AINIE WISATA",
-      "PT. AMANAH INDAH WISATA",
-      "PT. AMANAH TRAVEL INDONESIA",
-      "PT. AMANAH WISATA INSANI",
-      "PT. AMAR MADANI MASYHUR",
-      "PT. AMBASSADOR TOUR & TRAVEL",
-      "PT. AMININ TRAVEL INDONESIA",
-      "PT. AMISYA MUBAROKAH DAULY",
-      "PT. AMWAJ TOUR DAN TRAVEL",
-      "PT. ANAMONA TOUR AND TRAVEL",
-      "PT. AN CIPTA WISATA",
-      "PT. ANDALAS JAYA WISATA",
-      "PT. ANDALUS TRAVEL",
-      "PT. ANDROMEDA ATRIA WISATA",
-      "PT. ANITA SAUDARAKU WISATA",
-      "PT. AN NAMIROH TRAVELINDO",
-      "PT. ANNISA AHMADA TRAVELINDO",
-      "PT. AN NUR MAARIF",
-      "PT. ANNUR MAKNAH WISATA",
-      "PT. ANUGERAH CITRA MULIA",
-      "PT. ARABIA NUSANTAMA RAYA",
-      "PT. ARAFAH FARHANA WISATA",
-      "PT. ARAFAH MULIA INSANI",
-      "PT. ARFA MUTIARA MULIA",
-      "PT. ARMINAREKA PERDANA",
-      "PT. ARMINDO JAYA TUR",
-      "PT. ARRAFSYAH SAFARI HARAMAIN",
-      "PT. ARRAHMAN BERKAH WISATA",
-      "PT. ARRAYAN AL MUBARAK",
-      "PT. ARSYILA WAHYU TRAVEL",
-      "PT. ARTHA KARUNIA MULYA",
-      "PT. ARUDAM SEMBILAN SEMBILAN",
-      "PT. ASAMULIA EXPRESS",
-      "PT.ASANKALOKA RIAPINDO",
-      "PT. ASFOOR CIPTA MANDIRI",
-      "PT. ASHFA SHOWARAKUM HARAMAIN",
-      "PT. ASIA IMAN WISATA",
-      "PT. ASIA UTAMA WISATA",
-      "PT. ASSHAFFA RAWDAH LOMBOK",
-      "PT. ASTRI DUTA MANDIRI",
-      "PT. ASTRIFA INSAN MADANI",
-      "PT. ATHA BAITULLAH",
-      "PT. ATINA RAHMATAKA WISATA",
-      "PT. AT TAYIBAH",
-      "PT. AUFA DUTA WISATA TOUR & TRAVEL",
-      "PT. AULIYA PERKASA ABADI",
-      "PT. AVNNA SEJAHTERA",
-      "PT. AYU AMANAH NUSANTARA",
-      "PT. AZKA MANDIRI INTERNASIONAL",
-      "PT. AZ ZAHRA TOUR & TRAVEL",
-      "PT. AZZAM ALBAESUNI",
-      "PT. AZZAM MULIA HARAMAIN",
-      "PT. BAB ALUMRAH TOUR TRAVEL",
-      "PT. BABUL UMRAH WISATA",
-      "PT. BAHANA SUKSES SEJAHTERA",
-      "PT. BAITUSSALAM MANDIRI",
-      "PT. BALUBAID IKHWAN",
-      "PT. BAROKAH SHOLAWAT ABADI",
-      "PT. BERKAH CAHAYA SAFAR",
-      "PT. BIOTA WISATA TOUR DAN TRAVEL",
-      "PT. BIRO PERJALANAN WISATA APRILYA DARMA WISATA",
-      "PT. BIRO PERJALANAN WISATA KARYA ADITYA MANDIRI",
-      "PT. BIRO PERJALANAN WISATA MUHSININ",
-      "PT. BIRO PERJALANAN WISATA NEEKOI",
-      "PT. BIRO PERJALANAN WISATA PROCONFO",
-      "PT. BIRO PERJALANAN WISATA RAZEK",
-      "PT. BLOCKING TICKET CENTRE",
-      "PT. BOBINSA SURABAYA JAYA",
-      "PT. BUANA PAOTERE WISATA",
-      "PT. BUANA SENTOSA UTAMA",
-      "PT. BUMI NATA WISATA TOURS&TRAVEL",
-      "PT. BUMI NATA WISATATOURS & TRAVEL",
-      "PT. CAHAYA ANUGRAH AL MAWADDAH",
-      "PT. CAHAYA KAABAH AL HARAMAIN",
-      "PT. CAHAYA MADINAH MANDIRI",
-      "PT. CAHAYA TIGA PESONA",
-      "PT. CAKRA MANDIRI UTAMA",
-      "PT.CAKRAWALA GLOBALINDO WISATA",
-      "PT. CENTRAL GLOBAL NETWORK",
-      "PT. CITRA CERIA USAHA KHALIFAH",
-      "PT. CITRA SAHABAT ASIA",
-      "PT. COBIG INDONESIA KREATIF",
-      "PT. COMEUMROH WAHANA AMANAH",
-      "PT. DAAR SUNNAH MUBARAK",
-      "PT. DAEHATUR EXPRESS",
-      "PT. DARMAWISATA INDONESIA",
-      "PT. DARUL HAROMAIN",
-      "PT. DARUL HIKMAH MANDIRI",
-      "PT. DARUL MANASEK INTERNATIONAL",
-      "PT. DARUL UMROH ALHARAMAIN",
-      "PT. DAUROH TRAVEL INDONESIA",
-      "PT. DAWOOD ANDALAN HARAMAIN",
-      "PT. DAWOOD FATIMAH ALGHONNA",
-      "PT. DAYAKINDO KALIMANTAN UTAMA",
-      "PT. DELTA LARAS WISATA (DALLAS)",
-      "PT. DENA VISTAMA",
-      "PT. DEWISERASI INDAHWISATA",
-      "PT. DHIYAA EL HARAMAIN EL MUBARAKAH",
-      "PT. DHUYUFUR ROHMAN HAROMAIN",
-      "PT. DIAN ALMAAZ WISATA",
-      "PT. DIDI MABRUK BAYANAKA",
-      "PT. DIVA MABRURO",
-      "PT. DIYO SIBA",
-      "PT. DJAMILAH NURUL HIKMAH",
-      "PT. DREAM TOUR & TRAVEL",
-      "PT. DUTA FARAS",
-      "PT. DUTA PUTRA DELIM",
-      "PT. DWI AMANAH LESTARI",
-      "PT. DWINS BERKAH UTAMA",
-      "PT. EBAD AL RAHMAN",
-      "PT. EDIPENI TRAVEL",
-      "PT. ELHADY GRUP INTERNASIONAL",
-      "PT. ELHAQQ TOUR RELIGI",
-      "PT. ELREY PURI MALAK",
-      "PT. ELTEYBA MEDINA FAUZANNA",
-      "PT.ELTURA BERKAH SEHATI",
-      "PT. EMMA TOUR DAN TRAVEL",
-      "PT. ESRA WISATA",
-      "PT. FADHILAH AMANAH WISATA",
-      "PT. FAHIRA ARAFAH UTAMA",
-      "PT. FAHMY GLOBAL MANDIRI",
-      "PT. FAJAR BERKAH ILAHI",
-      "PT. FAJAR INDAH GEMILANG",
-      "PT. FAJRUL IKHSAN WISATA",
-      "PT FAROQ SULAIMAN AL FATAH TOURS & TRAVEL",
-      "PT. FATH INDAH TRAVEL SERVICES",
-      "PT. FAUZI MULIA BERSAMA",
-      "PT. FAZARY WISATA",
-      "PT. FINUSA KARYA WISATA",
-      "PT. FIO AMANAH PERDANA",
-      "PT. FIRDAUS MULIA ABADI",
-      "PT. FLY DBA INDONESIA",
-      "PT. FRESHNEL KREASINDO PERKASA",
-      "PT. FUTTUH MAKKAH ALWAHYU",
-      "PT. GADIKAH MANDIRI ISLAMI",
-      "PT. GAIDO AZZA DARUSSALAM",
-      "PT. GALATAMA NUANSA TOUR",
-      "PT. GALUH MUTIARA WISATA",
-      "PT. GAMALAMA INDO PESONA",
-      "PT. GAMAL HIKMAH",
-      "PT. GARISLURUS LINTAS SEMESTA",
-      "PT. GEMILANG DUNIA WISATA",
-      "PT. GEMILANG MULTAZAM MITRA SAKTI",
-      "PT. GENENA FERDOWS INTERNATIONAL",
-      "PT. GESYA PRIMA BIRO PERJALANAN UMUM",
-      "PT. GETWAY TOUR AND TRAVEL",
-      "PT. GHANIYA ZILIA RAHMAN",
-      "PT. GLOBALINDO SUKSES MAKSIMA",
-      "PT. GLOBAL WISATA IDAMAN",
-      "PT. GOENAWAN ERAWISATA",
-      "PT GOLDY MULIA WISATA",
-      "PT. GRANADA WISATA",
-      "PT. GRAND DARUSSALAM",
-      "PT. HAFIZA CINTA WISATA ABADI",
-      "PT. HAJAR ASWAD MUBAROQ",
-      "PT. HAMSA MANDIRI INTERNATIONAL TOURS",
-      "PT. HANA ASIA WISATA",
-      "PT. HENIRA CITRA UTAMA",
-      "PT. HIKMAH JAYA WISATA",
-      "PT. HISAR GLOBAL INDONESIA",
-      "PT. IBS BUANA SEJAHTERA",
-      "PT. IMPRESSAS MEDIA WISATA",
-      "PT. INDO CITRA TAMASYA",
-      "PT. INDOJAVA MULIA WISATA",
-      "PT. INDONESIA CENDEKIA MANDIRI",
-      "PT. INDONESIA INTERNATIONAL BUSINESS",
-      "PT. INHIL ARJUNA WISATA",
-      "PT. INTAN SALSABILA",
-      "PT. INTI UMMUL QURO",
-      "PT. JANNAH FIRDAUS",
-      "PT. JASIYAH TRAVEL SERVICE",
-      "PT. JEJAK IMANI BERKAH BERSAMA",
-      "PT. JENDELA HARAMAIN MANDIRI",
-      "PT. KAFILAH MAGHFIRA WISATA",
-      "PT. KAHA HOLIDAY INTERNATIONAL",
-      "PT. KAISA ROSSIE",
-      "PT. KALTRABU INDHA",
-      "PT. KAMILAH BERKAT GURU",
-      "PT. KANAYA WISATA JAYA",
-      "PT. KANOMAS ARCI WISATA",
-      "PT. KARSHINTA TUNGGAL WISATA",
-      "PT. KEMANG NUSANTARA TRAVEL",
-      "PT. KENCANA RAUDHAH JAYA",
-      "PT. KHARISSA PERMAI HOLIDAY",
-      "PT. KHAZANAH TAMMA INTERNASIONAL",
-      "PT. KHAZZANAH AL-ANSHARY",
-      "PT. KIBLATAIN JAYA WISATA",
-      "PT. KOTA PIRING KENCANA",
-      "PT. LABBAIKA CIPTA IMANI",
-      "PT LABBAIKA QOLBU INTERNASIONAL",
-      "PT LAMAHU TOUR & TRAVEL",
-      "PT. LAN TABUR UTAMA WISATA",
-      "PT. LIANTI TOUR & TRAVEL",
-      "PT. LINTAS ISKANDARIA",
-      "PT. MABRUR TOUR & TRAVEL",
-      "PT. MADANI BINA BERSAMA",
-      "PT. MADANI PRABU JAYA",
-      "PT. MADINAH IMAN WISATA",
-      "PT. MADINA WISATA ABADI",
-      "PT. MAKADINAH RAMANI JAYA",
-      "PT. MAKARIM EL AKHLAK TOURINDO",
-      "PT. MAKASSAR MANDIRI WISATA",
-      "PT. MAKKAH MADINAH MANDIRI",
-      "PT. MAKTOUR",
-      "PT. MALIKA WISATA UTAMA",
-      "PT. MALINDO MEKKAH MADINAH",
-      "PT. MANARA TABA INDONESIA",
-      "PT. MANASIK PRIMA",
-      "PT. MANAYA INDONESIA TOUR&TRAVEL",
-      "PT. MARBA WISATA INDONESIA",
-      "PT. MARCO TOUR TRAVEL",
-      "PT. MARHABAN MAKKAH MADINAH",
-      "PT. MARMARA GLOBAL WISATA",
-      "PT. MARWAH SARI UTAMA",
-      "PT. MASINDO BUANA WISATA",
-      "PT. MASWAH BAKTI WISATA",
-      "PT. MASY'ARIL HARAM",
-      "PT. MATAHARI WISATA MAKASSAR",
-      "PT. MATIAS JAYA ABADI",
-      "PT. MAZIYA RIZKI ALAMI",
-      "PT. MECCA SUKSES INTERNATIONAL",
-      "PT. MEGACITRA INTINAMANDIRI",
-      "PT. MEGAH BERKAH WISATA",
-      "PT. MEIDA WISATA",
-      "PT. MEKAH TUR INDONESIA",
-      "PT. MENARA NASUHA SYARIFAIN",
-      "PT. MENTARI OKKA SUKSES UTAMA",
-      "PT. METEOR KENCANA WISATA",
-      "PT. MIDEAST EXPRESS",
-      "PT. MILARI RISALAH WISATA",
-      "PT. MINA DARUSSALAM MANDIRI TUR",
-      "PT. MINAMAS ANGKASA SAKTI",
-      "PT MINANG KHAWAS WISATA",
-      "PT. MIQAT JAYA WISATA",
-      "PT. MOZAIK WALI WISATA",
-      "PT. MS. AISHAH MANDIRI",
-      "PT. MUKHTARA INDONESIA WISATA",
-      "PT. MULIA RAHAYU MITRA",
-      "PT. MULTAZAM WISATA",
-      "PT. MUNA BINA INSANI",
-      "PT. MUSAFIR LINTAS SAHARA",
-      "PT. MUSLIMAH",
-      "PT. MUSTIKA KARTIKA SAMUDERA",
-      "PT. MUTIARA SUNNAH MANDIRI",
-      "PT. NABILA SURABAYA PERDANA",
-      "PT. NAMIRA",
-      "PT. NAUFA MUTIARA PERSADA",
-      "PT. NAWAITUL UMRAH HAJI",
-      "PT. NAZAR JAYA MANDIRI",
-      "PT. NEWCITY BERJAYA LESTARI",
-      "PT. NIPINDO ANTAR WISATA",
-      "PT. NISMA WISATA HAROMAIN",
-      "PT. NOOR ABIKA TOURS",
-      "PT. NOORUHA KIRANA INDONESIA",
-      "PT. NOVAVIL MUTIARA UTAMA",
-      "PT. NUANSA CERIA PESONA",
-      "PT. NUR AMANAH WISATA",
-      "PT. NURANI EL MISBAH TOUR & TRAVEL",
-      "PT. NUR ASSYFA BERKAH",
-      "PT NUR HAMDALAH PRIMA WISATA",
-      "PT. NUR HARAMAIN MULIA",
-      "PT. NURINDO WISATA",
-      "PT. NURUL IMAN TOUR DAN TRAVEL",
-      "PT. NURUL ZAHRA",
-      "PT. OMARAH BERKAHNUGRAHA INTERNASIONAL",
-      "PT. PANCA MITRA INTEGRITY",
-      "PT. PANGHEGARPUTRA SAPTAWISATA",
-      "PT. PANGUJI LUHUR UTAMA",
-      "PT. PANTRAVEL",
-      "PT. PATUNA MEKAR JAYA",
-      "PT. PENATA RIHLAH",
-      "PT. PENJURU WISATA NEGERI",
-      "PT. PERMATA KENCANA MULIA",
-      "PT. PESONA MOZAIK",
-      "PT. PESONA MUDA PRIMA TOURS",
-      "PT. PESONA ROYAL SHAFWAH",
-      "PT. PRABA ARTA BUANA UTAMA/PRABA",
-      "PT. PRAYOGI LINTAS PERSADA",
-      "PT. PRIMA ASTUTI SEJAHTERA",
-      "PT. PRIMA TOUR & TRAVEL",
-      "PT. PRIMA UNGGUL GLOBAL",
-      "PT. PUNAMA MULIA WISATA",
-      "PT. QORYATUL HAYYAT",
-      "PT. RABBANI SEMESTA UTAMA",
-      "PT. RABIHA KARYA BERSAMA TOURS AND TRAVEL",
-      "PT. RADIAN KHARISMA WISATA",
-      "PT. RAFA LINTAS CAKRAWALA",
-      "PT. RAFFI INDO MAKMUR",
-      "PT. RAMADANI JAYA TOUR",
-      "PT. RANDI PRIMA WISATA",
-      "PT. RATNA AZIZAH MUSTIKA",
-      "PT. RATU HAMIDAH SAMPURNA BERSAUDARA",
-      "PT. RAUDHAH AMANI WISATA",
-      "PT. RAUDHAH MULTAZAM INDONESIA",
-      "PT. RAWASINDO",
-      "PT. RAZAN GROUP INDONESIA",
-      "PT. REGATTA JAYA VAGANZA",
-      "PT. REHABUL HARAMAIN SYARIFAIN",
-      "PT RENAZKIA REINDO WISATA",
-      "PT. RESI MANUNGGAL LESTARI",
-      "PT. RIAU WISATA HATI",
-      "PT. RIFLA WISATA UTAMA",
-      "PT. RIHLAH ALATAS WISATA",
-      "PT. RIHLAH ASSOFA AMANAH",
-      "PT. RIHLATUL HIDAYAH WISATA",
-      "PT. RISALAH MADINA TIARA",
-      "PT RIYADHULJANNAH TOUR & TRAVEL",
-      "PT. RIZMA SABILUL HAROM",
-      "PT. RIZQUNA MEKKAH MADINAH",
-      "PT. SABA KHIDMAH MUMTAZAH",
-      "PT. SADEWA ANANDEA WISATA",
-      "PT. SAFA NISA RIZKY",
-      "PT. SAFARI BORNEO TOUR",
-      "PT. SAFARI HARISTY WISATA",
-      "PT. SAFINA ASSALAM TOUR",
-      "PT. SAFINA DANIA WISATA",
-      "PT. SAFIR CATURJAYA WISATA",
-      "PT. SAHABAT DUA ARAH",
-      "PT. SAHARA DZUMIRRA INTERNATIONAL",
-      "PT. SAKINAH TOUR & TRAVEL",
-      "PT. SALWANA GLOBAL SARANA",
-      "PT. SAMAWA BERKAH WISATA",
-      "PT. SAUDI PATRIA WISATA",
-      "PT. SELARAS CINTANUSA WISATA",
-      "PT. SHAFIRA LINTAS SEMESTA",
-      "PT. SHAZA QOLBU IZMIR",
-      "PT. SHOFICE JAYA ABGHANI",
-      "PT. SIANOK INDAH HOLIDAY",
-      "PT. SIAR HARAMAIN INTERNATIONAL WISATA",
-      "PT. SILVER SILK TOUR & TRAVEL",
-      "PT. SINDO WISATA",
-      "PT. SOLUSINDO JAYA PRATAMA GROUP",
-      "PT. SOLUTION INDONESIA",
-      "PT. SPIDEST INTERNASIONAL",
-      "PT. SRIKANDI NUANSA WISATA INDONESIA",
-      "PT. SRIWIJAYA MEGA WISATA",
-      "PT. STARINDO MITRADASA CIPTA",
-      "PT. SUKSES INTERNASIONAL TOUR & TRAVEL",
-      "PT. SUTRA TOUR HIDAYAH",
-      "PT. SWADHARMA TRAVELINDO",
-      "PT. SYAKIRA ASFARINA",
-      "PT SYAMMAS ANGKASA WISATA",
-      "PT. TAJAK RAMADHAN",
-      "PT. TAMASYA INDAH TOUR & TRAVEL",
-      "PT. TAMA WISATA INDONESIA",
-      "PT. TAMR CAHAYA MANDIRI",
-      "PT. TANUR MUTHMAINNAH TOUR",
-      "PT. TAQWA CAHAYA SEMESTA",
-      "PT. TASBIH AMANAH BERSAMA",
-      "PT. TAUBA ZAKKA ALKIA",
-      "PT. TAWAKAL INTERNATIONAL",
-      "PT TAYSIR TOUR & TRAVEL",
-      "PT. TAZAKKA TOUR DAN TRAVEL",
-      "PT. TAZKIYAH GLOBAL MANDIRI",
-      "PT. TIFA JAYA ABADI",
-      "PT. TISAGA MULTAZAM UTAMA",
-      "PT. TRIDAYA PESONA WISATA",
-      "PT. TRIMAGNA ADHI WISATA",
-      "PT. TRIPURI WISATA",
-      "PT. TRITAMA TOUR TRAVEL",
-      "PT. TUJUH PUTRI BAROKAH",
-      "PT. TUNAS RIZKI SEMESTA",
-      "PT. TURISINA BUANA",
-      "PT. TUR SILATURAHMI NABI",
-      "PT. UMI TOUR & TRAVEL",
-      "PT. VENTURA SEMESTA WISATA",
-      "PT. VIZITRIP GLOBAL TOUR",
-      "PT. WAHYU TITIAN INSANI",
-      "PT. WISATA HALAL INDONESIA",
-      "PT. WISATA PILIHAN",
-      "PT. WISATA RAHMAH SEMESTA",
-      "PT. YASDIN TRAVEL",
-      "PT. YASSINTA ANDROMEDA KENCANA",
-      "PT. YASTHA MANDIRI",
-      "PT. ZAHARA MUTIARA BAKKAH",
-      "PT. ZAHRANI ABADI WISATA",
-      "PT. ZAHRA OTO MANDIRI",
-      "PT. ZAM ZAM MANDIRI",
-      "PT. ZAMZAM SUMBULA THOYYIBBAH",
-      "PT. ZHAFIRAH MITRA MADINA",
-      "PT. ZIARAH HATI NURANI",
-      "PT. ZIAR NIDA UL HARAMAIN",
-      "PT. ZIMAH TOUR & TRAVEL",
-      "PT. ZNH INTERNASIONAL INDONESIA",
-      "PT. ZONA ASIA HAROMAIN",
-      "PT. ZULIAN KAMSAINDO TOUR & TRAVEL"
-];
-
-    const ASURANSI_OPTIONS = [
-      "AJS AMANAH JIWA GIRI ARTHA",
-      "ASURANSI ASKRIDA SYARIAH",
-      "ASURANSI BRINS",
-      "ASURANSI CENTRAL ASIA SYARIAH",
-      "ASURANSI CHUBB SYARIAH",
-      "ASURANSI JIWA SYARIAH AL AMIN",
-      "ASURANSI MAXIMUS GRAHA PERSADA UNIT SYARIAH",
-      "ASURANSI RELIANCE INDONESIA UNIT SYARIAH",
-      "ASURANSI SINARMAS SYARIAH",
-      "ASURANSI SONWELIS TAKAFUL",
-      "ASURANSI TAKAFUL UMUM",
-      "ASURANSI TRI PAKARTA UNIT SYARIAH",
-      "ASURANSI TUGU PRATAMA INDONESIA",
-      "PAN PACIFIC SYARIAH INSURANCE",
-      "PT ASURANSI JASINDO SYARIAH",
-      "PT. ASURANSI UMUM MEGA UNIT SYARIAH",
-      "SYARIAH BUMIDA",
-      "ZURICH GENERAL TAKAFUL INDONESIA"
-];
-
-    function populateProviderVisaAndInsuranceDropdowns() {
-      const providerSelect = document.getElementById("providerVisa");
-      const insuranceSelect = document.getElementById("asuransi");
-      if (providerSelect) {
-        providerSelect.replaceChildren(new Option("-- Pilih Provider Visa --", ""));
-        // Semua entri adalah pilihan Provider Visa biasa, termasuk "B2C".
-        PROVIDER_VISA_OPTIONS.forEach((name) => providerSelect.add(new Option(name, name)));
-      }
-      if (insuranceSelect) {
-        insuranceSelect.replaceChildren(new Option("-- Pilih Asuransi --", ""));
-        ASURANSI_OPTIONS.forEach((name) => insuranceSelect.add(new Option(name, name)));
-      }
-    }
-
-    // Initial load
-    document.addEventListener("DOMContentLoaded", () => {
-      populateProviderVisaAndInsuranceDropdowns();
-      const savedUser = localStorage.getItem("umroh_user");
-      if (savedUser) {
-        showMainApp(savedUser);
-      }
-      fetchProvinces();
-    });
-
-    // Fetch Wilayah Indonesia (Dengan API Resmi EMSIFA & Fallback Offline)
-    async function fetchProvinces() {
-      try {
-        const res = await fetch(`${API_WILAYAH}/provinces.json`);
-        if (!res.ok) throw new Error("Gagal mengambil provinsi");
-        const responseData = await res.json();
-        provincesData = Array.isArray(responseData) ? responseData : (responseData.data || []);
-      } catch (e) {
-        // Fallback jika offline/gagal
-        provincesData = [
-          { id: "31", name: "DKI JAKARTA" },
-          { id: "32", name: "JAWA BARAT" },
-          { id: "33", name: "JAWA TENGAH" },
-          { id: "34", name: "DI YOGYAKARTA" },
-          { id: "35", name: "JAWA TIMUR" },
-          { id: "36", name: "BANTEN" },
-          { id: "12", name: "SUMATERA UTARA" },
-          { id: "13", name: "SUMATERA BARAT" },
-          { id: "73", name: "SULAWESI SELATAN" }
-        ];
-      }
-      populateProvinsiDropdown();
-    }
-
-    function populateProvinsiDropdown() {
-      const provSelect = document.getElementById("provinsiSelect");
-      provSelect.innerHTML = `<option value="">-- Pilih Provinsi --</option>` +
-        provincesData.map(p => `<option value="${p.name}" data-id="${p.id}">${p.name}</option>`).join("");
-    }
-
-    async function onProvinsiChange() {
-      const provSelect = document.getElementById("provinsiSelect");
-      const selectedOption = provSelect.options[provSelect.selectedIndex];
-      const provId = selectedOption ? selectedOption.getAttribute("data-id") : null;
-      const kabSelect = document.getElementById("kabupatenSelect");
-      const kecSelect = document.getElementById("kecamatanSelect");
-      const kelSelect = document.getElementById("kelurahanSelect");
-
-      kabSelect.innerHTML = `<option value="">-- Memuat Kabupaten/Kota... --</option>`;
-      kabSelect.disabled = true;
-      kecSelect.innerHTML = `<option value="">-- Pilih Kecamatan --</option>`;
-      kecSelect.disabled = true;
-      kelSelect.innerHTML = `<option value="">-- Pilih Kelurahan/Desa --</option>`;
-      kelSelect.disabled = true;
-
-      if (!provId) {
-        kabSelect.innerHTML = `<option value="">-- Pilih Kabupaten/Kota --</option>`;
-        return;
-      }
-      try {
-        if (!regenciesData[provId]) {
-          const res = await fetch(`${API_WILAYAH}/regencies/${provId}.json`);
-          if (!res.ok) throw new Error("Gagal mengambil kabupaten/kota");
-          const responseData = await res.json();
-          regenciesData[provId] = Array.isArray(responseData) ? responseData : (responseData.data || []);
-        }
-        kabSelect.innerHTML = `<option value="">-- Pilih Kabupaten/Kota --</option>` +
-          regenciesData[provId].map(r => `<option value="${r.name}" data-id="${r.id}">${r.name}</option>`).join("");
-        kabSelect.disabled = false;
-      } catch (e) {
-        console.error(e);
-        kabSelect.innerHTML = `<option value="">-- Gagal memuat data --</option>`;
-      }
-    }
-
-    async function onKabupatenChange() {
-      const kabSelect = document.getElementById("kabupatenSelect");
-      const selectedOption = kabSelect.options[kabSelect.selectedIndex];
-      const kabId = selectedOption ? selectedOption.getAttribute("data-id") : null;
-      const kecSelect = document.getElementById("kecamatanSelect");
-      const kelSelect = document.getElementById("kelurahanSelect");
-
-      kecSelect.innerHTML = `<option value="">-- Memuat Kecamatan... --</option>`;
-      kecSelect.disabled = true;
-      kelSelect.innerHTML = `<option value="">-- Pilih Kelurahan/Desa --</option>`;
-      kelSelect.disabled = true;
-      if (!kabId) {
-        kecSelect.innerHTML = `<option value="">-- Pilih Kecamatan --</option>`;
-        return;
-      }
-      try {
-        if (!districtsData[kabId]) {
-          const res = await fetch(`${API_WILAYAH}/districts/${kabId}.json`);
-          if (!res.ok) throw new Error("Gagal mengambil kecamatan");
-          const responseData = await res.json();
-          districtsData[kabId] = Array.isArray(responseData) ? responseData : (responseData.data || []);
-        }
-        kecSelect.innerHTML = `<option value="">-- Pilih Kecamatan --</option>` +
-          districtsData[kabId].map(k => `<option value="${k.name}" data-id="${k.id}">${k.name}</option>`).join("");
-        kecSelect.disabled = false;
-      } catch (e) {
-        console.error(e);
-        kecSelect.innerHTML = `<option value="">-- Gagal memuat data --</option>`;
-      }
-    }
-
-    async function onKecamatanChange() {
-      const kecSelect = document.getElementById("kecamatanSelect");
-      const selectedOption = kecSelect.options[kecSelect.selectedIndex];
-      const kecId = selectedOption ? selectedOption.getAttribute("data-id") : null;
-      const kelSelect = document.getElementById("kelurahanSelect");
-      kelSelect.innerHTML = `<option value="">-- Memuat Kelurahan/Desa... --</option>`;
-      kelSelect.disabled = true;
-      if (!kecId) {
-        kelSelect.innerHTML = `<option value="">-- Pilih Kelurahan/Desa --</option>`;
-        return;
-      }
-      try {
-        if (!villagesData[kecId]) {
-          const res = await fetch(`${API_WILAYAH}/villages/${kecId}.json`);
-          if (!res.ok) throw new Error("Gagal mengambil kelurahan/desa");
-          const responseData = await res.json();
-          villagesData[kecId] = Array.isArray(responseData) ? responseData : (responseData.data || []);
-        }
-        kelSelect.innerHTML = `<option value="">-- Pilih Kelurahan/Desa --</option>` +
-          villagesData[kecId].map(v => `<option value="${v.name}" data-id="${v.id}">${v.name}</option>`).join("");
-        kelSelect.disabled = false;
-      } catch (e) {
-        console.error(e);
-        kelSelect.innerHTML = `<option value="">-- Gagal memuat data --</option>`;
-      }
-    }
-
-    // Otentikasi Login Staf
-    async function handleAuth(e) {
-      e.preventDefault();
-      const username = document.getElementById("authUsername").value.trim().toLowerCase();
-      const password = document.getElementById("authPassword").value;
-
-      if (!username || !password) return alert("Harap isi username dan password!");
-
-      try {
-        const userRef = db.collection("users").doc(username);
-        const doc = await userRef.get();
-
-        if (doc.exists && doc.data().password === password) {
-          localStorage.setItem("umroh_user", username);
-          showMainApp(username);
-        } else {
-          alert("Username atau Password salah!");
-        }
-      } catch (err) {
-        console.error(err);
-        alert("Gagal terhubung ke database. Pastikan koneksi internet aktif.");
-      }
-    }
-
-    function showMainApp(username) {
-      document.getElementById("authSection").classList.add("hidden");
-      document.getElementById("mainApp").classList.remove("hidden");
-      document.getElementById("userInfo").classList.remove("hidden");
-      document.getElementById("fabContainer").classList.remove("hidden");
-      document.getElementById("userBadge").innerText = "Staf: " + username;
-      mulaiListenerRealtime();
-    }
-
-    function logout() {
-      localStorage.removeItem("umroh_user");
-      location.reload();
-    }
-
-    // Switch Tab Navigasi
-    function switchTab(tab) {
-      const dashboardSection = document.getElementById("dashboardTabSection");
-      const dataSection = document.getElementById("dataTabSection");
-
-      const tabDashboardBtn = document.getElementById("tabDashboardBtn");
-      const tabDataBtn = document.getElementById("tabDataBtn");
-
-      // Reset style tombol
-      [tabDashboardBtn, tabDataBtn].forEach(btn => {
-        btn.className = "flex-1 py-2.5 text-center text-sm font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition flex items-center justify-center gap-2";
-      });
-
-      dashboardSection.classList.add("hidden");
-      dataSection.classList.add("hidden");
-
-      if (tab === 'dashboard') {
-        dashboardSection.classList.remove("hidden");
-        tabDashboardBtn.className = "flex-1 py-2.5 text-center text-sm font-bold rounded-lg bg-emerald-700 text-white transition flex items-center justify-center gap-2";
+      if (storedPakets) {
+        state.pakets = JSON.parse(storedPakets);
       } else {
-        dataSection.classList.remove("hidden");
-        tabDataBtn.className = "flex-1 py-2.5 text-center text-sm font-bold rounded-lg bg-emerald-700 text-white transition flex items-center justify-center gap-2";
+        state.pakets = DEFAULT_PAKETS;
+        savePaketsToStorage();
+      }
+
+      if (storedJemaahs) {
+        state.jemaahs = JSON.parse(storedJemaahs);
+      } else {
+        state.jemaahs = DEFAULT_JEMAAHS;
+        saveJemaahsToStorage();
       }
     }
 
-    // Modal Form FAB Handlers
-    function openFormModal() {
-      document.getElementById("formModal").classList.remove("hidden");
+    function savePaketsToStorage() {
+      localStorage.setItem('shabar_pakets', JSON.stringify(state.pakets));
     }
 
-    function closeFormModal() {
-      document.getElementById("formModal").classList.add("hidden");
-      resetForm();
+    function saveJemaahsToStorage() {
+      localStorage.setItem('shabar_jemaahs', JSON.stringify(state.jemaahs));
     }
 
-    // Listener Real-time Firestore Sync
-    function mulaiListenerRealtime() {
-      db.collection("jemaah").orderBy("updatedAt", "desc").onSnapshot(snapshot => {
-        jemaahCache = [];
-        snapshot.forEach(doc => {
-          jemaahCache.push({ id: doc.id, ...doc.data() });
-        });
-
-        updateDaftarPaket();
-        updateDashboard();
-        renderGroupRows();
-
-        // Refresh group detail modal jika sedang terbuka
-        if (!document.getElementById("groupDetailModal").classList.contains("hidden") && activeDetailGroup) {
-          openGroupDetailModal(activeDetailGroup);
-        }
-
-      }, err => console.error("Realtime Listener Error:", err));
-    }
-
-    function updateDaftarPaket() {
-      const setPaket = new Set(paketCache);
-      jemaahCache.forEach(j => {
-        if (j.paket) setPaket.add(j.paket.trim());
-      });
-
-      paketCache = Array.from(setPaket).sort();
-
-      const selectForm = document.getElementById("paketSelect");
-      const currentSelected = selectForm.value;
-      selectForm.innerHTML = `<option value="">-- Pilih Paket / Group --</option>` + 
-        paketCache.map(p => `<option value="${p}">${p}</option>`).join("");
-
-      if (currentSelected && paketCache.includes(currentSelected)) {
-        selectForm.value = currentSelected;
-      }
-    }
-
-    // Modal Tambah Paket Baru
-    function openModalTambahPaket() {
-      document.getElementById("namaPaketBaru").value = "";
-      document.getElementById("modalTambahPaket").classList.remove("hidden");
-    }
-
-    function closeModalTambahPaket() {
-      document.getElementById("modalTambahPaket").classList.add("hidden");
-    }
-
-    function simpanPaketBaru(e) {
-      e.preventDefault();
-      const paketBaru = document.getElementById("namaPaketBaru").value.trim();
-      if (!paketBaru) return;
-
-      if (!paketCache.includes(paketBaru)) {
-        paketCache.push(paketBaru);
-        updateDaftarPaket();
-      }
-
-      document.getElementById("paketSelect").value = paketBaru;
-      closeModalTambahPaket();
-    }
-
-    // Convert Image File to Compressed Base64
-    function previewImage(event, type) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.src = e.target.result;
-        img.onload = function() {
-          const canvas = document.createElement("canvas");
-          const MAX_WIDTH = 600;
-          const scaleSize = MAX_WIDTH / img.width;
-          canvas.width = MAX_WIDTH;
-          canvas.height = img.height * scaleSize;
-
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          
-          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-
-          if (type === 'foto') {
-            currentFotoBase64 = compressedBase64;
-            document.getElementById("fotoPreview").src = compressedBase64;
-            document.getElementById("fotoPreviewContainer").classList.remove("hidden");
-          } else if (type === 'ktp') {
-            currentKtpBase64 = compressedBase64;
-            document.getElementById("ktpPreview").src = compressedBase64;
-            document.getElementById("ktpPreviewContainer").classList.remove("hidden");
+    /* ==========================================================================
+       3. NAVIGATION & UI SWITCHING
+       ========================================================================== */
+    function switchTab(tabName) {
+      const views = ['dashboard', 'dataJemaah', 'tambahJemaah', 'kelolaPaket', 'eksporData'];
+      views.forEach(view => {
+        const el = document.getElementById(`view-${view}`);
+        const tabBtn = document.getElementById(`tab-${view}`);
+        if (view === tabName) {
+          el.classList.remove('hidden');
+          if (tabBtn) {
+            tabBtn.classList.add('border-amber-400', 'text-amber-400');
+            tabBtn.classList.remove('border-transparent', 'text-slate-300');
+          }
+        } else {
+          el.classList.add('hidden');
+          if (tabBtn) {
+            tabBtn.classList.remove('border-amber-400', 'text-amber-400');
+            tabBtn.classList.add('border-transparent', 'text-slate-300');
           }
         }
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function clearImage(type) {
-      if (type === 'foto') {
-        currentFotoBase64 = "";
-        document.getElementById("fotoFile").value = "";
-        document.getElementById("fotoPreviewContainer").classList.add("hidden");
-      } else if (type === 'ktp') {
-        currentKtpBase64 = "";
-        document.getElementById("ktpFile").value = "";
-        document.getElementById("ktpPreviewContainer").classList.add("hidden");
-      }
-    }
-
-    // Simpan / Update Jemaah ke Firestore
-    async function simpanJemaah(e) {
-      e.preventDefault();
-      const docId = document.getElementById("editDocId").value;
-      const paket = document.getElementById("paketSelect").value;
-      if (!paket) return alert("Harap pilih Paket / Group Umroh!");
-
-      const submitBtn = document.getElementById("submitBtn");
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan data...`;
-      const title = document.getElementById("titleJemaah").value;
-      const jenisIdentitas = document.getElementById("jenisIdentitas").value;
-      const noIdentitas = document.getElementById("noIdentitas").value.trim();
-      const noHp = document.getElementById("noHp").value.trim();
-      const noTelepon = document.getElementById("noTelepon").value.trim();
-
-      const payload = {
-        paket,
-        title,
-        nama: document.getElementById("nama").value.trim(),
-        namaAyah: document.getElementById("namaAyah").value.trim(),
-        jenisIdentitas,
-        noIdentitas,
-        // Pertahankan field lama untuk kompatibilitas dengan data/laporan sebelumnya.
-        nik: noIdentitas,
-        namaPaspor: document.getElementById("namaPaspor").value.trim(),
-        noPaspor: document.getElementById("noPaspor").value.trim(),
-        tanggalDikeluarkanPaspor: document.getElementById("tanggalDikeluarkanPaspor").value,
-        kotaPaspor: document.getElementById("kotaPaspor").value.trim(),
-        tempatLahir: document.getElementById("tempatLahir").value.trim(),
-        tanggalLahir: document.getElementById("tanggalLahir").value,
-        // Dashboard lama tetap dapat menghitung rasio L/P dari pilihan Title.
-        jenisKelamin: title === "TUAN" ? "Laki-laki" : (title === "NONA" || title === "NYONYA" ? "Perempuan" : ""),
-        alamat: document.getElementById("alamat").value.trim(),
-        provinsi: document.getElementById("provinsiSelect").value,
-        kabupaten: document.getElementById("kabupatenSelect").value,
-        kecamatan: document.getElementById("kecamatanSelect").value,
-        kelurahan: document.getElementById("kelurahanSelect").value,
-        noTelepon,
-        noHp,
-        // Field telepon lama dipertahankan untuk tabel/detail versi sebelumnya.
-        telepon: noHp || noTelepon || "-",
-        kewarganegaraan: document.getElementById("kewarganegaraan").value,
-        statusPernikahan: document.getElementById("statusPernikahan").value,
-        pendidikan: document.getElementById("pendidikan").value,
-        pekerjaan: document.getElementById("pekerjaan").value,
-        providerVisa: document.getElementById("providerVisa").value,
-        noVisa: document.getElementById("noVisa").value.trim(),
-        tanggalBerlakuVisa: document.getElementById("tanggalBerlakuVisa").value,
-        tanggalAkhirVisa: document.getElementById("tanggalAkhirVisa").value,
-        asuransi: document.getElementById("asuransi").value,
-        noPolis: document.getElementById("noPolis").value.trim(),
-        tanggalInputPolis: document.getElementById("tanggalInputPolis").value,
-        tanggalAwalPolis: document.getElementById("tanggalAwalPolis").value,
-        tanggalAkhirPolis: document.getElementById("tanggalAkhirPolis").value,
-        noBPJS: document.getElementById("noBPJS").value.trim(),
-        foto: currentFotoBase64,
-        ktpFoto: currentKtpBase64,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-
-      try {
-        if (docId) {
-          await db.collection("jemaah").doc(docId).update(payload);
-          alert("Data jemaah berhasil diperbarui!");
-        } else {
-          await db.collection("jemaah").add(payload);
-          alert("Jemaah baru berhasil ditambahkan!");
-        }
-        closeFormModal();
-        switchTab('data');
-      } catch (err) {
-        console.error(err);
-        alert("Gagal menyimpan data jemaah!");
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Jemaah`;
-      }
-    }
-
-    // Update Dashboard Metrics & Chart.js Diagram
-    function updateDashboard() {
-      const total = jemaahCache.length;
-      document.getElementById("dashTotalJemaah").innerText = total;
-
-      const setPaket = new Set(jemaahCache.map(j => j.paket));
-      document.getElementById("dashTotalPaket").innerText = setPaket.size;
-      document.getElementById("totalGroupBadge").innerText = setPaket.size;
-
-      const laki = jemaahCache.filter(j => j.jenisKelamin === 'Laki-laki').length;
-      const perempuan = jemaahCache.filter(j => j.jenisKelamin === 'Perempuan').length;
-      document.getElementById("dashGenderRatio").innerText = `${laki} / ${perempuan}`;
-
-      const berkasLengkap = jemaahCache.filter(j => j.foto && j.ktpFoto).length;
-      document.getElementById("dashBerkasLengkap").innerText = berkasLengkap;
-
-      // Render Ringkasan Status Group
-      const dashGroupList = document.getElementById("dashboardGroupList");
-      if (setPaket.size === 0) {
-        dashGroupList.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Belum ada group umroh yang dibuat.</p>`;
-      } else {
-        const countsByPaket = {};
-        jemaahCache.forEach(j => {
-          countsByPaket[j.paket] = (countsByPaket[j.paket] || 0) + 1;
-        });
-
-        dashGroupList.innerHTML = Object.keys(countsByPaket).map(p => `
-          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
-            <div>
-              <h4 class="font-bold text-slate-800 text-xs">${p}</h4>
-              <p class="text-[11px] text-slate-500 mt-0.5">${countsByPaket[p]} Jemaah Terdaftar</p>
-            </div>
-            <button onclick="openGroupDetailModal('${p}')" class="text-xs text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1">
-              <i class="fa-solid fa-eye text-[11px]"></i> Detail
-            </button>
-          </div>
-        `).join("");
-      }
-
-      // RENDER DIAGRAM JEMAAH (CHART.JS)
-      renderDashboardChart();
-    }
-
-    function renderDashboardChart() {
-      const ctx = document.getElementById('jemaahGroupChart').getContext('2d');
-      
-      const countsByPaket = {};
-      jemaahCache.forEach(j => {
-        const key = j.paket || "Tanpa Group";
-        countsByPaket[key] = (countsByPaket[key] || 0) + 1;
       });
 
-      const labels = Object.keys(countsByPaket);
-      const data = Object.values(countsByPaket);
+      // Refresh charts if switching to dashboard
+      if (tabName === 'dashboard') {
+        renderDashboard();
+      }
+    }
 
-      if (chartInstance) {
-        chartInstance.destroy();
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('hidden');
+    }
+
+    function showAlert(message, type = 'success') {
+      const container = document.getElementById('alertContainer');
+      const alert = document.createElement('div');
+      
+      const bgColor = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+      const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation';
+
+      alert.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-xl text-xs flex items-center justify-between transition-all duration-300 transform translate-x-full pointer-events-auto`;
+      alert.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid ${icon} text-base"></i>
+          <span>${message}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="ml-4 hover:text-slate-200">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
+
+      container.appendChild(alert);
+
+      setTimeout(() => alert.classList.remove('translate-x-full'), 10);
+      setTimeout(() => {
+        alert.classList.add('translate-x-full');
+        setTimeout(() => alert.remove(), 300);
+      }, 4000);
+    }
+
+    /* ==========================================================================
+       4. DROPDOWN POPULATION LOGIC
+       ========================================================================== */
+    function populatePaketDropdowns() {
+      const formSelect = document.getElementById('inputPaketId');
+      const filterSelect = document.getElementById('tableFilterPaket');
+      const exportSelect = document.getElementById('exportSelectPaket');
+
+      // Save previous selections
+      const prevFormVal = formSelect.value;
+      const prevFilterVal = filterSelect.value;
+      const prevExportVal = exportSelect.value;
+
+      formSelect.innerHTML = '<option value="">-- Pilih Paket Umroh --</option>';
+      filterSelect.innerHTML = '<option value="">-- Semua Paket --</option>';
+      exportSelect.innerHTML = '<option value="">-- Pilih Paket Umroh --</option>';
+
+      state.pakets.forEach(p => {
+        const optionText = `${p.namaPaket} (${formatDateIndo(p.tglKeberangkatan)})`;
+        
+        formSelect.innerHTML += `<option value="${p.id}">${optionText}</option>`;
+        filterSelect.innerHTML += `<option value="${p.id}">${p.namaPaket}</option>`;
+        exportSelect.innerHTML += `<option value="${p.id}">${p.namaPaket}</option>`;
+      });
+
+      formSelect.value = prevFormVal;
+      filterSelect.value = prevFilterVal;
+      exportSelect.value = prevExportVal;
+    }
+
+    /* ==========================================================================
+       5. JEMAAH FORM MANAGEMENT (ADD / EDIT)
+       ========================================================================== */
+    function handleSaveJemaah(e) {
+      e.preventDefault();
+
+      const editId = document.getElementById('editJemaahId').value;
+      const jemaahData = {
+        id: editId || 'jem_' + Date.now(),
+        paketId: document.getElementById('inputPaketId').value,
+        namaLengkap: document.getElementById('inputNamaLengkap').value.trim(),
+        nik: document.getElementById('inputNik').value.trim(),
+        tempatLahir: document.getElementById('inputTempatLahir').value.trim(),
+        tanggalLahir: document.getElementById('inputTanggalLahir').value,
+        jenisKelamin: document.getElementById('inputJenisKelamin').value,
+        noHp: document.getElementById('inputNoHp').value.trim(),
+        noPaspor: document.getElementById('inputNoPaspor').value.trim(),
+        alamat: document.getElementById('inputAlamat').value.trim(),
+        catatan: document.getElementById('inputCatatan').value.trim(),
+        createdAt: new Date().toISOString()
+      };
+
+      if (editId) {
+        // Update
+        const index = state.jemaahs.findIndex(j => j.id === editId);
+        if (index !== -1) {
+          state.jemaahs[index] = jemaahData;
+          showAlert('Data jemaah berhasil diperbarui!', 'success');
+        }
+      } else {
+        // Add
+        state.jemaahs.unshift(jemaahData);
+        showAlert('Jemaah baru berhasil ditambahkan!', 'success');
       }
 
-      chartInstance = new Chart(ctx, {
+      saveJemaahsToStorage();
+      resetJemaahForm();
+      renderDashboard();
+      renderJemaahTable();
+      switchTab('dataJemaah');
+    }
+
+    function editJemaah(id) {
+      const jemaah = state.jemaahs.find(j => j.id === id);
+      if (!jemaah) return;
+
+      document.getElementById('editJemaahId').value = jemaah.id;
+      document.getElementById('inputPaketId').value = jemaah.paketId;
+      document.getElementById('inputNamaLengkap').value = jemaah.namaLengkap;
+      document.getElementById('inputNik').value = jemaah.nik;
+      document.getElementById('inputTempatLahir').value = jemaah.tempatLahir;
+      document.getElementById('inputTanggalLahir').value = jemaah.tanggalLahir;
+      document.getElementById('inputJenisKelamin').value = jemaah.jenisKelamin;
+      document.getElementById('inputNoHp').value = jemaah.noHp;
+      document.getElementById('inputNoPaspor').value = jemaah.noPaspor || '';
+      document.getElementById('inputAlamat').value = jemaah.alamat;
+      document.getElementById('inputCatatan').value = jemaah.catatan || '';
+
+      document.getElementById('formTitleText').textContent = 'Edit Data Jemaah';
+      document.getElementById('btnSubmitText').textContent = 'Perbarui Data Jemaah';
+      document.getElementById('btnCancelEdit').classList.remove('hidden');
+
+      switchTab('tambahJemaah');
+    }
+
+    function cancelEditMode() {
+      resetJemaahForm();
+    }
+
+    function resetJemaahForm() {
+      document.getElementById('formJemaahSederhana').reset();
+      document.getElementById('editJemaahId').value = '';
+      document.getElementById('formTitleText').textContent = 'Formulir Tambah Data Jemaah';
+      document.getElementById('btnSubmitText').textContent = 'Simpan Data Jemaah';
+      document.getElementById('btnCancelEdit').classList.add('hidden');
+    }
+
+    function deleteJemaah(id) {
+      if (confirm('Apakah Anda yakin ingin menghapus data jemaah ini?')) {
+        state.jemaahs = state.jemaahs.filter(j => j.id !== id);
+        saveJemaahsToStorage();
+        renderDashboard();
+        renderJemaahTable();
+        showAlert('Data jemaah berhasil dihapus.', 'success');
+      }
+    }
+
+    /* ==========================================================================
+       6. PAKET MANAGEMENT (ADD / DELETE)
+       ========================================================================== */
+    function handleSavePaket(e) {
+      e.preventDefault();
+
+      const newPaket = {
+        id: 'pkt_' + Date.now(),
+        namaPaket: document.getElementById('inputNamaPaket').value.trim(),
+        tglKeberangkatan: document.getElementById('inputTglKeberangkatan').value,
+        muthawwif: document.getElementById('inputMuthawwif').value.trim() || '-'
+      };
+
+      state.pakets.push(newPaket);
+      savePaketsToStorage();
+      populatePaketDropdowns();
+      renderPaketTable();
+      renderDashboard();
+
+      document.getElementById('formTambahPaket').reset();
+      showAlert('Paket umroh baru berhasil dibuat!', 'success');
+    }
+
+    function deletePaket(id) {
+      const countAssigned = state.jemaahs.filter(j => j.paketId === id).length;
+      if (countAssigned > 0) {
+        alert(`Tidak dapat menghapus paket ini karena masih terhubung dengan ${countAssigned} jemaah.`);
+        return;
+      }
+
+      if (confirm('Apakah Anda yakin ingin menghapus paket umroh ini?')) {
+        state.pakets = state.pakets.filter(p => p.id !== id);
+        savePaketsToStorage();
+        populatePaketDropdowns();
+        renderPaketTable();
+        renderDashboard();
+        showAlert('Paket berhasil dihapus.', 'success');
+      }
+    }
+
+    function renderPaketTable() {
+      const tbody = document.getElementById('paketTableBody');
+      const countEl = document.getElementById('paketCountText');
+      tbody.innerHTML = '';
+
+      countEl.textContent = state.pakets.length;
+
+      if (state.pakets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada paket umroh.</td></tr>`;
+        return;
+      }
+
+      state.pakets.forEach(p => {
+        const jemaahCount = state.jemaahs.filter(j => j.paketId === p.id).length;
+        
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(p.namaPaket)}</td>
+            <td class="px-4 py-3">${formatDateIndo(p.tglKeberangkatan)}</td>
+            <td class="px-4 py-3">${escapeHtml(p.muthawwif)}</td>
+            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">${jemaahCount} Jemaah</span></td>
+            <td class="px-4 py-3 text-center">
+              <button onclick="deletePaket('${p.id}')" class="text-red-500 hover:text-red-700 p-1">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    /* ==========================================================================
+       7. TABLE RENDERING & FILTERING
+       ========================================================================== */
+    function renderJemaahTable() {
+      const tbody = document.getElementById('mainJemaahTableBody');
+      const search = document.getElementById('tableSearchInput').value.toLowerCase();
+      const filterPaket = document.getElementById('tableFilterPaket').value;
+      const filterGender = document.getElementById('tableFilterGender').value;
+
+      tbody.innerHTML = '';
+
+      const filtered = state.jemaahs.filter(j => {
+        const matchSearch = j.namaLengkap.toLowerCase().includes(search) || 
+                            j.nik.toLowerCase().includes(search) || 
+                            (j.noPaspor && j.noPaspor.toLowerCase().includes(search));
+        const matchPaket = !filterPaket || j.paketId === filterPaket;
+        const matchGender = !filterGender || j.jenisKelamin === filterGender;
+
+        return matchSearch && matchPaket && matchGender;
+      });
+
+      document.getElementById('jemaahCountInfo').textContent = `Menampilkan ${filtered.length} dari ${state.jemaahs.length} data`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400">Data jemaah tidak ditemukan.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach((j, index) => {
+        const paketObj = state.pakets.find(p => p.id === j.paketId);
+        const namaPaket = paketObj ? paketObj.namaPaket : 'Tanpa Paket';
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="px-4 py-3 text-slate-400">${index + 1}</td>
+            <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(j.namaLengkap)}</td>
+            <td class="px-4 py-3 text-slate-500">${escapeHtml(j.nik)}</td>
+            <td class="px-4 py-3">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${j.jenisKelamin === 'L' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}">
+                ${j.jenisKelamin}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-slate-500">${escapeHtml(j.tempatLahir)}, ${formatDateIndo(j.tanggalLahir)}</td>
+            <td class="px-4 py-3 text-slate-600">${escapeHtml(j.noHp)}</td>
+            <td class="px-4 py-3 text-slate-600">${j.noPaspor ? escapeHtml(j.noPaspor) : '<span class="text-slate-300">-</span>'}</td>
+            <td class="px-4 py-3 font-medium text-emerald-700">${escapeHtml(namaPaket)}</td>
+            <td class="px-4 py-3 text-slate-500 max-w-xs truncate" title="${escapeHtml(j.alamat)}">${escapeHtml(j.alamat)}</td>
+            <td class="px-4 py-3 text-center space-x-1">
+              <button onclick="editJemaah('${j.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="Edit">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button onclick="deleteJemaah('${j.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function handleGlobalSearch(query) {
+      if (!query) return;
+      document.getElementById('tableSearchInput').value = query;
+      switchTab('dataJemaah');
+      renderJemaahTable();
+    }
+
+    /* ==========================================================================
+       8. DASHBOARD STATS & CHARTS
+       ========================================================================== */
+    function renderDashboard() {
+      // 1. Stats Counter
+      const totalJemaah = state.jemaahs.length;
+      const totalPaket = state.pakets.length;
+      const priaCount = state.jemaahs.filter(j => j.jenisKelamin === 'L').length;
+      const wanitaCount = state.jemaahs.filter(j => j.jenisKelamin === 'P').length;
+
+      document.getElementById('statTotalJemaah').textContent = totalJemaah;
+      document.getElementById('statTotalPaket').textContent = totalPaket;
+      document.getElementById('statPria').textContent = priaCount;
+      document.getElementById('statWanita').textContent = wanitaCount;
+
+      const priaPct = totalJemaah > 0 ? Math.round((priaCount / totalJemaah) * 100) : 0;
+      const wanitaPct = totalJemaah > 0 ? Math.round((wanitaCount / totalJemaah) * 100) : 0;
+
+      document.getElementById('statPriaPersen').textContent = `${priaPct}% dari total jemaah`;
+      document.getElementById('statWanitaPersen').textContent = `${wanitaPct}% dari total jemaah`;
+
+      // 2. Recent Jemaah Preview Table
+      const recentTbody = document.getElementById('recentJemaahTable');
+      recentTbody.innerHTML = '';
+      const recentList = state.jemaahs.slice(0, 5);
+
+      if (recentList.length === 0) {
+        recentTbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">Belum ada data jemaah.</td></tr>`;
+      } else {
+        recentList.forEach(j => {
+          const paketObj = state.pakets.find(p => p.id === j.paketId);
+          recentTbody.innerHTML += `
+            <tr class="hover:bg-slate-50">
+              <td class="px-4 py-2.5 font-semibold text-slate-800">${escapeHtml(j.namaLengkap)}</td>
+              <td class="px-4 py-2.5 text-emerald-700">${paketObj ? escapeHtml(paketObj.namaPaket) : '-'}</td>
+              <td class="px-4 py-2.5">${escapeHtml(j.noHp)}</td>
+              <td class="px-4 py-2.5">${j.noPaspor || '-'}</td>
+              <td class="px-4 py-2.5">${formatDateIndo(j.tanggalLahir)}</td>
+            </tr>
+          `;
+        });
+      }
+
+      // 3. Render Chart Paket
+      const paketLabels = state.pakets.map(p => p.namaPaket);
+      const paketDataCounts = state.pakets.map(p => state.jemaahs.filter(j => j.paketId === p.id).length);
+
+      const ctxPaket = document.getElementById('chartPaket').getContext('2d');
+      if (state.chartPaketInstance) state.chartPaketInstance.destroy();
+
+      state.chartPaketInstance = new Chart(ctxPaket, {
         type: 'bar',
         data: {
-          labels: labels.length > 0 ? labels : ['Belum Ada Data'],
+          labels: paketLabels,
           datasets: [{
             label: 'Jumlah Jemaah',
-            data: data.length > 0 ? data : [0],
-            backgroundColor: 'rgba(5, 150, 105, 0.75)',
-            borderColor: 'rgb(4, 120, 87)',
-            borderWidth: 2,
-            borderRadius: 8,
-            borderSkipped: false,
+            data: paketDataCounts,
+            backgroundColor: '#16a34a',
+            borderRadius: 6
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return ` ${context.raw} Jemaah`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                stepSize: 1,
-                font: { size: 11 }
-              },
-              grid: {
-                color: '#f1f5f9'
-              }
-            },
-            x: {
-              ticks: {
-                font: { size: 11 }
-              },
-              grid: {
-                display: false
-              }
-            }
-          }
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+
+      // 4. Render Chart Gender
+      const ctxGender = document.getElementById('chartGender').getContext('2d');
+      if (state.chartGenderInstance) state.chartGenderInstance.destroy();
+
+      state.chartGenderInstance = new Chart(ctxGender, {
+        type: 'doughnut',
+        data: {
+          labels: ['Laki-Laki', 'Perempuan'],
+          datasets: [{
+            data: [priaCount, wanitaCount],
+            backgroundColor: ['#2563eb', '#ec4899']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
         }
       });
     }
 
-    // Render Data Group Umroh (Satu Baris per Group)
-    function renderGroupRows() {
-      const tbody = document.getElementById("groupTableBody");
-      const query = document.getElementById("searchInput").value.toLowerCase().trim();
+    /* ==========================================================================
+       9. EXPORT LOGIC (CSV / EXCEL DOWNLOADER)
+       ========================================================================== */
+    function executeExport(type) {
+      let dataToExport = [];
+      let filename = 'Manifest_Jemaah_ShabarTour.csv';
 
-      // Grouping Jemaah Berdasarkan Paket
-      const grouped = {};
-      jemaahCache.forEach(j => {
-        const key = j.paket || "Tanpa Group";
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(j);
-      });
-
-      const groupNames = Object.keys(grouped).filter(name => !query || name.toLowerCase().includes(query));
-
-      if (groupNames.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="p-8 text-center text-slate-400">
-              <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i>
-              <p>Tidak ada group umroh yang ditemukan.</p>
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
-      tbody.innerHTML = groupNames.map((groupName, index) => {
-        const list = grouped[groupName];
-        const laki = list.filter(j => j.jenisKelamin === 'Laki-laki').length;
-        const perempuan = list.filter(j => j.jenisKelamin === 'Perempuan').length;
-        const lengkap = list.filter(j => j.foto && j.ktpFoto).length;
-
-        return `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="p-3.5 font-bold text-slate-500">${index + 1}</td>
-            <td class="p-3.5 font-bold text-slate-800 flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
-                <i class="fa-solid fa-kaaba"></i>
-              </div>
-              <div>
-                <span>${groupName}</span>
-                <p class="text-[11px] font-normal text-slate-400">Keberangkatan Shabar Tour</p>
-              </div>
-            </td>
-            <td class="p-3.5 text-center font-black text-slate-700 text-sm">${list.length} Jemaah</td>
-            <td class="p-3.5 text-center text-slate-600 font-medium">${laki} L / ${perempuan} P</td>
-            <td class="p-3.5 text-center">
-              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${lengkap === list.length ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-                ${lengkap} / ${list.length} Berkas Lengkap
-              </span>
-            </td>
-            <td class="p-3.5 text-center">
-              <div class="flex items-center justify-center gap-2">
-                <!-- Tombol Detail -->
-                <button onclick="openGroupDetailModal('${groupName}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow flex items-center gap-1 transition">
-                  <i class="fa-solid fa-eye"></i> Detail
-                </button>
-                <!-- Tombol Unduh Excel -->
-                <button onclick="eksporExcelGroup('${groupName}')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow flex items-center gap-1 transition">
-                  <i class="fa-solid fa-file-excel"></i> Unduh Excel
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join("");
-    }
-
-    // Open Group Detail Modal (Menampilkan Seluruh Member dari Group Tersebut)
-    function openGroupDetailModal(groupName) {
-      activeDetailGroup = groupName;
-      const list = jemaahCache.filter(j => (j.paket || "Tanpa Group") === groupName);
-
-      document.getElementById("groupDetailTitle").innerHTML = `<i class="fa-solid fa-kaaba text-emerald-700"></i> Detail Group: ${groupName}`;
-      document.getElementById("groupDetailSubtitle").innerText = `Daftar seluruh jemaah terdaftar (${list.length} Orang)`;
-      document.getElementById("groupDetailTotalCount").innerText = `Total: ${list.length} Jemaah`;
-      document.getElementById("groupDetailExportBtn").onclick = () => eksporExcelGroup(groupName);
-
-      const tbody = document.getElementById("groupDetailTableBody");
-
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Tidak ada anggota jemaah di group ini.</td></tr>`;
+      if (type === 'paket') {
+        const paketId = document.getElementById('exportSelectPaket').value;
+        if (!paketId) {
+          alert('Silakan pilih paket umroh yang akan diekspor.');
+          return;
+        }
+        const paketObj = state.pakets.find(p => p.id === paketId);
+        dataToExport = state.jemaahs.filter(j => j.paketId === paketId);
+        filename = `Manifest_${paketObj ? paketObj.namaPaket.replace(/[^a-zA-Z0-9]/g, '_') : 'Paket'}.csv`;
       } else {
-        tbody.innerHTML = list.map(item => {
-          const alamatLengkap = [
-            item.alamat,
-            item.kelurahan || '',
-            item.kecamatan ? `Kec. ${item.kecamatan}` : '',
-            item.kabupaten ? item.kabupaten : '',
-            item.provinsi ? item.provinsi : ''
-          ].filter(Boolean).join(", ");
-
-          return `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="p-3">
-                <div class="flex items-center gap-1">
-                  ${item.foto 
-                    ? `<img src="${item.foto}" class="w-8 h-10 object-cover rounded shadow-sm border border-slate-300" title="Pasfoto">` 
-                    : `<div class="w-8 h-10 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs" title="Tidak ada foto"><i class="fa-solid fa-user"></i></div>`}
-                  
-                  ${item.ktpFoto 
-                    ? `<img src="${item.ktpFoto}" class="w-10 h-7 object-cover rounded shadow-sm border border-slate-300" title="Identitas">` 
-                    : `<div class="w-10 h-7 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-[10px]" title="Tidak ada KTP"><i class="fa-solid fa-id-card"></i></div>`}
-                </div>
-              </td>
-              <td class="p-3 font-semibold text-slate-800">${item.nama}</td>
-              <td class="p-3 text-slate-600 font-mono">${item.jenisIdentitas || "NIK"}: ${item.noIdentitas || item.nik || "-"}</td>
-              <td class="p-3 text-slate-600">${item.tempatLahir || '-'}, ${item.tanggalLahir || '-'}</td>
-              <td class="p-3 text-slate-600 max-w-xs truncate" title="${alamatLengkap}">${alamatLengkap || '-'}</td>
-              <td class="p-3 text-slate-600">${item.telepon || '-'}</td>
-              <td class="p-3 text-center">
-                <div class="flex items-center justify-center gap-1">
-                  <button onclick="viewDetail('${item.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Lihat Detail"><i class="fa-solid fa-eye"></i></button>
-                  <button onclick="editJemaah('${item.id}')" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition" title="Edit Jemaah"><i class="fa-solid fa-pen"></i></button>
-                  <button onclick="hapusJemaah('${item.id}')" class="p-1.5 text-red-600 hover:bg-red-50 rounded transition" title="Hapus Jemaah"><i class="fa-solid fa-trash"></i></button>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join("");
+        dataToExport = state.jemaahs;
       }
 
-      document.getElementById("groupDetailModal").classList.remove("hidden");
-    }
-
-    function closeGroupDetailModal() {
-      document.getElementById("groupDetailModal").classList.add("hidden");
-      activeDetailGroup = "";
-    }
-
-    // Helper untuk mengisi dropdown saat mengedit record lama atau nilai yang belum ada di daftar.
-    function setSelectValueWithFallback(id, value) {
-      const select = document.getElementById(id);
-      if (!select || value == null || value === "") {
-        if (select) select.value = "";
+      if (dataToExport.length === 0) {
+        alert('Tidak ada data jemaah untuk diekspor.');
         return;
       }
-      const wanted = String(value);
-      let option = Array.from(select.options).find(opt => opt.value.toUpperCase() === wanted.toUpperCase());
-      if (!option) {
-        option = document.createElement("option");
-        option.value = wanted;
-        option.textContent = wanted;
-        select.appendChild(option);
-      }
-      select.value = option.value;
+
+      // Build CSV Content
+      let csvContent = 'No,Nama Lengkap,NIK,Jenis Kelamin,Tempat Lahir,Tanggal Lahir,No HP/WA,No Paspor,Paket,Alamat,Catatan\n';
+
+      dataToExport.forEach((j, index) => {
+        const paketObj = state.pakets.find(p => p.id === j.paketId);
+        const namaPaket = paketObj ? paketObj.namaPaket : '';
+
+        const row = [
+          index + 1,
+          `"${j.namaLengkap.replace(/"/g, '""')}"`,
+          `"${j.nik}"`,
+          j.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
+          `"${j.tempatLahir}"`,
+          j.tanggalLahir,
+          `"${j.noHp}"`,
+          `"${j.noPaspor || ''}"`,
+          `"${namaPaket}"`,
+          `"${j.alamat.replace(/"/g, '""')}"`,
+          `"${(j.catatan || '').replace(/"/g, '""')}"`
+        ];
+
+        csvContent += row.join(',') + '\n';
+      });
+
+      // Trigger Download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showAlert(`Berhasil mengunduh ${dataToExport.length} data jemaah.`, 'success');
     }
 
-    async function editJemaah(id) {
-      const item = jemaahCache.find(j => j.id === id);
-      if (!item) return;
-      document.getElementById("editDocId").value = item.id;
-      document.getElementById("paketSelect").value = item.paket || "";
-      document.getElementById("titleJemaah").value = item.title || (item.jenisKelamin === "Laki-laki" ? "TUAN" : (item.jenisKelamin === "Perempuan" ? "NONA" : ""));
-      document.getElementById("nama").value = item.nama || "";
-      document.getElementById("namaAyah").value = item.namaAyah || "";
-      document.getElementById("jenisIdentitas").value = item.jenisIdentitas || (item.nik ? "NIK" : "");
-      document.getElementById("noIdentitas").value = item.noIdentitas || item.nik || "";
-      document.getElementById("namaPaspor").value = item.namaPaspor || "";
-      document.getElementById("noPaspor").value = item.noPaspor || "";
-      document.getElementById("tanggalDikeluarkanPaspor").value = item.tanggalDikeluarkanPaspor || "";
-      document.getElementById("kotaPaspor").value = item.kotaPaspor || "";
-      document.getElementById("tempatLahir").value = item.tempatLahir || "";
-      document.getElementById("tanggalLahir").value = item.tanggalLahir || "";
-      document.getElementById("alamat").value = item.alamat || "";
-      document.getElementById("noTelepon").value = item.noTelepon || "";
-      document.getElementById("noHp").value = item.noHp || ((item.telepon && item.telepon !== "-") ? item.telepon : "");
-      document.getElementById("kewarganegaraan").value = item.kewarganegaraan || "";
-      document.getElementById("statusPernikahan").value = item.statusPernikahan || "";
-      document.getElementById("pendidikan").value = item.pendidikan || "";
-      document.getElementById("pekerjaan").value = item.pekerjaan || "";
-      setSelectValueWithFallback("providerVisa", item.providerVisa || "");
-      document.getElementById("noVisa").value = item.noVisa || "";
-      document.getElementById("tanggalBerlakuVisa").value = item.tanggalBerlakuVisa || "";
-      document.getElementById("tanggalAkhirVisa").value = item.tanggalAkhirVisa || "";
-      setSelectValueWithFallback("asuransi", item.asuransi || "");
-      document.getElementById("noPolis").value = item.noPolis || "";
-      document.getElementById("tanggalInputPolis").value = item.tanggalInputPolis || "";
-      document.getElementById("tanggalAwalPolis").value = item.tanggalAwalPolis || "";
-      document.getElementById("tanggalAkhirPolis").value = item.tanggalAkhirPolis || "";
-      document.getElementById("noBPJS").value = item.noBPJS || "";
-
-      if (provincesData.length === 0) await fetchProvinces();
-      document.getElementById("kabupatenSelect").innerHTML = `<option value="">-- Pilih Kabupaten/Kota --</option>`;
-      document.getElementById("kabupatenSelect").disabled = true;
-      document.getElementById("kecamatanSelect").innerHTML = `<option value="">-- Pilih Kecamatan --</option>`;
-      document.getElementById("kecamatanSelect").disabled = true;
-      document.getElementById("kelurahanSelect").innerHTML = `<option value="">-- Pilih Kelurahan/Desa --</option>`;
-      document.getElementById("kelurahanSelect").disabled = true;
-
-      if (item.provinsi) {
-        setSelectValueWithFallback("provinsiSelect", item.provinsi);
-        const provOpt = document.getElementById("provinsiSelect").selectedOptions[0];
-        if (provOpt && provOpt.getAttribute("data-id")) {
-          await onProvinsiChange();
-          if (item.kabupaten) {
-            setSelectValueWithFallback("kabupatenSelect", item.kabupaten);
-            const kabOpt = document.getElementById("kabupatenSelect").selectedOptions[0];
-            if (kabOpt && kabOpt.getAttribute("data-id")) {
-              await onKabupatenChange();
-              if (item.kecamatan) {
-                setSelectValueWithFallback("kecamatanSelect", item.kecamatan);
-                const kecOpt = document.getElementById("kecamatanSelect").selectedOptions[0];
-                if (kecOpt && kecOpt.getAttribute("data-id")) {
-                  await onKecamatanChange();
-                  setSelectValueWithFallback("kelurahanSelect", item.kelurahan || "");
-                }
-              }
-            }
-          }
-        }
-      }
-
-      if (item.foto) {
-        currentFotoBase64 = item.foto;
-        document.getElementById("fotoPreview").src = item.foto;
-        document.getElementById("fotoPreviewContainer").classList.remove("hidden");
-      } else clearImage('foto');
-      if (item.ktpFoto) {
-        currentKtpBase64 = item.ktpFoto;
-        document.getElementById("ktpPreview").src = item.ktpFoto;
-        document.getElementById("ktpPreviewContainer").classList.remove("hidden");
-      } else clearImage('ktp');
-
-      document.getElementById("formTitle").innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-pen text-amber-600"></i>Edit Data Jemaah</span>`;
-      closeGroupDetailModal();
-      openFormModal();
+    /* ==========================================================================
+       10. HELPER UTILITIES
+       ========================================================================== */
+    function formatDateIndo(dateStr) {
+      if (!dateStr) return '-';
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return dateStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
 
-    function resetForm() {
-      document.getElementById("jemaahForm").reset();
-      document.getElementById("editDocId").value = "";
-      clearImage('foto');
-      clearImage('ktp');
-      document.getElementById("kabupatenSelect").disabled = true;
-      document.getElementById("kecamatanSelect").disabled = true;
-      document.getElementById("kelurahanSelect").disabled = true;
-      document.getElementById("kabupatenSelect").innerHTML = `<option value="">-- Pilih Kabupaten/Kota --</option>`;
-      document.getElementById("kecamatanSelect").innerHTML = `<option value="">-- Pilih Kecamatan --</option>`;
-      document.getElementById("kelurahanSelect").innerHTML = `<option value="">-- Pilih Kelurahan/Desa --</option>`;
-      document.getElementById("formTitle").innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-user-plus text-emerald-700"></i>Tambah Data Jemaah</span>`;
-    }
-
-    // Hapus Jemaah
-    async function hapusJemaah(id) {
-      if (confirm("Apakah Anda yakin ingin menghapus data jemaah ini dari database?")) {
-        try {
-          await db.collection("jemaah").doc(id).delete();
-          alert("Data berhasil dihapus.");
-        } catch (err) {
-          console.error(err);
-          alert("Gagal menghapus data.");
-        }
-      }
-    }
-
-    // Modal Detail Single Jemaah
-    function viewDetail(id) {
-      const item = jemaahCache.find(j => j.id === id);
-      if (!item) return;
-      const alamatLengkap = [item.alamat, item.kelurahan, item.kecamatan, item.kabupaten, item.provinsi].filter(Boolean).join(", ");
-      const rows = [
-        ["Group Umroh", item.paket], ["Title", item.title], ["Nama sesuai kartu vaksin", item.nama],
-        ["Nama Ayah", item.namaAyah], ["Jenis Identitas", item.jenisIdentitas || "NIK"],
-        ["No Identitas", item.noIdentitas || item.nik], ["Nama Paspor", item.namaPaspor], ["No Paspor", item.noPaspor],
-        ["Tanggal Dikeluarkan Paspor", item.tanggalDikeluarkanPaspor], ["Kota Paspor", item.kotaPaspor],
-        ["Tempat Lahir", item.tempatLahir], ["Tanggal Lahir", item.tanggalLahir], ["Alamat", alamatLengkap],
-        ["No. Telepon", item.noTelepon], ["No HP", item.noHp || item.telepon], ["Kewarganegaraan", item.kewarganegaraan],
-        ["Status Pernikahan", item.statusPernikahan], ["Pendidikan", item.pendidikan], ["Pekerjaan", item.pekerjaan],
-        ["Provider Visa", item.providerVisa], ["No Visa", item.noVisa], ["Tanggal Berlaku Visa", item.tanggalBerlakuVisa],
-        ["Tanggal Akhir Visa", item.tanggalAkhirVisa], ["Asuransi", item.asuransi], ["No Polis", item.noPolis],
-        ["Tanggal Input Polis", item.tanggalInputPolis], ["Tanggal Awal Polis", item.tanggalAwalPolis],
-        ["Tanggal Akhir Polis", item.tanggalAkhirPolis], ["No BPJS", item.noBPJS]
-      ];
-      const content = `
-        <div class="grid grid-cols-2 gap-3 mb-4">
-          <div class="text-center"><p class="text-[10px] text-slate-500 mb-1 font-semibold">Pasfoto Jemaah</p>
-            ${item.foto ? `<img src="${item.foto}" class="w-24 h-32 object-cover rounded-lg border-2 border-emerald-600 mx-auto shadow">` : `<div class="w-24 h-32 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 mx-auto border border-dashed"><i class="fa-solid fa-user text-2xl"></i></div>`}
-          </div>
-          <div class="text-center"><p class="text-[10px] text-slate-500 mb-1 font-semibold">Foto Identitas Jemaah</p>
-            ${item.ktpFoto ? `<img src="${item.ktpFoto}" class="w-36 h-24 object-cover rounded-lg border-2 border-blue-600 mx-auto shadow mt-4">` : `<div class="w-36 h-24 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 mx-auto border border-dashed mt-4"><i class="fa-solid fa-id-card text-2xl"></i></div>`}
-          </div>
-        </div>
-        <div class="space-y-2 border-t border-slate-100 pt-3">
-          ${rows.map(([label, value]) => `<div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 border-b border-slate-50 pb-1"><span class="text-slate-500">${label}:</span><span class="font-medium text-slate-800 break-words">${value || "-"}</span></div>`).join("")}
-        </div>`;
-      document.getElementById("modalContent").innerHTML = content;
-      document.getElementById("detailModal").classList.remove("hidden");
-    }
-
-    function closeModal() {
-      document.getElementById("detailModal").classList.add("hidden");
-    }
-
-    // Ekspor Excel Semua Data
-    function eksporExcelSemua() {
-      if (jemaahCache.length === 0) return alert("Belum ada data untuk diunduh!");
-      prosesDownloadExcel(jemaahCache, "Semua_Group");
-    }
-
-    // Ekspor Excel Khusus Group Tertentu
-    function eksporExcelGroup(namaGroup) {
-      const filtered = jemaahCache.filter(j => j.paket === namaGroup);
-      if (filtered.length === 0) return alert("Belum ada data pada group ini!");
-      prosesDownloadExcel(filtered, namaGroup.replace(/[^a-zA-Z0-9]/g, "_"));
-    }
-
-    function prosesDownloadExcel(dataList, suffixFileName) {
-      const cleanData = dataList.map((j, idx) => ({
-        "No": idx + 1,
-        "Paket / Group Umroh": j.paket || "",
-        "Title": j.title || "",
-        "Nama (Sesuai Kartu Vaksin)": j.nama || "",
-        "Nama Ayah": j.namaAyah || "",
-        "Jenis Identitas": j.jenisIdentitas || "NIK",
-        "No Identitas": j.noIdentitas || j.nik || "",
-        "Nama Paspor": j.namaPaspor || "",
-        "No Paspor": j.noPaspor || "",
-        "Tanggal Dikeluarkan Paspor": j.tanggalDikeluarkanPaspor || "",
-        "Kota Paspor": j.kotaPaspor || "",
-        "Tempat Lahir": j.tempatLahir || "",
-        "Tanggal Lahir": j.tanggalLahir || "",
-        "Alamat": j.alamat || "",
-        "Provinsi": j.provinsi || "",
-        "Kabupaten": j.kabupaten || "",
-        "Kecamatan": j.kecamatan || "",
-        "Kelurahan": j.kelurahan || "",
-        "No. Telepon": j.noTelepon || "",
-        "No HP": j.noHp || j.telepon || "",
-        "Kewarganegaraan": j.kewarganegaraan || "",
-        "Status Pernikahan": j.statusPernikahan || "",
-        "Pendidikan": j.pendidikan || "",
-        "Pekerjaan": j.pekerjaan || "",
-        "Provider Visa": j.providerVisa || "",
-        "No Visa": j.noVisa || "",
-        "Tanggal Berlaku Visa": j.tanggalBerlakuVisa || "",
-        "Tanggal Akhir Visa": j.tanggalAkhirVisa || "",
-        "Asuransi": j.asuransi || "",
-        "No Polis": j.noPolis || "",
-        "Tanggal Input Polis": j.tanggalInputPolis || "",
-        "Tanggal Awal Polis": j.tanggalAwalPolis || "",
-        "Tanggal Akhir Polis": j.tanggalAkhirPolis || "",
-        "No BPJS": j.noBPJS || "",
-        "Pasfoto Uploaded": j.foto ? "Ya" : "Tidak",
-        "Foto Identitas Uploaded": j.ktpFoto ? "Ya" : "Tidak"
-      }));
-      const worksheet = XLSX.utils.json_to_sheet(cleanData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Jemaah");
-      XLSX.writeFile(workbook, `Jemaah_ShabarTour_${suffixFileName}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
   </script>
 </body>
