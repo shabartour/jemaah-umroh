@@ -305,8 +305,8 @@
           <label class="block text-xs font-medium text-slate-600 mb-1">Filter Jenis Kelamin</label>
           <select id="tableFilterGender" onchange="renderJemaahTable()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
             <option value="">-- Semua Gender --</option>
-            <option value="L">Laki-laki</option>
-            <option value="P">Perempuan</option>
+            <option value="Laki-laki">Laki-laki</option>
+            <option value="Perempuan">Perempuan</option>
           </select>
         </div>
       </div>
@@ -393,7 +393,7 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label for="inputTempatLahir" class="block text-xs font-semibold text-slate-700 mb-1">Tempat Lahir <span class="text-red-500">*</span></label>
-              <input type="text" id="inputTempatLahir" required placeholder="Contoh: Bandung" 
+              <input type="text" id="inputTempatLahir" required placeholder="Contoh: Cirebon" 
                      class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
             </div>
 
@@ -406,8 +406,8 @@
             <div>
               <label for="inputJenisKelamin" class="block text-xs font-semibold text-slate-700 mb-1">Jenis Kelamin <span class="text-red-500">*</span></label>
               <select id="inputJenisKelamin" required class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="L">Laki-laki</option>
-                <option value="P">Perempuan</option>
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
               </select>
             </div>
           </div>
@@ -442,7 +442,7 @@
 
           <div>
             <label for="inputAlamat" class="block text-xs font-semibold text-slate-700 mb-1">Alamat Lengkap <span class="text-red-500">*</span></label>
-            <textarea id="inputAlamat" required rows="3" placeholder="Masukkan Jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten, dan Provinsi" 
+            <textarea id="inputAlamat" required rows="3" placeholder="Masukkan Jalan, RT/RW, Desa/Kelurahan, Kecamatan, Kabupaten/Kota, dan Provinsi" 
                       class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
           </div>
 
@@ -478,7 +478,7 @@
           <form id="formTambahPaket" onsubmit="handleSavePaket(event)" class="space-y-3">
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Paket / Program</label>
-              <input type="text" id="inputNamaPaket" required placeholder="Umroh Ramadhan 2026" 
+              <input type="text" id="inputNamaPaket" required placeholder="UMROH 25-09-2026" 
                      class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
             </div>
 
@@ -664,7 +664,6 @@
         window.state.pakets = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
-          // Fleksibilitas membaca variasi nama field dari Firestore
           window.state.pakets.push({
             id: docSnap.id,
             namaPaket: data.namaPaket || data.nama_paket || data.nama || 'Paket Tanpa Nama',
@@ -674,7 +673,7 @@
           });
         });
 
-        // Urutkan paket berdasarkan tanggal keberangkatan jika ada
+        // Urutkan paket
         window.state.pakets.sort((a, b) => {
           if (!a.tglKeberangkatan) return 1;
           if (!b.tglKeberangkatan) return -1;
@@ -688,8 +687,7 @@
       }, (error) => {
         console.error("Error snapshot paket:", error);
         if (error.code === 'permission-denied') {
-          updateFirebaseStatusUI(false, "Akses Firestore Ditolak (Periksa Rules)");
-          showAlert("Akses Firestore ditolak untuk koleksi paket!", "error");
+          updateFirebaseStatusUI(false, "Akses Firestore Ditolak");
         }
       });
 
@@ -698,14 +696,41 @@
         window.state.jemaahs = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
+          
+          // Penggabungan otomatis Alamat Berjenjang jika ada
+          let fullAlamat = data.alamat || '';
+          if (data.kecamatan || data.kabupaten || data.provinsi) {
+            const parts = [data.alamat, data.kecamatan, data.kabupaten, data.provinsi].filter(Boolean);
+            fullAlamat = parts.join(', ');
+          }
+
           window.state.jemaahs.push({
             id: docSnap.id,
-            namaLengkap: data.namaLengkap || data.nama || '-',
+            namaLengkap: data.nama || data.namaLengkap || '-',
             nik: data.nik || '-',
-            paketId: data.paketId || data.paket || '',
+            paketId: data.paket || data.paketId || '',
+            noHp: data.telepon || data.noHp || '-',
+            jenisKelamin: data.jenisKelamin || '-',
+            tempatLahir: data.tempatLahir || '',
+            tanggalLahir: data.tanggalLahir || '',
+            noPaspor: data.noPaspor || '',
+            alamat: fullAlamat || '-',
+            catatan: data.catatan || '-',
             ...data
           });
         });
+
+        // Ekstrak nama paket unik secara otomatis jika koleksi "paket" masih kosong di Firestore
+        if (window.state.pakets.length === 0 && window.state.jemaahs.length > 0) {
+          const uniquePaketNames = [...new Set(window.state.jemaahs.map(j => j.paketId).filter(Boolean))];
+          window.state.pakets = uniquePaketNames.map(pName => ({
+            id: pName,
+            namaPaket: pName,
+            tglKeberangkatan: '',
+            muthawwif: '-'
+          }));
+          populatePaketDropdowns();
+        }
 
         renderDashboard();
         renderJemaahTable();
@@ -725,30 +750,34 @@
       event.preventDefault();
 
       const editId = document.getElementById('editJemaahId').value;
-      const paketId = document.getElementById('inputPaketId').value;
-      const namaLengkap = document.getElementById('inputNamaLengkap').value.trim();
-      const nik = document.getElementById('inputNik').value.trim();
+      const paketVal = document.getElementById('inputPaketId').value;
+      const namaVal = document.getElementById('inputNamaLengkap').value.trim();
+      const nikVal = document.getElementById('inputNik').value.trim();
       const tempatLahir = document.getElementById('inputTempatLahir').value.trim();
       const tanggalLahir = document.getElementById('inputTanggalLahir').value;
       const jenisKelamin = document.getElementById('inputJenisKelamin').value;
-      const noHp = document.getElementById('inputNoHp').value.trim();
+      const telepon = document.getElementById('inputNoHp').value.trim();
       const noPaspor = document.getElementById('inputNoPaspor').value.trim();
       const alamat = document.getElementById('inputAlamat').value.trim();
       const catatan = document.getElementById('inputCatatan').value.trim();
 
-      if (!paketId || !namaLengkap || !nik) {
+      if (!paketVal || !namaVal || !nikVal) {
         showAlert('Harap isi Paket, Nama Lengkap, dan NIK jemaah!', 'error');
         return;
       }
 
+      // Payload yang kompatibel persis dengan field di Firestore Console Anda
       const jemaahPayload = {
-        paketId: paketId,
-        namaLengkap: namaLengkap,
-        nik: nik,
+        nama: namaVal,
+        namaLengkap: namaVal,
+        nik: nikVal,
+        paket: paketVal,
+        paketId: paketVal,
+        telepon: telepon,
+        noHp: telepon,
+        jenisKelamin: jenisKelamin,
         tempatLahir: tempatLahir,
         tanggalLahir: tanggalLahir,
-        jenisKelamin: jenisKelamin,
-        noHp: noHp,
         noPaspor: noPaspor,
         alamat: alamat,
         catatan: catatan || '-',
@@ -778,13 +807,13 @@
       if (!jemaah) return;
 
       document.getElementById('editJemaahId').value = jemaah.id;
-      document.getElementById('inputPaketId').value = jemaah.paketId || '';
-      document.getElementById('inputNamaLengkap').value = jemaah.namaLengkap || jemaah.nama || '';
+      document.getElementById('inputPaketId').value = jemaah.paket || jemaah.paketId || '';
+      document.getElementById('inputNamaLengkap').value = jemaah.nama || jemaah.namaLengkap || '';
       document.getElementById('inputNik').value = jemaah.nik || '';
       document.getElementById('inputTempatLahir').value = jemaah.tempatLahir || '';
       document.getElementById('inputTanggalLahir').value = jemaah.tanggalLahir || '';
-      document.getElementById('inputJenisKelamin').value = jemaah.jenisKelamin || 'L';
-      document.getElementById('inputNoHp').value = jemaah.noHp || '';
+      document.getElementById('inputJenisKelamin').value = jemaah.jenisKelamin === 'P' || jemaah.jenisKelamin === 'Perempuan' ? 'Perempuan' : 'Laki-laki';
+      document.getElementById('inputNoHp').value = jemaah.telepon || jemaah.noHp || '';
       document.getElementById('inputNoPaspor').value = jemaah.noPaspor || '';
       document.getElementById('inputAlamat').value = jemaah.alamat || '';
       document.getElementById('inputCatatan').value = jemaah.catatan || '';
@@ -828,6 +857,7 @@
       try {
         await addDoc(collection(db, "paket"), {
           namaPaket,
+          nama: namaPaket,
           tglKeberangkatan,
           muthawwif: muthawwif || '-',
           createdAt: serverTimestamp()
@@ -918,7 +948,6 @@
       exportSelect.innerHTML = '<option value="">-- Pilih Paket Umroh --</option>';
 
       if (window.state.pakets.length === 0) {
-        // Fallback opsi jika di Firestore koleksi paket belum terisi
         const defaultOption = '<option value="" disabled>Belum ada paket di Firestore</option>';
         formSelect.innerHTML += defaultOption;
         return;
@@ -927,13 +956,11 @@
       window.state.pakets.forEach(p => {
         const tglText = p.tglKeberangkatan ? ` (${formatDateIndo(p.tglKeberangkatan)})` : '';
         const optionText = `${p.namaPaket}${tglText}`;
+        const optionValue = p.namaPaket; // Menggunakan Nama Paket untuk mencocokkan dengan field 'paket' jemaah
         
-        // Gunakan ID dokumen atau namaPaket sebagai value
-        const optionValue = p.id;
-        
-        formSelect.innerHTML += `<option value="${optionValue}">${escapeHtml(optionText)}</option>`;
-        filterSelect.innerHTML += `<option value="${optionValue}">${escapeHtml(p.namaPaket)}</option>`;
-        exportSelect.innerHTML += `<option value="${optionValue}">${escapeHtml(p.namaPaket)}</option>`;
+        formSelect.innerHTML += `<option value="${escapeHtml(optionValue)}">${escapeHtml(optionText)}</option>`;
+        filterSelect.innerHTML += `<option value="${escapeHtml(optionValue)}">${escapeHtml(p.namaPaket)}</option>`;
+        exportSelect.innerHTML += `<option value="${escapeHtml(optionValue)}">${escapeHtml(p.namaPaket)}</option>`;
       });
 
       if (prevFormVal) formSelect.value = prevFormVal;
@@ -955,10 +982,8 @@
       }
 
       window.state.pakets.forEach(p => {
-        // Hitung jemaah yang cocok baik berdasarkan ID dokumen paket maupun Nama Paket
         const jemaahCount = window.state.jemaahs.filter(j => 
-          (j.paketId === p.id) || (j.paket === p.id) || 
-          (j.paketId === p.namaPaket) || (j.paket === p.namaPaket)
+          (j.paket === p.namaPaket) || (j.paketId === p.namaPaket) || (j.paket === p.id) || (j.paketId === p.id)
         ).length;
         
         tbody.innerHTML += `
@@ -988,14 +1013,18 @@
       tbody.innerHTML = '';
 
       const filtered = window.state.jemaahs.filter(j => {
-        const nama = j.namaLengkap || j.nama || '';
+        const nama = j.nama || j.namaLengkap || '';
         const matchSearch = nama.toLowerCase().includes(search) || 
                             (j.nik || '').toLowerCase().includes(search) || 
                             (j.noPaspor && j.noPaspor.toLowerCase().includes(search));
         
-        const jPaketVal = j.paketId || j.paket || '';
+        const jPaketVal = j.paket || j.paketId || '';
         const matchPaket = !filterPaket || jPaketVal === filterPaket;
-        const matchGender = !filterGender || j.jenisKelamin === filterGender;
+        
+        const g = (j.jenisKelamin || '').toLowerCase();
+        let matchGender = !filterGender;
+        if (filterGender === 'Laki-laki') matchGender = g.startsWith('l');
+        if (filterGender === 'Perempuan') matchGender = g.startsWith('p');
 
         return matchSearch && matchPaket && matchGender;
       });
@@ -1009,11 +1038,9 @@
       }
 
       filtered.forEach((j, index) => {
-        // Cari nama paket berdasarkan paketId / paket
-        const jPaketKey = j.paketId || j.paket;
-        const paketObj = window.state.pakets.find(p => p.id === jPaketKey || p.namaPaket === jPaketKey);
-        const namaPaket = paketObj ? paketObj.namaPaket : (jPaketKey || 'Tanpa Paket');
-        const nama = j.namaLengkap || j.nama || '-';
+        const namaPaket = j.paket || j.paketId || 'Tanpa Paket';
+        const nama = j.nama || j.namaLengkap || '-';
+        const isMale = (j.jenisKelamin || '').toLowerCase().startsWith('l');
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition">
@@ -1021,12 +1048,12 @@
             <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(nama)}</td>
             <td class="px-4 py-3 text-slate-500">${escapeHtml(j.nik || '-')}</td>
             <td class="px-4 py-3">
-              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${j.jenisKelamin === 'L' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}">
-                ${j.jenisKelamin || '-'}
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isMale ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}">
+                ${escapeHtml(j.jenisKelamin || '-')}
               </span>
             </td>
             <td class="px-4 py-3 text-slate-500">${escapeHtml(j.tempatLahir || '')}, ${formatDateIndo(j.tanggalLahir)}</td>
-            <td class="px-4 py-3 text-slate-600">${escapeHtml(j.noHp || '-')}</td>
+            <td class="px-4 py-3 text-slate-600">${escapeHtml(j.telepon || j.noHp || '-')}</td>
             <td class="px-4 py-3 text-slate-600">${j.noPaspor ? escapeHtml(j.noPaspor) : '<span class="text-slate-300">-</span>'}</td>
             <td class="px-4 py-3 font-medium text-emerald-700">${escapeHtml(namaPaket)}</td>
             <td class="px-4 py-3 text-slate-500 max-w-xs truncate" title="${escapeHtml(j.alamat)}">${escapeHtml(j.alamat || '-')}</td>
@@ -1053,8 +1080,8 @@
     function renderDashboard() {
       const totalJemaah = window.state.jemaahs.length;
       const totalPaket = window.state.pakets.length;
-      const priaCount = window.state.jemaahs.filter(j => j.jenisKelamin === 'L').length;
-      const wanitaCount = window.state.jemaahs.filter(j => j.jenisKelamin === 'P').length;
+      const priaCount = window.state.jemaahs.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('l')).length;
+      const wanitaCount = window.state.jemaahs.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('p')).length;
 
       document.getElementById('statTotalJemaah').textContent = totalJemaah;
       document.getElementById('statTotalPaket').textContent = totalPaket;
@@ -1076,12 +1103,11 @@
           recentTbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">Belum ada data jemaah.</td></tr>`;
         } else {
           recentList.forEach(j => {
-            const paketObj = window.state.pakets.find(p => p.id === (j.paketId || j.paket));
             recentTbody.innerHTML += `
               <tr class="hover:bg-slate-50">
-                <td class="px-4 py-2.5 font-semibold text-slate-800">${escapeHtml(j.namaLengkap || j.nama || '-')}</td>
-                <td class="px-4 py-2.5 text-emerald-700">${paketObj ? escapeHtml(paketObj.namaPaket) : '-'}</td>
-                <td class="px-4 py-2.5">${escapeHtml(j.noHp || '-')}</td>
+                <td class="px-4 py-2.5 font-semibold text-slate-800">${escapeHtml(j.nama || j.namaLengkap || '-')}</td>
+                <td class="px-4 py-2.5 text-emerald-700">${escapeHtml(j.paket || j.paketId || '-')}</td>
+                <td class="px-4 py-2.5">${escapeHtml(j.telepon || j.noHp || '-')}</td>
                 <td class="px-4 py-2.5">${j.noPaspor || '-'}</td>
                 <td class="px-4 py-2.5">${formatDateIndo(j.tanggalLahir)}</td>
               </tr>
@@ -1091,7 +1117,7 @@
       }
 
       const paketLabels = window.state.pakets.map(p => p.namaPaket);
-      const paketDataCounts = window.state.pakets.map(p => window.state.jemaahs.filter(j => (j.paketId || j.paket) === p.id).length);
+      const paketDataCounts = window.state.pakets.map(p => window.state.jemaahs.filter(j => (j.paket || j.paketId) === p.namaPaket).length);
 
       const ctxPaket = document.getElementById('chartPaket');
       if (ctxPaket) {
@@ -1144,14 +1170,13 @@
       let filename = 'Manifest_Jemaah_ShabarTour.csv';
 
       if (type === 'paket') {
-        const paketId = document.getElementById('exportSelectPaket').value;
-        if (!paketId) {
+        const paketVal = document.getElementById('exportSelectPaket').value;
+        if (!paketVal) {
           alert('Silakan pilih paket umroh yang akan diekspor.');
           return;
         }
-        const paketObj = window.state.pakets.find(p => p.id === paketId);
-        dataToExport = window.state.jemaahs.filter(j => (j.paketId || j.paket) === paketId);
-        filename = `Manifest_${paketObj ? paketObj.namaPaket.replace(/[^a-zA-Z0-9]/g, '_') : 'Paket'}.csv`;
+        dataToExport = window.state.jemaahs.filter(j => (j.paket || j.paketId) === paketVal);
+        filename = `Manifest_${paketVal.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
       } else {
         dataToExport = window.state.jemaahs;
       }
@@ -1164,19 +1189,16 @@
       let csvContent = 'No,Nama Lengkap,NIK,Jenis Kelamin,Tempat Lahir,Tanggal Lahir,No HP/WA,No Paspor,Paket,Alamat,Catatan\n';
 
       dataToExport.forEach((j, index) => {
-        const paketObj = window.state.pakets.find(p => p.id === (j.paketId || j.paket));
-        const namaPaket = paketObj ? paketObj.namaPaket : '';
-
         const row = [
           index + 1,
-          `"${(j.namaLengkap || j.nama || '').replace(/"/g, '""')}"`,
+          `"${(j.nama || j.namaLengkap || '').replace(/"/g, '""')}"`,
           `"${j.nik || ''}"`,
-          j.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
+          j.jenisKelamin || '',
           `"${j.tempatLahir || ''}"`,
           j.tanggalLahir || '',
-          `"${j.noHp || ''}"`,
+          `"${j.telepon || j.noHp || ''}"`,
           `"${j.noPaspor || ''}"`,
-          `"${namaPaket}"`,
+          `"${j.paket || j.paketId || ''}"`,
           `"${(j.alamat || '').replace(/"/g, '""')}"`,
           `"${(j.catatan || '').replace(/"/g, '""')}"`
         ];
