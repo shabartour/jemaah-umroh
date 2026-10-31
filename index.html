@@ -102,13 +102,13 @@
             <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
           </button>
           <button id="tab-dataJemaah" onclick="switchTab('dataJemaah')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
-            <i class="fa-solid fa-users"></i><span>Data Jemaah</span>
+            <i class="fa-solid fa-users"></i><span>Jemaah</span>
           </button>
           <button id="tab-kelolaPaket" onclick="switchTab('kelolaPaket')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
-            <i class="fa-solid fa-box-archive"></i><span>Kelola Paket/Grup</span>
+            <i class="fa-solid fa-box-archive"></i><span>Kelola Paket</span>
           </button>
           <button id="tab-laporan" onclick="switchTab('laporan')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
-            <i class="fa-solid fa-file-lines"></i><span>Laporan & Manifest</span>
+            <i class="fa-solid fa-file-lines"></i><span>Laporan</span>
           </button>
           <button id="tab-setting" onclick="switchTab('setting')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
             <i class="fa-solid fa-gear"></i><span>Setting</span>
@@ -126,10 +126,10 @@
         <i class="fa-solid fa-users mr-2"></i>Data Jemaah
       </button>
       <button onclick="switchTab('kelolaPaket'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
-        <i class="fa-solid fa-box-archive mr-2"></i>Kelola Paket/Grup
+        <i class="fa-solid fa-box-archive mr-2"></i>Kelola Paket
       </button>
       <button onclick="switchTab('laporan'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
-        <i class="fa-solid fa-file-lines mr-2"></i>Laporan & Manifest
+        <i class="fa-solid fa-file-lines mr-2"></i>Laporan
       </button>
       <button onclick="switchTab('setting'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
         <i class="fa-solid fa-gear mr-2"></i>Setting
@@ -156,7 +156,7 @@
         </div>
         <div class="relative z-10 max-w-2xl">
           <h2 class="text-2xl font-bold text-amber-400 mb-1" id="welcomeTravelName">Selamat Datang di Portal Admin Shabar Tour</h2>
-          <p class="text-sm text-slate-200 mb-4">Kelola pendaftaran jemaah, manifest rombongan, serta rekapitulasi data umroh secara terpusat dan aman.</p>
+          <p class="text-sm text-slate-200 mb-4">Kelola pendaftaran jemaah, manifest rombongan, serta rekapitulasi data umroh secara terpusat dan aman di Firestore.</p>
           <div class="flex flex-wrap gap-3">
             <button onclick="openAddJemaahModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs transition flex items-center shadow">
               <i class="fa-solid fa-user-plus mr-2"></i>Tambah Jemaah Baru
@@ -167,7 +167,115 @@
           </div>
         </div>
       </div>
-<!-- ... --><!-- ==================== VIEW 2: DATA JEMAAH ==================== -->
+
+      <!-- Stats Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">Total Jemaah Terdaftar</p>
+            <h3 id="statTotalJemaah" class="text-2xl font-bold text-slate-800">0</h3>
+            <p class="text-[10px] text-emerald-600 mt-0.5"><i class="fa-solid fa-cloud-arrow-up mr-1"></i>Terdata di Firestore</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-box-archive"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">Paket / Rombongan Aktif</p>
+            <h3 id="statTotalPaket" class="text-2xl font-bold text-slate-800">0</h3>
+            <p class="text-[10px] text-amber-600 mt-0.5"><i class="fa-solid fa-plane-departure mr-1"></i>Keberangkatan Siap</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-person"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">Jemaah Laki-Laki</p>
+            <h3 id="statPria" class="text-2xl font-bold text-slate-800">0</h3>
+            <p id="statPriaPersen" class="text-[10px] text-slate-400 mt-0.5">0% dari total</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="w-12 h-12 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-person-dress"></i>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500">Jemaah Perempuan</p>
+            <h3 id="statWanita" class="text-2xl font-bold text-slate-800">0</h3>
+            <p id="statWanitaPersen" class="text-[10px] text-slate-400 mt-0.5">0% dari total</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center">
+              <i class="fa-solid fa-chart-bar text-emerald-600 mr-2"></i>Distribusi Jemaah Per Paket Umroh
+            </h3>
+            <span class="text-xs text-slate-400">Real-time</span>
+          </div>
+          <div class="h-64 relative">
+            <canvas id="chartPaket"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm mb-4 flex items-center">
+              <i class="fa-solid fa-chart-pie text-amber-500 mr-2"></i>Komposisi Gender
+            </h3>
+            <div class="h-48 relative">
+              <canvas id="chartGender"></canvas>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 text-center">
+            Perbandingan Rasio Jemaah Pria & Wanita
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Added Table Preview -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <h3 class="font-bold text-slate-800 text-sm flex items-center">
+            <i class="fa-solid fa-clock-rotate-left text-slate-500 mr-2"></i>Jemaah Terbaru Mendaftar
+          </h3>
+          <button onclick="switchTab('dataJemaah')" class="text-xs font-semibold text-emerald-700 hover:text-emerald-800">
+            Lihat Semua <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs text-slate-600">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold text-[11px]">
+              <tr>
+                <th class="px-4 py-3">Nama Lengkap</th>
+                <th class="px-4 py-3">Paket</th>
+                <th class="px-4 py-3">No. HP/WA</th>
+                <th class="px-4 py-3">No. Paspor</th>
+                <th class="px-4 py-3">Tanggal Lahir</th>
+              </tr>
+            </thead>
+            <tbody id="recentJemaahTable" class="divide-y divide-slate-200">
+              <tr>
+                <td colspan="5" class="text-center py-4 text-slate-400">Memuat data dari Firestore...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 2: DATA JEMAAH ==================== -->
     <section id="view-dataJemaah" class="hidden space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div>
@@ -184,30 +292,67 @@
           </button>
         </div>
       </div>
-<!-- ... --><!-- ==================== VIEW 3: LAPORAN & MANIFEST (MANTAN EKSPOR DATA) ==================== -->
-    <section id="view-laporan" class="hidden space-y-6">
-      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+      <!-- Filters & Search Bar -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
-          <h2 class="text-lg font-bold text-slate-800">Laporan Riwayat Paket Umroh</h2>
-          <p class="text-xs text-slate-500">Daftar seluruh paket keberangkatan (terlewat maupun akan datang) lengkap dengan unduhan PDF & XLSX.</p>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Cari Nama / NIK / Paspor</label>
+          <div class="relative">
+            <input type="text" id="tableSearchInput" oninput="renderJemaahTable()" placeholder="Ketik kata kunci..." 
+                   class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <i class="fa-solid fa-search absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+          </div>
         </div>
-        <div class="flex items-center space-x-2">
-          <button onclick="renderLaporanList()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center">
-            <i class="fa-solid fa-rotate mr-1.5"></i>Muat Ulang
-          </button>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Filter Paket Umroh</label>
+          <select id="tableFilterPaket" onchange="renderJemaahTable()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="">-- Semua Paket --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Filter Jenis Kelamin</label>
+          <select id="tableFilterGender" onchange="renderJemaahTable()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="">-- Semua Gender --</option>
+            <option value="Laki-laki">Laki-laki</option>
+            <option value="Perempuan">Perempuan</option>
+          </select>
         </div>
       </div>
 
-      <!-- Container Daftar Paket Laporan -->
-      <div id="laporanPaketContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Diisi secara dinamis oleh JavaScript -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm text-center py-8 text-slate-400">
-          Memuat data laporan paket...
+      <!-- Main Data Table Card -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs text-slate-600">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[11px] border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">No</th>
+                <th class="px-4 py-3">Nama Lengkap</th>
+                <th class="px-4 py-3">NIK</th>
+                <th class="px-4 py-3">L/P</th>
+                <th class="px-4 py-3">TTL</th>
+                <th class="px-4 py-3">No. HP/WA</th>
+                <th class="px-4 py-3">No. Paspor</th>
+                <th class="px-4 py-3">Paket</th>
+                <th class="px-4 py-3">Alamat</th>
+                <th class="px-4 py-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="mainJemaahTableBody" class="divide-y divide-slate-200">
+              <tr>
+                <td colspan="10" class="text-center py-8 text-slate-400">Memuat data dari Firestore...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+          <span id="jemaahCountInfo">Menampilkan 0 dari 0 data</span>
         </div>
       </div>
     </section>
 
-    <!-- ==================== VIEW 4: KELOLA PAKET/GRUP ==================== -->
+    <!-- ==================== VIEW 3: KELOLA PAKET ==================== -->
     <section id="view-kelolaPaket" class="hidden space-y-6 max-w-5xl mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         
@@ -275,7 +420,29 @@
       </div>
     </section>
 
-    <!-- ==================== VIEW 5: SETTING (NEW MENU) ==================== -->
+    <!-- ==================== VIEW 4: LAPORAN & MANIFEST ==================== -->
+    <section id="view-laporan" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">Laporan Riwayat Paket Umroh</h2>
+          <p class="text-xs text-slate-500">Daftar seluruh paket keberangkatan (baik yang sudah terlewat maupun akan datang) lengkap dengan unduhan PDF & XLSX.</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="renderLaporanList()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center">
+            <i class="fa-solid fa-rotate mr-1.5"></i>Muat Ulang
+          </button>
+        </div>
+      </div>
+
+      <!-- Container Daftar Paket Laporan -->
+      <div id="laporanPaketContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm text-center py-8 text-slate-400">
+          Memuat data laporan paket...
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 5: SETTING ==================== -->
     <section id="view-setting" class="hidden space-y-6 max-w-3xl mx-auto">
       <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
         <div>
@@ -657,7 +824,7 @@
       document.getElementById('inputNik').value = jemaah.nik || '';
       document.getElementById('inputTempatLahir').value = jemaah.tempatLahir || '';
       document.getElementById('inputTanggalLahir').value = jemaah.tanggalLahir || '';
-      document.getElementById('inputJenisKelamin').value = jemaah.jenisKelamin.toLowerCase().includes('p') ? 'Perempuan' : 'Laki-laki';
+      document.getElementById('inputJenisKelamin').value = (j.jenisKelamin || '').toLowerCase().includes('p') ? 'Perempuan' : 'Laki-laki';
       document.getElementById('inputNoHp').value = jemaah.telepon || jemaah.noHp || '';
       document.getElementById('inputNoPaspor').value = jemaah.noPaspor || '';
       document.getElementById('inputAlamat').value = jemaah.alamat || '';
@@ -714,7 +881,8 @@
     window.handleSaveSetting = function(event) {
       event.preventDefault();
       const travelName = document.getElementById('settingTravelName').value;
-      document.getElementById('welcomeTravelName').textContent = `Selamat Datang di Portal Admin ${travelName}`;
+      const welcomeEl = document.getElementById('welcomeTravelName');
+      if (welcomeEl) welcomeEl.textContent = `Selamat Datang di Portal Admin ${travelName}`;
       showAlert('Pengaturan aplikasi berhasil disimpan!', 'success');
     };
 
@@ -727,7 +895,6 @@
 
       container.innerHTML = '';
 
-      // Gabungkan paket dari koleksi 'paket' dan paket unik dari 'jemaah'
       const allPaketNamesSet = new Set();
       window.state.pakets.forEach(p => allPaketNamesSet.add(p.namaPaket));
       window.state.jemaahs.forEach(j => {
@@ -785,10 +952,10 @@
             </div>
 
             <div class="flex items-center space-x-2 pt-2 border-t border-slate-100">
-              <button onclick="exportPackageXLSX('${escapeHtml(pName)}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center shadow-sm">
+              <button onclick="exportPackageXLSX('${escapeHtml(pName).replace(/'/g, "\\'")}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center shadow-sm">
                 <i class="fa-solid fa-file-excel mr-1.5 text-emerald-200"></i>Unduh XLSX
               </button>
-              <button onclick="exportPackagePDF('${escapeHtml(pName)}')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center shadow-sm">
+              <button onclick="exportPackagePDF('${escapeHtml(pName).replace(/'/g, "\\'")}')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center shadow-sm">
                 <i class="fa-solid fa-file-pdf mr-1.5 text-red-400"></i>Unduh PDF
               </button>
             </div>
@@ -833,10 +1000,10 @@
       }
 
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+      const doc = new jsPDF('l', 'mm', 'a4');
 
       doc.setFontSize(16);
-      doc.setTextColor(22, 101, 52); // Emerald
+      doc.setTextColor(22, 101, 52);
       doc.text("PT. SHABAR TOUR - MANIFES JEMAAH UMROH", 14, 15);
 
       doc.setFontSize(10);
@@ -1024,6 +1191,14 @@
           </tr>
         `;
       });
+    };
+
+    window.handleGlobalSearch = function(query) {
+      if (!query) return;
+      const searchInput = document.getElementById('tableSearchInput');
+      if (searchInput) searchInput.value = query;
+      switchTab('dataJemaah');
+      renderJemaahTable();
     };
 
     function renderDashboard() {
