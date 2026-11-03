@@ -142,6 +142,12 @@
       <button onclick="switchTab('setting'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
         <i class="fa-solid fa-gear mr-2"></i>Setting
       </button>
+      <div class="border-t border-slate-700 pt-3 mt-2">
+        <button id="authBtnMobile" onclick="window.handleAuthAction(); window.toggleMobileMenu();" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-2 rounded-lg text-sm font-semibold transition flex items-center justify-center space-x-2 shadow">
+          <i class="fa-solid fa-right-to-bracket" id="authBtnMobileIcon"></i>
+          <span id="authBtnMobileText">Login Staf</span>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -679,9 +685,10 @@
           <input type="password" id="loginPassword" required placeholder="••••••••" 
                  class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
         </div>
-        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-xs transition shadow-md">
+        <button id="loginSubmitBtn" type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2 rounded-lg text-xs transition shadow-md">
           Masuk Akun
         </button>
+        <p class="text-[11px] text-slate-500 text-center">Gunakan akun staf yang terdaftar di Firebase Authentication.</p>
       </form>
     </div>
   </div>
@@ -723,107 +730,195 @@
       appId: "1:79698174177:web:abcdef123456789"
     };
 
-    let app, db, auth;
+    let app = null, db = null, auth = null;
+    let firebaseInitError = null;
+    let unsubscribePaket = null;
+    let unsubscribeJemaah = null;
+
     try {
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
       auth = getAuth(app);
-    } catch (e) {
-      console.error("Gagal menginisialisasi Firebase SDK:", e);
+    } catch (error) {
+      firebaseInitError = error;
+      console.error("Gagal menginisialisasi Firebase SDK:", error);
     }
 
-    // State aplikasi dengan Auth status
+    // Data Firestore hanya diambil saat sesi staf aktif.
     window.state = {
       pakets: [],
       jemaahs: [],
       isLoggedIn: false,
+      isAuthReady: false,
       currentUser: null,
       chartPaketInstance: null,
       chartGenderInstance: null
     };
 
     /* ==========================================================================
-       AUTHENTICATION LOGIC (FIREBASE AUTH ASLI)
+       AUTHENTICATION LOGIC
        ========================================================================== */
-    // Pantau status login staf secara real-time dari Firebase Auth
-    if (auth) {
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          window.state.isLoggedIn = true;
-          window.state.currentUser = user;
-          updateAuthUI(user.email);
-        } else {
-          window.state.isLoggedIn = false;
-          window.state.currentUser = null;
-          updateAuthUI(null);
+    function getAuthErrorMessage(error) {
+      const messages = {
+        'auth/invalid-api-key': 'API Key Firebase tidak valid. Periksa firebaseConfig.apiKey di Firebase Console.',
+        'auth/invalid-app-id': 'App ID Firebase tidak valid. Salin App ID Web yang benar dari Firebase Console.',
+        'auth/operation-not-allowed': 'Metode login Email/Password belum diaktifkan. Aktifkan di Firebase Console > Authentication > Sign-in method.',
+        'auth/unauthorized-domain': 'Domain website belum diizinkan. Tambahkan domain ini di Firebase Console > Authentication > Settings > Authorized domains.',
+        'auth/invalid-email': 'Format email tidak valid.',
+        'auth/invalid-credential': 'Email atau password salah, atau akun staf tidak ditemukan.',
+        'auth/wrong-password': 'Password yang dimasukkan salah.',
+        'auth/user-not-found': 'Akun staf tidak ditemukan di Firebase Authentication.',
+        'auth/user-disabled': 'Akun staf ini dinonaktifkan. Hubungi administrator Firebase.',
+        'auth/too-many-requests': 'Terlalu banyak percobaan login. Coba lagi beberapa saat kemudian.',
+        'auth/network-request-failed': 'Koneksi ke Firebase gagal. Periksa internet, pemblokir jaringan, atau ekstensi browser.',
+        'auth/weak-password': 'Password tidak memenuhi kebijakan keamanan Firebase.',
+        'permission-denied': 'Login berhasil, tetapi Firestore Security Rules menolak akses. Periksa aturan koleksi jemaah dan paket.',
+        'unavailable': 'Firestore sedang tidak dapat dihubungi. Periksa koneksi internet lalu coba lagi.'
+      };
+      return messages[error?.code] || `Proses Firebase gagal${error?.code ? ` (${error.code})` : ''}: ${error?.message || 'Kesalahan tidak diketahui.'}`;
+    }
+
+    function updateAuthUI(user) {
+      const loggedIn = Boolean(user);
+      const username = user?.email ? user.email.split('@')[0] : '';
+      const buttonSets = [
+        {
+          button: document.getElementById('authBtn'),
+          text: document.getElementById('authBtnText'),
+          icon: document.getElementById('authBtnIcon'),
+          loggedClass: 'bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow',
+          guestClass: 'bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow'
+        },
+        {
+          button: document.getElementById('authBtnMobile'),
+          text: document.getElementById('authBtnMobileText'),
+          icon: document.getElementById('authBtnMobileIcon'),
+          loggedClass: 'w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition flex items-center justify-center space-x-2 shadow',
+          guestClass: 'w-full bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-2 rounded-lg text-sm font-semibold transition flex items-center justify-center space-x-2 shadow'
         }
+      ];
+
+      buttonSets.forEach(({ button, text, icon, loggedClass, guestClass }) => {
+        if (!button || !text || !icon) return;
+        text.textContent = loggedIn ? `Logout (${username || 'Staf'})` : 'Login Staf';
+        icon.className = loggedIn ? 'fa-solid fa-right-from-bracket' : 'fa-solid fa-right-to-bracket';
+        button.className = loggedIn ? loggedClass : guestClass;
+        button.setAttribute('aria-label', loggedIn ? 'Logout staf' : 'Login staf');
       });
     }
 
+    function requireStaffLogin() {
+      if (window.state.isLoggedIn && auth) return true;
+      showAlert('Silakan login menggunakan akun staf sebelum mengakses fitur ini.', 'error');
+      if (auth) document.getElementById('loginModal')?.classList.remove('hidden');
+      return false;
+    }
+
+    function stopRealtimeListeners() {
+      if (unsubscribePaket) unsubscribePaket();
+      if (unsubscribeJemaah) unsubscribeJemaah();
+      unsubscribePaket = null;
+      unsubscribeJemaah = null;
+
+      window.state.pakets = [];
+      window.state.jemaahs = [];
+      populatePaketDropdowns();
+      renderPaketTable();
+      renderDashboard();
+      renderJemaahTable();
+      renderJemaahGroupCards();
+      renderLaporanList();
+    }
+
+    if (auth) {
+      onAuthStateChanged(auth, (user) => {
+        window.state.isAuthReady = true;
+        window.state.isLoggedIn = Boolean(user);
+        window.state.currentUser = user || null;
+        updateAuthUI(user || null);
+
+        if (user) {
+          initRealtimeListeners();
+        } else {
+          stopRealtimeListeners();
+        }
+      }, (error) => {
+        console.error('Gagal memantau status Firebase Auth:', error);
+        window.state.isAuthReady = true;
+        window.state.isLoggedIn = false;
+        window.state.currentUser = null;
+        stopRealtimeListeners();
+        updateAuthUI(null);
+        showAlert(getAuthErrorMessage(error), 'error');
+      });
+    } else {
+      window.state.isAuthReady = true;
+      updateAuthUI(null);
+    }
+
     window.handleAuthAction = async function() {
+      if (!auth) {
+        const detail = firebaseInitError?.message || 'Periksa konfigurasi Firebase di dalam index.html.';
+        showAlert(`Firebase Authentication belum siap. ${detail}`, 'error');
+        console.error('Firebase Auth belum siap:', firebaseInitError);
+        return;
+      }
+
       if (window.state.isLoggedIn) {
-        if (confirm("Apakah Anda yakin ingin keluar dari akun staf?")) {
-          try {
-            await signOut(auth);
-            showAlert("Anda telah keluar dari sistem.", "success");
-          } catch (error) {
-            showAlert(`Gagal logout: ${error.message}`, "error");
-          }
+        if (!confirm('Apakah Anda yakin ingin keluar dari akun staf?')) return;
+        try {
+          await signOut(auth);
+          showAlert('Anda telah keluar dari sistem.', 'success');
+        } catch (error) {
+          console.error('Gagal logout Firebase Auth:', error);
+          showAlert(`Gagal logout: ${getAuthErrorMessage(error)}`, 'error');
         }
       } else {
-        document.getElementById('loginModal').classList.remove('hidden');
+        document.getElementById('loginModal')?.classList.remove('hidden');
+        document.getElementById('loginEmail')?.focus();
       }
     };
 
     window.closeLoginModal = function() {
-      document.getElementById('loginModal').classList.add('hidden');
+      document.getElementById('loginModal')?.classList.add('hidden');
     };
 
     window.handleLoginSubmit = async function(event) {
       event.preventDefault();
-      const email = document.getElementById('loginEmail').value.trim();
-      const pass = document.getElementById('loginPassword').value;
+      const email = document.getElementById('loginEmail')?.value.trim() || '';
+      const pass = document.getElementById('loginPassword')?.value || '';
+      const submitBtn = document.getElementById('loginSubmitBtn');
 
-      if (!email || !pass) {
-        showAlert("Silakan isi Email dan Password!", "error");
+      if (!auth) {
+        const detail = firebaseInitError?.message || 'Periksa konfigurasi Firebase di dalam index.html.';
+        showAlert(`Firebase Authentication belum siap. ${detail}`, 'error');
         return;
+      }
+      if (!email || !pass) {
+        showAlert('Silakan isi Email dan Password!', 'error');
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Memeriksa akun...';
       }
 
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, pass);
         window.closeLoginModal();
-        document.getElementById('formLoginStaf').reset();
-        showAlert(`Selamat datang kembali, ${userCredential.user.email}!`, "success");
+        document.getElementById('formLoginStaf')?.reset();
+        showAlert(`Selamat datang, ${userCredential.user.email || 'Staf'}!`, 'success');
       } catch (error) {
-        console.error("Gagal Login Firebase Auth:", error);
-        let errorMsg = "Gagal login. Periksa kembali email & password Anda.";
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-          errorMsg = "Email atau Password salah!";
-        } else if (error.code === 'auth/user-not-found') {
-          errorMsg = "Akun staf tidak ditemukan di Firebase!";
+        console.error('Gagal login Firebase Auth:', error);
+        showAlert(getAuthErrorMessage(error), 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Masuk Akun';
         }
-        showAlert(errorMsg, "error");
       }
     };
-
-    function updateAuthUI(userEmail) {
-      const btnText = document.getElementById('authBtnText');
-      const btnIcon = document.getElementById('authBtnIcon');
-      const authBtn = document.getElementById('authBtn');
-
-      if (!btnText || !authBtn) return;
-
-      if (window.state.isLoggedIn && userEmail) {
-        const displayUsername = userEmail.split('@')[0];
-        btnText.textContent = `Logout (${displayUsername})`;
-        btnIcon.className = "fa-solid fa-right-from-bracket";
-        authBtn.className = "bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow";
-      } else {
-        btnText.textContent = "Login Staf";
-        btnIcon.className = "fa-solid fa-right-to-bracket";
-        authBtn.className = "bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow";
-      }
-    }
 
     /* ==========================================================================
        TAB SWITCHING LOGIC
@@ -855,9 +950,10 @@
        REAL-TIME LISTENERS (FIRESTORE SYNC)
        ========================================================================== */
     function initRealtimeListeners() {
-      if (!db) return;
+      if (!db || !window.state.isLoggedIn) return;
+      if (unsubscribePaket || unsubscribeJemaah) return;
 
-      onSnapshot(collection(db, "paket"), (snapshot) => {
+      unsubscribePaket = onSnapshot(collection(db, "paket"), (snapshot) => {
         window.state.pakets = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
@@ -883,9 +979,12 @@
         renderDashboard();
         renderJemaahTable();
         renderJemaahGroupCards();
+      }, (error) => {
+        console.error('Gagal memuat koleksi paket:', error);
+        showAlert(`Gagal memuat paket: ${getAuthErrorMessage(error)}`, 'error');
       });
 
-      onSnapshot(collection(db, "jemaah"), (snapshot) => {
+      unsubscribeJemaah = onSnapshot(collection(db, "jemaah"), (snapshot) => {
         window.state.jemaahs = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
@@ -915,6 +1014,9 @@
         renderJemaahTable();
         renderPaketTable();
         renderJemaahGroupCards();
+      }, (error) => {
+        console.error('Gagal memuat koleksi jemaah:', error);
+        showAlert(`Gagal memuat data jemaah: ${getAuthErrorMessage(error)}`, 'error');
       });
     }
 
@@ -922,6 +1024,7 @@
        MODAL & FORM HANDLING
        ========================================================================== */
     window.openAddJemaahModal = function() {
+      if (!requireStaffLogin()) return;
       window.resetJemaahForm();
       document.getElementById('modalFormTitleText').textContent = "Tambah Data Jemaah";
       document.getElementById('modalBtnSubmitText').textContent = "Simpan Data Jemaah";
@@ -939,6 +1042,7 @@
 
     window.handleSaveJemaah = async function(event) {
       event.preventDefault();
+      if (!requireStaffLogin()) return;
 
       const editId = document.getElementById('editJemaahId').value;
       const paketVal = document.getElementById('inputPaketId').value;
@@ -992,6 +1096,7 @@
     };
 
     window.editJemaah = function(id) {
+      if (!requireStaffLogin()) return;
       const jemaah = window.state.jemaahs.find(j => j.id === id);
       if (!jemaah) return;
 
@@ -1013,6 +1118,7 @@
     };
 
     window.deleteJemaah = async function(id) {
+      if (!requireStaffLogin()) return;
       if (confirm('Apakah Anda yakin ingin menghapus data jemaah ini?')) {
         try {
           await deleteDoc(doc(db, "jemaah", id));
@@ -1025,6 +1131,7 @@
 
     window.handleSavePaket = async function(event) {
       event.preventDefault();
+      if (!requireStaffLogin()) return;
       const namaPaket = document.getElementById('inputNamaPaket').value.trim();
       const tglKeberangkatan = document.getElementById('inputTglKeberangkatan').value;
       const muthawwif = document.getElementById('inputMuthawwif').value.trim();
@@ -1049,6 +1156,7 @@
     };
 
     window.deletePaket = async function(id) {
+      if (!requireStaffLogin()) return;
       if (confirm('Apakah Anda yakin ingin menghapus paket ini?')) {
         try {
           await deleteDoc(doc(db, "paket", id));
@@ -1430,6 +1538,7 @@
     };
 
     window.exportPackageXLSX = function(packageName) {
+      if (!requireStaffLogin()) return;
       const dataToExport = window.state.jemaahs.filter(j => (j.paket || j.paketId) === packageName);
       if (dataToExport.length === 0) {
         showAlert('Tidak ada data jemaah pada paket ini.', 'error');
@@ -1458,6 +1567,7 @@
     };
 
     window.exportPackagePDF = function(packageName) {
+      if (!requireStaffLogin()) return;
       const dataToExport = window.state.jemaahs.filter(j => (j.paket || j.paketId) === packageName);
       if (dataToExport.length === 0) {
         showAlert('Tidak ada data jemaah pada paket ini.', 'error');
@@ -1574,7 +1684,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      initRealtimeListeners();
+      if (window.state.isLoggedIn) initRealtimeListeners();
     });
   </script>
 </body>
