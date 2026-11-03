@@ -662,36 +662,116 @@
     </div>
   </div>
 
-  <!-- MODAL LOGIN STAF -->
-  <div id="loginModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b pb-3">
-        <h3 class="font-bold text-slate-800 text-base flex items-center">
-          <i class="fa-solid fa-user-lock text-amber-500 mr-2"></i>Login Staf Admin
-        </h3>
-        <button onclick="window.closeLoginModal()" class="text-slate-400 hover:text-slate-600">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
+  <!-- LOGIN COVER / HALAMAN PEMBUKA -->
+  <section id="loginCover" class="fixed inset-0 z-[100] overflow-y-auto bg-[#071f1b] text-white">
+    <div class="relative min-h-screen flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
+      <!-- Ornamen latar geometris -->
+      <div class="absolute inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute -top-40 -left-32 w-[34rem] h-[34rem] rounded-full border border-amber-400/10"></div>
+        <div class="absolute -top-24 -left-16 w-[25rem] h-[25rem] rounded-full border border-amber-400/10"></div>
+        <div class="absolute -bottom-56 -right-40 w-[42rem] h-[42rem] rounded-full border border-emerald-300/10"></div>
+        <div class="absolute inset-0 opacity-[0.07]" style="background-image: url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 stroke=%22%23D4AF37%22 stroke-width=%220.7%22%3E%3Cpath d=%22M30 2 58 30 30 58 2 30Z%22/%3E%3Cpath d=%22M30 14 46 30 30 46 14 30Z%22/%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%223%22/%3E%3C/g%3E%3C/svg%3E');"></div>
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
       </div>
 
-      <form id="formLoginStaf" onsubmit="window.handleLoginSubmit(event)" class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Email Staf</label>
-          <input type="email" id="loginEmail" required placeholder="admin@shabartour.id" 
-                 class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+      <div class="relative w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl shadow-black/40">
+        <!-- Panel identitas Shabar Tour -->
+        <div class="relative hidden lg:flex flex-col justify-between min-h-[620px] p-12 bg-gradient-to-br from-emerald-900 via-[#0b3c32] to-[#092820]">
+          <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute right-[-5rem] top-16 w-80 h-80 rounded-full border border-amber-300/15"></div>
+            <div class="absolute right-[-2rem] top-28 w-64 h-64 rounded-full border border-amber-300/10"></div>
+            <div class="absolute bottom-[-7rem] left-[-5rem] w-80 h-80 rounded-full bg-emerald-300/5 blur-2xl"></div>
+          </div>
+
+          <div class="relative flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-white/10 border border-amber-300/30 p-2 flex items-center justify-center shadow-lg">
+              <img src="assets/logo.png" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=&quot;fa-solid fa-kaaba text-amber-300 text-3xl&quot;></i>';" alt="Logo Shabar Tour" class="w-full h-full object-contain">
+            </div>
+            <div>
+              <p class="text-amber-300 font-bold tracking-[0.18em] text-sm">PT. SHABAR TOUR</p>
+              <p class="text-emerald-100/60 text-xs tracking-wide mt-1">UMROH &amp; HAJI KHUSUS</p>
+            </div>
+          </div>
+
+          <div class="relative py-10">
+            <div class="w-20 h-1 bg-amber-400 rounded-full mb-7"></div>
+            <p class="text-emerald-100/70 text-xs font-semibold tracking-[0.28em] uppercase mb-4">Sistem Manajemen Terpadu</p>
+            <h1 class="text-4xl xl:text-5xl leading-[1.15] font-semibold tracking-tight text-white max-w-xl">
+              Melayani Perjalanan Ibadah dengan
+              <span class="text-amber-300">Amanah.</span>
+            </h1>
+            <p class="text-emerald-50/70 text-sm leading-7 mt-6 max-w-lg">
+              Portal internal untuk mengelola data jemaah, paket keberangkatan, manifest, dan laporan perjalanan ibadah umroh PT. Shabar Tour.
+            </p>
+
+            <div class="flex items-center gap-3 mt-9 text-xs text-emerald-100/75">
+              <span class="w-9 h-9 rounded-full border border-amber-300/30 flex items-center justify-center text-amber-300"><i class="fa-solid fa-shield-halved"></i></span>
+              <span>Data terpusat · Akses khusus staf · Sinkronisasi realtime</span>
+            </div>
+          </div>
+
+          <div class="relative flex items-center justify-between border-t border-white/10 pt-5 text-[10px] tracking-wide text-emerald-100/45">
+            <span>AMANAH • PROFESIONAL • TERPERCAYA</span>
+            <span>SHABAR TOUR</span>
+          </div>
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-          <input type="password" id="loginPassword" required placeholder="••••••••" 
-                 class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+
+        <!-- Panel login -->
+        <div class="relative bg-[#fbfaf6] text-slate-800 p-6 sm:p-10 lg:p-12 flex flex-col justify-center min-h-[580px]">
+          <div class="lg:hidden flex items-center gap-3 mb-9">
+            <div class="w-12 h-12 rounded-xl bg-emerald-900 p-1.5 flex items-center justify-center border border-amber-400/40">
+              <img src="assets/logo.png" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=&quot;fa-solid fa-kaaba text-amber-300 text-2xl&quot;></i>';" alt="Logo Shabar Tour" class="w-full h-full object-contain">
+            </div>
+            <div>
+              <p class="font-bold tracking-wide text-emerald-950">PT. SHABAR TOUR</p>
+              <p class="text-[10px] tracking-widest text-slate-500">UMROH &amp; HAJI KHUSUS</p>
+            </div>
+          </div>
+
+          <div class="mb-8">
+            <div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase">
+              <span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>
+              Staff Secure Portal
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mt-5">Selamat Datang</h2>
+            <p class="text-sm text-slate-500 mt-2 leading-6">Silakan masuk menggunakan akun staf untuk melanjutkan ke Sistem Manajemen Jemaah Umroh.</p>
+          </div>
+
+          <form id="formLoginStaf" onsubmit="window.handleLoginSubmit(event)" class="space-y-5">
+            <div>
+              <label for="loginEmail" class="block text-xs font-semibold text-slate-700 mb-2">Email Staf</label>
+              <div class="relative">
+                <i class="fa-regular fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="email" id="loginEmail" required autocomplete="username" placeholder="nama@shabartour.id"
+                  class="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10">
+              </div>
+            </div>
+
+            <div>
+              <label for="loginPassword" class="block text-xs font-semibold text-slate-700 mb-2">Password</label>
+              <div class="relative">
+                <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="Masukkan password"
+                  class="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10">
+              </div>
+            </div>
+
+            <button id="loginSubmitBtn" type="submit" class="w-full bg-emerald-800 hover:bg-emerald-900 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl text-sm transition shadow-lg shadow-emerald-900/15 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-right-to-bracket"></i>
+              <span>Masuk ke Aplikasi</span>
+            </button>
+          </form>
+
+          <div class="mt-8 pt-6 border-t border-slate-200 flex items-start gap-3">
+            <i class="fa-solid fa-circle-info text-emerald-700 mt-0.5"></i>
+            <p class="text-[11px] text-slate-500 leading-5">Halaman ini khusus untuk administrator dan staf PT. Shabar Tour. Jangan membagikan informasi akun kepada pihak lain.</p>
+          </div>
+          <p class="mt-8 text-center text-[10px] text-slate-400">© 2026 PT. SHABAR TOUR · Sistem Internal</p>
         </div>
-        <button id="loginSubmitBtn" type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2 rounded-lg text-xs transition shadow-md">
-          Masuk Akun
-        </button>
-        <p class="text-[11px] text-slate-500 text-center">Gunakan akun staf yang terdaftar di Firebase Authentication.</p>
-      </form>
+      </div>
     </div>
-  </div>
+  </section>
+
 
   <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-12">
     <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
@@ -782,6 +862,11 @@
     function updateAuthUI(user) {
       const loggedIn = Boolean(user);
       const username = user?.email ? user.email.split('@')[0] : '';
+      const loginCover = document.getElementById('loginCover');
+
+      // Cover selalu tampil untuk pengguna tanpa sesi staf, dan hilang setelah login.
+      if (loginCover) loginCover.classList.toggle('hidden', loggedIn);
+
       const buttonSets = [
         {
           button: document.getElementById('authBtn'),
@@ -811,7 +896,7 @@
     function requireStaffLogin() {
       if (window.state.isLoggedIn && auth) return true;
       showAlert('Silakan login menggunakan akun staf sebelum mengakses fitur ini.', 'error');
-      if (auth) document.getElementById('loginModal')?.classList.remove('hidden');
+      if (auth) document.getElementById('loginCover')?.classList.remove('hidden');
       return false;
     }
 
@@ -875,13 +960,14 @@
           showAlert(`Gagal logout: ${getAuthErrorMessage(error)}`, 'error');
         }
       } else {
-        document.getElementById('loginModal')?.classList.remove('hidden');
+        document.getElementById('loginCover')?.classList.remove('hidden');
         document.getElementById('loginEmail')?.focus();
       }
     };
 
     window.closeLoginModal = function() {
-      document.getElementById('loginModal')?.classList.add('hidden');
+      // Dipanggil sesudah autentikasi berhasil; state auth juga akan menyembunyikan cover.
+      document.getElementById('loginCover')?.classList.add('hidden');
     };
 
     window.handleLoginSubmit = async function(event) {
@@ -902,7 +988,7 @@
 
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Memeriksa akun...';
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Memeriksa akun...</span>';
       }
 
       try {
@@ -916,7 +1002,7 @@
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Masuk Akun';
+          submitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><span>Masuk ke Aplikasi</span>';
         }
       }
     };
