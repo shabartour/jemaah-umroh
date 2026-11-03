@@ -1102,6 +1102,7 @@
           });
         });
 
+        populatePaketDropdowns();
         renderDashboard();
         renderJemaahTable();
         renderPaketTable();
@@ -1444,9 +1445,10 @@
         const listInGroup = getJemaahsForPaket(p.namaPaket);
         const pria = listInGroup.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('l')).length;
         const wanita = listInGroup.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('p')).length;
+        const packageNameArg = encodeURIComponent(p.namaPaket).replace(/'/g, '%27');
 
         container.innerHTML += `
-          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-400 transition cursor-pointer" onclick="filterJemaahByPaket('${escapeHtml(p.namaPaket).replace(/'/g, "\\'")}')">
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-400 transition cursor-pointer" onclick="filterJemaahByPaket(decodeURIComponent('${packageNameArg}'))">
             <div class="flex items-center justify-between mb-2 gap-2">
               <span class="font-bold text-slate-800 text-xs truncate max-w-[150px]" title="${escapeHtml(p.namaPaket)}">${escapeHtml(p.namaPaket)}</span>
               <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] whitespace-nowrap">${listInGroup.length} Jemaah</span>
@@ -1739,6 +1741,7 @@
 
       allGroups.forEach(paket => {
         const pName = paket.namaPaket;
+        const packageNameArg = encodeURIComponent(pName).replace(/'/g, '%27');
         const tgl = paket.tglKeberangkatan || '';
         const muthawwif = paket.muthawwif || '-';
         const jemaahList = getJemaahsForPaket(pName);
@@ -1779,10 +1782,10 @@
             </div>
 
             <div class="flex items-center space-x-2 pt-2 border-t border-slate-100">
-              <button onclick="exportPackageXLSX('${escapeHtml(pName).replace(/'/g, "\\'")}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center shadow-sm">
+              <button onclick="exportPackageXLSX(decodeURIComponent('${packageNameArg}'))" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center shadow-sm">
                 <i class="fa-solid fa-file-excel mr-1.5 text-emerald-200"></i>Unduh XLSX
               </button>
-              <button onclick="exportPackagePDF('${escapeHtml(pName).replace(/'/g, "\\'")}')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center shadow-sm">
+              <button onclick="exportPackagePDF(decodeURIComponent('${packageNameArg}'))" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center shadow-sm">
                 <i class="fa-solid fa-file-pdf mr-1.5 text-red-400"></i>Unduh PDF
               </button>
             </div>
