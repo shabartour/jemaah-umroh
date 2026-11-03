@@ -70,7 +70,7 @@
           </div>
         </div>
 
-        <!-- Global Quick Search & Firebase Status Badge -->
+        <!-- Global Quick Search & Firebase Status Badge & Auth -->
         <div class="hidden md:flex items-center space-x-4">
           <div class="relative">
             <input type="text" id="globalSearchInput" placeholder="Cari nama / NIK jemaah..." 
@@ -84,7 +84,7 @@
             <span id="firebaseStatusText">Firestore Realtime Mode</span>
           </div>
 
-          <!-- Tombol Auth Login / Logout -->
+          <!-- Tombol Login / Logout -->
           <div id="authContainer">
             <button id="authBtn" onclick="handleAuthAction()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow">
               <i class="fa-solid fa-right-to-bracket" id="authBtnIcon"></i>
@@ -113,7 +113,7 @@
             <i class="fa-solid fa-users"></i><span>Data Jemaah</span>
           </button>
           <button id="tab-kelolaPaket" onclick="switchTab('kelolaPaket')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
-            <i class="fa-solid fa-box-archive"></i><span>Kelola Paket/Grup</span>
+            <i class="fa-solid fa-box-archive"></i><span>Kelola Paket</span>
           </button>
           <button id="tab-laporan" onclick="switchTab('laporan')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
             <i class="fa-solid fa-file-lines"></i><span>Laporan</span>
@@ -134,7 +134,7 @@
         <i class="fa-solid fa-users mr-2"></i>Data Jemaah
       </button>
       <button onclick="switchTab('kelolaPaket'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
-        <i class="fa-solid fa-box-archive mr-2"></i>Kelola Paket/Grup
+        <i class="fa-solid fa-box-archive mr-2"></i>Kelola Paket
       </button>
       <button onclick="switchTab('laporan'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
         <i class="fa-solid fa-file-lines mr-2"></i>Laporan
@@ -340,6 +340,36 @@
       </div>
 
       <!-- Main Data Table Card -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs text-slate-600">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[11px] border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">No</th>
+                <th class="px-4 py-3">Nama Lengkap</th>
+                <th class="px-4 py-3">NIK</th>
+                <th class="px-4 py-3">L/P</th>
+                <th class="px-4 py-3">TTL</th>
+                <th class="px-4 py-3">No. HP/WA</th>
+                <th class="px-4 py-3">No. Paspor</th>
+                <th class="px-4 py-3">Paket</th>
+                <th class="px-4 py-3">Alamat</th>
+                <th class="px-4 py-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="mainJemaahTableBody" class="divide-y divide-slate-200">
+              <tr>
+                <td colspan="10" class="text-center py-8 text-slate-400">Memuat data dari Firestore...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+          <span id="jemaahCountInfo">Menampilkan 0 dari 0 data</span>
+        </div>
+      </div>
+    </section>
+
     <!-- ==================== VIEW 3: KELOLA PAKET ==================== -->
     <section id="view-kelolaPaket" class="hidden space-y-6 max-w-5xl mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -603,6 +633,29 @@
         </div>
 
         <div>
+          <label for="inputAlamat" class="block text-xs font-semibold text-slate-700 mb-1">Alamat Lengkap <span class="text-red-500">*</span></label>
+          <textarea id="inputAlamat" required rows="2" placeholder="Jl. Raya Kedawung No. 87, Cirebon" 
+                    class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+        </div>
+
+        <div>
+          <label for="inputCatatan" class="block text-xs font-semibold text-slate-700 mb-1">Catatan Khusus <span class="text-slate-400 font-normal">(Ukuran baju, riwayat, dll)</span></label>
+          <input type="text" id="inputCatatan" placeholder="Ukuran Baju XL" 
+                 class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 flex justify-end space-x-2">
+          <button type="button" onclick="closeAddJemaahModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+            Batal
+          </button>
+          <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow flex items-center">
+            <i class="fa-solid fa-floppy-disk mr-2"></i><span id="modalBtnSubmitText">Simpan Data Jemaah</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- MODAL LOGIN STAF -->
   <div id="loginModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
@@ -632,6 +685,13 @@
       </form>
     </div>
   </div>
+
+  <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-12">
+    <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+      <p class="font-medium text-slate-300">&copy; 2026 PT. SHABAR TOUR. Hak Cipta Dilindungi Undang-Undang.</p>
+      <p class="text-slate-500 text-[11px]">Sistem Manajemen Jemaah Umroh terintegrasi Google Firebase Cloud Database.</p>
+    </div>
+  </footer>
 
   <!-- ==================== JAVASCRIPT LOGIC & FIREBASE SDK INTEGRATION ==================== -->
   <script type="module">
@@ -665,13 +725,67 @@
       console.error("Gagal menginisialisasi Firebase SDK:", e);
     }
 
-    // Application State
+    // State aplikasi dengan Auth status
     window.state = {
       pakets: [],
       jemaahs: [],
+      isLoggedIn: false,
+      currentUser: null,
       chartPaketInstance: null,
       chartGenderInstance: null
     };
+
+    /* ==========================================================================
+       AUTHENTICATION LOGIC (LOGIN / LOGOUT)
+       ========================================================================== */
+    window.handleAuthAction = function() {
+      if (window.state.isLoggedIn) {
+        if (confirm("Apakah Anda yakin ingin keluar dari akun staf?")) {
+          window.state.isLoggedIn = false;
+          window.state.currentUser = null;
+          updateAuthUI();
+          showAlert("Anda telah keluar dari akun staf.", "success");
+        }
+      } else {
+        document.getElementById('loginModal').classList.remove('hidden');
+      }
+    };
+
+    window.closeLoginModal = function() {
+      document.getElementById('loginModal').classList.add('hidden');
+    };
+
+    window.handleLoginSubmit = function(event) {
+      event.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+
+      if (email && pass) {
+        window.state.isLoggedIn = true;
+        window.state.currentUser = email;
+        updateAuthUI();
+        window.closeLoginModal();
+        showAlert(`Selamat datang, ${email}!`, "success");
+      }
+    };
+
+    function updateAuthUI() {
+      const btnText = document.getElementById('authBtnText');
+      const btnIcon = document.getElementById('authBtnIcon');
+      const authBtn = document.getElementById('authBtn');
+
+      if (!btnText || !authBtn) return;
+
+      if (window.state.isLoggedIn) {
+        btnText.textContent = "Logout";
+        btnIcon.className = "fa-solid fa-right-from-bracket";
+        authBtn.className = "bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow";
+      } else {
+        btnText.textContent = "Login Staf";
+        btnIcon.className = "fa-solid fa-right-to-bracket";
+        authBtn.className = "bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow";
+      }
+    }
 
     /* ==========================================================================
        TAB SWITCHING LOGIC
@@ -713,6 +827,8 @@
             id: docSnap.id,
             namaPaket: data.namaPaket || data.nama_paket || data.nama || 'Paket Tanpa Nama',
             tglKeberangkatan: data.tglKeberangkatan || data.tanggal_keberangkatan || data.tgl || '',
+            pesawat: data.pesawat || data.maskapai || '-',
+            program: data.program || data.durasi || '-',
             muthawwif: data.muthawwif || data.pembimbing || '-',
             ...data
           });
@@ -728,9 +844,7 @@
         renderPaketTable();
         renderDashboard();
         renderJemaahTable();
-        if (!document.getElementById('view-laporan').classList.contains('hidden')) {
-          renderLaporanList();
-        }
+        renderJemaahGroupCards();
       });
 
       onSnapshot(collection(db, "jemaah"), (snapshot) => {
@@ -759,23 +873,10 @@
           });
         });
 
-        if (window.state.pakets.length === 0 && window.state.jemaahs.length > 0) {
-          const uniquePaketNames = [...new Set(window.state.jemaahs.map(j => j.paketId).filter(Boolean))];
-          window.state.pakets = uniquePaketNames.map(pName => ({
-            id: pName,
-            namaPaket: pName,
-            tglKeberangkatan: '',
-            muthawwif: '-'
-          }));
-          populatePaketDropdowns();
-        }
-
         renderDashboard();
         renderJemaahTable();
         renderPaketTable();
-        if (!document.getElementById('view-laporan').classList.contains('hidden')) {
-          renderLaporanList();
-        }
+        renderJemaahGroupCards();
       });
     }
 
@@ -783,7 +884,7 @@
        MODAL & FORM HANDLING
        ========================================================================== */
     window.openAddJemaahModal = function() {
-      resetJemaahForm();
+      window.resetJemaahForm();
       document.getElementById('modalFormTitleText').textContent = "Tambah Data Jemaah";
       document.getElementById('modalBtnSubmitText').textContent = "Simpan Data Jemaah";
       document.getElementById('jemaahModal').classList.remove('hidden');
@@ -845,7 +946,7 @@
           showAlert('Jemaah baru berhasil ditambahkan!', 'success');
         }
 
-        closeAddJemaahModal();
+        window.closeAddJemaahModal();
       } catch (error) {
         console.error("Gagal menyimpan jemaah:", error);
         showAlert(`Gagal menyimpan data: ${error.message}`, 'error');
@@ -862,7 +963,7 @@
       document.getElementById('inputNik').value = jemaah.nik || '';
       document.getElementById('inputTempatLahir').value = jemaah.tempatLahir || '';
       document.getElementById('inputTanggalLahir').value = jemaah.tanggalLahir || '';
-      document.getElementById('inputJenisKelamin').value = (j.jenisKelamin || '').toLowerCase().includes('p') ? 'Perempuan' : 'Laki-laki';
+      document.getElementById('inputJenisKelamin').value = (jemaah.jenisKelamin || '').toLowerCase().includes('p') ? 'Perempuan' : 'Laki-laki';
       document.getElementById('inputNoHp').value = jemaah.telepon || jemaah.noHp || '';
       document.getElementById('inputNoPaspor').value = jemaah.noPaspor || '';
       document.getElementById('inputAlamat').value = jemaah.alamat || '';
@@ -889,6 +990,8 @@
       const namaPaket = document.getElementById('inputNamaPaket').value.trim();
       const tglKeberangkatan = document.getElementById('inputTglKeberangkatan').value;
       const muthawwif = document.getElementById('inputMuthawwif').value.trim();
+      const pesawat = document.getElementById('inputPesawat').value.trim();
+      const program = document.getElementById('inputProgram').value.trim();
 
       try {
         await addDoc(collection(db, "paket"), {
@@ -896,6 +999,8 @@
           nama: namaPaket,
           tglKeberangkatan,
           muthawwif: muthawwif || '-',
+          pesawat: pesawat || '-',
+          program: program || '-',
           createdAt: serverTimestamp()
         });
         showAlert('Paket umroh berhasil ditambahkan!', 'success');
@@ -923,6 +1028,276 @@
       if (welcomeEl) welcomeEl.textContent = `Selamat Datang di Portal Admin ${travelName}`;
       showAlert('Pengaturan aplikasi berhasil disimpan!', 'success');
     };
+
+    /* ==========================================================================
+       CRUD & RENDERING GROUP CARDS AND TABLES
+       ========================================================================== */
+    function renderJemaahGroupCards() {
+      const container = document.getElementById('jemaahGroupCardsContainer');
+      if (!container) return;
+
+      container.innerHTML = '';
+      if (window.state.pakets.length === 0) {
+        container.innerHTML = `<div class="col-span-4 text-slate-400 text-xs text-center py-4 bg-white rounded-xl border border-slate-200">Belum ada grup/paket umroh terdaftar.</div>`;
+        return;
+      }
+
+      window.state.pakets.forEach(p => {
+        const listInGroup = window.state.jemaahs.filter(j => (j.paket || j.paketId) === p.namaPaket);
+        const pria = listInGroup.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('l')).length;
+        const wanita = listInGroup.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('p')).length;
+
+        container.innerHTML += `
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-400 transition cursor-pointer" onclick="filterJemaahByPaket('${escapeHtml(p.namaPaket).replace(/'/g, "\\'")}')">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-slate-800 text-xs truncate max-w-[150px]">${escapeHtml(p.namaPaket)}</span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">${listInGroup.length} Jemaah</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+              <span><i class="fa-solid fa-plane text-emerald-600 mr-1"></i>${escapeHtml(p.pesawat || '-')}</span>
+              <span><i class="fa-solid fa-person mr-1 text-blue-600"></i>${pria} <i class="fa-solid fa-person-dress ml-1 text-pink-600"></i>${wanita}</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    window.filterJemaahByPaket = function(pName) {
+      const filterSelect = document.getElementById('tableFilterPaket');
+      if (filterSelect) {
+        filterSelect.value = pName;
+        window.renderJemaahTable();
+      }
+    };
+
+    function renderPaketTable() {
+      const tbodyAktif = document.getElementById('paketTableBody');
+      const tbodyRiwayat = document.getElementById('riwayatPaketTableBody');
+      const countEl = document.getElementById('paketCountText');
+      if (!tbodyAktif || !tbodyRiwayat) return;
+
+      tbodyAktif.innerHTML = '';
+      tbodyRiwayat.innerHTML = '';
+
+      const today = new Date().toISOString().split('T')[0];
+      const paketsAktif = window.state.pakets.filter(p => !p.tglKeberangkatan || p.tglKeberangkatan >= today);
+      const paketsRiwayat = window.state.pakets.filter(p => p.tglKeberangkatan && p.tglKeberangkatan < today);
+
+      if (countEl) countEl.textContent = paketsAktif.length;
+
+      // Render Paket Aktif
+      if (paketsAktif.length === 0) {
+        tbodyAktif.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Tidak ada paket umroh aktif.</td></tr>`;
+      } else {
+        paketsAktif.forEach(p => {
+          const count = window.state.jemaahs.filter(j => (j.paket || j.paketId) === p.namaPaket).length;
+          tbodyAktif.innerHTML += `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(p.namaPaket)}</td>
+              <td class="px-4 py-3">${p.tglKeberangkatan ? formatDateIndo(p.tglKeberangkatan) : '-'}</td>
+              <td class="px-4 py-3">${escapeHtml(p.pesawat || '-')} / ${escapeHtml(p.program || '-')}</td>
+              <td class="px-4 py-3">${escapeHtml(p.muthawwif)}</td>
+              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">${count} Jemaah</span></td>
+              <td class="px-4 py-3 text-center">
+                <button onclick="deletePaket('${p.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus Paket">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      // Render Riwayat Paket Selesai
+      if (paketsRiwayat.length === 0) {
+        tbodyRiwayat.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada riwayat paket terlewat.</td></tr>`;
+      } else {
+        paketsRiwayat.forEach(p => {
+          const count = window.state.jemaahs.filter(j => (j.paket || j.paketId) === p.namaPaket).length;
+          tbodyRiwayat.innerHTML += `
+            <tr class="hover:bg-slate-50 transition bg-slate-50/50">
+              <td class="px-4 py-3 font-semibold text-slate-700">${escapeHtml(p.namaPaket)}</td>
+              <td class="px-4 py-3 text-slate-500">${formatDateIndo(p.tglKeberangkatan)}</td>
+              <td class="px-4 py-3 text-slate-500">${escapeHtml(p.pesawat || '-')} / ${escapeHtml(p.program || '-')}</td>
+              <td class="px-4 py-3 text-slate-500">${escapeHtml(p.muthawwif)}</td>
+              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold text-[10px]">${count} Jemaah</span></td>
+            </tr>
+          `;
+        });
+      }
+    }
+
+    window.renderJemaahTable = function() {
+      const tbody = document.getElementById('mainJemaahTableBody');
+      if (!tbody) return;
+
+      const search = (document.getElementById('tableSearchInput')?.value || '').toLowerCase();
+      const filterPaket = document.getElementById('tableFilterPaket')?.value || '';
+      const filterGender = document.getElementById('tableFilterGender')?.value || '';
+
+      tbody.innerHTML = '';
+
+      const filtered = window.state.jemaahs.filter(j => {
+        const nama = j.nama || j.namaLengkap || '';
+        const matchSearch = nama.toLowerCase().includes(search) || 
+                            (j.nik || '').toLowerCase().includes(search) || 
+                            (j.noPaspor && j.noPaspor.toLowerCase().includes(search));
+        
+        const jPaketVal = j.paket || j.paketId || '';
+        const matchPaket = !filterPaket || jPaketVal === filterPaket;
+        
+        const g = (j.jenisKelamin || '').toLowerCase();
+        let matchGender = !filterGender;
+        if (filterGender === 'Laki-laki') matchGender = g.startsWith('l');
+        if (filterGender === 'Perempuan') matchGender = g.startsWith('p');
+
+        return matchSearch && matchPaket && matchGender;
+      });
+
+      const countInfo = document.getElementById('jemaahCountInfo');
+      if (countInfo) countInfo.textContent = `Menampilkan ${filtered.length} dari ${window.state.jemaahs.length} data`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400">Data jemaah tidak ditemukan.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach((j, index) => {
+        const namaPaket = j.paket || j.paketId || 'Tanpa Paket';
+        const nama = j.nama || j.namaLengkap || '-';
+        const isMale = (j.jenisKelamin || '').toLowerCase().startsWith('l');
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="px-4 py-3 text-slate-400">${index + 1}</td>
+            <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(nama)}</td>
+            <td class="px-4 py-3 text-slate-500">${escapeHtml(j.nik || '-')}</td>
+            <td class="px-4 py-3">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isMale ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}">
+                ${escapeHtml(j.jenisKelamin || '-')}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-slate-500">${escapeHtml(j.tempatLahir || '')}, ${formatDateIndo(j.tanggalLahir)}</td>
+            <td class="px-4 py-3 text-slate-600">${escapeHtml(j.telepon || j.noHp || '-')}</td>
+            <td class="px-4 py-3 text-slate-600">${j.noPaspor ? escapeHtml(j.noPaspor) : '<span class="text-slate-300">-</span>'}</td>
+            <td class="px-4 py-3 font-medium text-emerald-700">${escapeHtml(namaPaket)}</td>
+            <td class="px-4 py-3 text-slate-500 max-w-xs truncate" title="${escapeHtml(j.alamat)}">${escapeHtml(j.alamat || '-')}</td>
+            <td class="px-4 py-3 text-center space-x-1">
+              <button onclick="editJemaah('${j.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="Edit">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button onclick="deleteJemaah('${j.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    };
+
+    window.handleGlobalSearch = function(query) {
+      if (!query) return;
+      const searchInput = document.getElementById('tableSearchInput');
+      if (searchInput) searchInput.value = query;
+      window.switchTab('dataJemaah');
+      window.renderJemaahTable();
+    };
+
+    function renderDashboard() {
+      const totalJemaah = window.state.jemaahs.length;
+      const totalPaket = window.state.pakets.length;
+      const priaCount = window.state.jemaahs.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('l')).length;
+      const wanitaCount = window.state.jemaahs.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('p')).length;
+
+      const elTotalJemaah = document.getElementById('statTotalJemaah');
+      const elTotalPaket = document.getElementById('statTotalPaket');
+      const elPria = document.getElementById('statPria');
+      const elWanita = document.getElementById('statWanita');
+
+      if (elTotalJemaah) elTotalJemaah.textContent = totalJemaah;
+      if (elTotalPaket) elTotalPaket.textContent = totalPaket;
+      if (elPria) elPria.textContent = priaCount;
+      if (elWanita) elWanita.textContent = wanitaCount;
+
+      const priaPct = totalJemaah > 0 ? Math.round((priaCount / totalJemaah) * 100) : 0;
+      const wanitaPct = totalJemaah > 0 ? Math.round((wanitaCount / totalJemaah) * 100) : 0;
+
+      const elPriaPersen = document.getElementById('statPriaPersen');
+      const elWanitaPersen = document.getElementById('statWanitaPersen');
+
+      if (elPriaPersen) elPriaPersen.textContent = `${priaPct}% dari total jemaah`;
+      if (elWanitaPersen) elWanitaPersen.textContent = `${wanitaPct}% dari total jemaah`;
+
+      const recentTbody = document.getElementById('recentJemaahTable');
+      if (recentTbody) {
+        recentTbody.innerHTML = '';
+        const recentList = window.state.jemaahs.slice(0, 5);
+
+        if (recentList.length === 0) {
+          recentTbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-slate-400">Belum ada data jemaah.</td></tr>`;
+        } else {
+          recentList.forEach(j => {
+            recentTbody.innerHTML += `
+              <tr class="hover:bg-slate-50">
+                <td class="px-4 py-2.5 font-semibold text-slate-800">${escapeHtml(j.nama || j.namaLengkap || '-')}</td>
+                <td class="px-4 py-2.5 text-emerald-700">${escapeHtml(j.paket || j.paketId || '-')}</td>
+                <td class="px-4 py-2.5">${escapeHtml(j.telepon || j.noHp || '-')}</td>
+                <td class="px-4 py-2.5">${j.noPaspor || '-'}</td>
+                <td class="px-4 py-2.5">${formatDateIndo(j.tanggalLahir)}</td>
+              </tr>
+            `;
+          });
+        }
+      }
+
+      const paketLabels = window.state.pakets.map(p => p.namaPaket);
+      const paketDataCounts = window.state.pakets.map(p => window.state.jemaahs.filter(j => (j.paket || j.paketId) === p.namaPaket).length);
+
+      const ctxPaket = document.getElementById('chartPaket');
+      if (ctxPaket) {
+        if (window.state.chartPaketInstance) window.state.chartPaketInstance.destroy();
+
+        window.state.chartPaketInstance = new Chart(ctxPaket.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: paketLabels,
+            datasets: [{
+              label: 'Jumlah Jemaah',
+              data: paketDataCounts,
+              backgroundColor: '#16a34a',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+      }
+
+      const ctxGender = document.getElementById('chartGender');
+      if (ctxGender) {
+        if (window.state.chartGenderInstance) window.state.chartGenderInstance.destroy();
+
+        window.state.chartGenderInstance = new Chart(ctxGender.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: ['Laki-Laki', 'Perempuan'],
+            datasets: [{
+              data: [priaCount, wanitaCount],
+              backgroundColor: ['#2563eb', '#ec4899']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+    }
 
     /* ==========================================================================
        LAPORAN & EXPORT PDF / XLSX
@@ -1083,256 +1458,50 @@
     function showAlert(message, type = 'success') {
       const container = document.getElementById('alertContainer');
       const alert = document.createElement('div');
-    // State aplikasi dengan Auth status
-    window.state = {
-      pakets: [],
-      jemaahs: [],
-      isLoggedIn: false,
-      currentUser: null,
-      chartPaketInstance: null,
-      chartGenderInstance: null
-    };
+      const bgColor = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+      const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation';
 
-    /* ==========================================================================
-       AUTHENTICATION LOGIC (LOGIN / LOGOUT)
-       ========================================================================== */
-    window.handleAuthAction = function() {
-      if (window.state.isLoggedIn) {
-        if (confirm("Apakah Anda yakin ingin keluar dari akun staf?")) {
-          window.state.isLoggedIn = false;
-          window.state.currentUser = null;
-          updateAuthUI();
-          showAlert("Anda telah keluar dari akun staf.", "success");
-        }
-      } else {
-        document.getElementById('loginModal').classList.remove('hidden');
-      }
-    };
+      alert.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-xl text-xs flex items-center justify-between transition-all duration-300 transform translate-x-full pointer-events-auto`;
+      alert.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid ${icon} text-base"></i>
+          <span>${message}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="ml-4 hover:text-slate-200">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
 
-    window.closeLoginModal = function() {
-      document.getElementById('loginModal').classList.add('hidden');
-    };
-
-    window.handleLoginSubmit = function(event) {
-      event.preventDefault();
-      const email = document.getElementById('loginEmail').value.trim();
-      const pass = document.getElementById('loginPassword').value;
-
-      if (email && pass) {
-        window.state.isLoggedIn = true;
-        window.state.currentUser = email;
-        updateAuthUI();
-        closeLoginModal();
-        showAlert(`Selamat datang, ${email}!`, "success");
-      }
-    };
-
-    function updateAuthUI() {
-      const btnText = document.getElementById('authBtnText');
-      const btnIcon = document.getElementById('authBtnIcon');
-      const authBtn = document.getElementById('authBtn');
-
-      if (!btnText || !authBtn) return;
-
-      if (window.state.isLoggedIn) {
-        btnText.textContent = "Logout";
-        btnIcon.className = "fa-solid fa-right-from-bracket";
-        authBtn.className = "bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow";
-      } else {
-        btnText.textContent = "Login Staf";
-        btnIcon.className = "fa-solid fa-right-to-bracket";
-        authBtn.className = "bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow";
-      }
+      container.appendChild(alert);
+      setTimeout(() => alert.classList.remove('translate-x-full'), 10);
+      setTimeout(() => {
+        alert.classList.add('translate-x-full');
+        setTimeout(() => alert.remove(), 300);
+      }, 4000);
     }
 
-    /* ==========================================================================
-       REAL-TIME LISTENERS (FIRESTORE SYNC)
-       ========================================================================== */
-    function initRealtimeListeners() {
-      if (!db) return;
+    function populatePaketDropdowns() {
+      const formSelect = document.getElementById('inputPaketId');
+      const filterSelect = document.getElementById('tableFilterPaket');
 
-      onSnapshot(collection(db, "paket"), (snapshot) => {
-        window.state.pakets = [];
-        snapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          window.state.pakets.push({
-            id: docSnap.id,
-            namaPaket: data.namaPaket || data.nama_paket || data.nama || 'Paket Tanpa Nama',
-            tglKeberangkatan: data.tglKeberangkatan || data.tanggal_keberangkatan || data.tgl || '',
-            pesawat: data.pesawat || data.maskapai || '-',
-            program: data.program || data.durasi || '-',
-            muthawwif: data.muthawwif || data.pembimbing || '-',
-            ...data
-          });
-        });
+      if (!formSelect) return;
 
-        window.state.pakets.sort((a, b) => {
-          if (!a.tglKeberangkatan) return 1;
-          if (!b.tglKeberangkatan) return -1;
-          return new Date(a.tglKeberangkatan) - new Date(b.tglKeberangkatan);
-        });
+      const prevFormVal = formSelect.value;
+      const prevFilterVal = filterSelect ? filterSelect.value : '';
 
-        populatePaketDropdowns();
-        renderPaketTable();
-        renderDashboard();
-        renderJemaahTable();
-        renderJemaahGroupCards();
-      });
-
-      onSnapshot(collection(db, "jemaah"), (snapshot) => {
-        window.state.jemaahs = [];
-        snapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          let fullAlamat = data.alamat || '';
-          if (data.kecamatan || data.kabupaten || data.provinsi) {
-            const parts = [data.alamat, data.kecamatan, data.kabupaten, data.provinsi].filter(Boolean);
-            fullAlamat = parts.join(', ');
-          }
-
-          window.state.jemaahs.push({
-            id: docSnap.id,
-            namaLengkap: data.nama || data.namaLengkap || '-',
-            nik: data.nik || '-',
-            paketId: data.paket || data.paketId || '',
-            noHp: data.telepon || data.noHp || '-',
-            jenisKelamin: data.jenisKelamin || '-',
-            tempatLahir: data.tempatLahir || '',
-            tanggalLahir: data.tanggalLahir || '',
-            noPaspor: data.noPaspor || '',
-            alamat: fullAlamat || '-',
-            catatan: data.catatan || '-',
-            ...data
-          });
-        });
-
-        renderDashboard();
-        renderJemaahTable();
-        renderPaketTable();
-        renderJemaahGroupCards();
-      });
-    }
-
-    /* ==========================================================================
-       CRUD & RENDERING GROUP CARDS AND TABLES
-       ========================================================================== */
-    window.handleSavePaket = async function(event) {
-      event.preventDefault();
-      const namaPaket = document.getElementById('inputNamaPaket').value.trim();
-      const tglKeberangkatan = document.getElementById('inputTglKeberangkatan').value;
-      const muthawwif = document.getElementById('inputMuthawwif').value.trim();
-      const pesawat = document.getElementById('inputPesawat').value.trim();
-      const program = document.getElementById('inputProgram').value.trim();
-
-      try {
-        await addDoc(collection(db, "paket"), {
-          namaPaket,
-          nama: namaPaket,
-          tglKeberangkatan,
-          muthawwif: muthawwif || '-',
-          pesawat: pesawat || '-',
-          program: program || '-',
-          createdAt: serverTimestamp()
-        });
-        showAlert('Paket umroh berhasil ditambahkan!', 'success');
-        document.getElementById('formTambahPaket').reset();
-      } catch (error) {
-        showAlert(`Gagal menambah paket: ${error.message}`, 'error');
-      }
-    };
-
-    function renderJemaahGroupCards() {
-      const container = document.getElementById('jemaahGroupCardsContainer');
-      if (!container) return;
-
-      container.innerHTML = '';
-      if (window.state.pakets.length === 0) {
-        container.innerHTML = `<div class="col-span-4 text-slate-400 text-xs text-center py-4 bg-white rounded-xl border border-slate-200">Belum ada grup/paket umroh terdaftar.</div>`;
-        return;
-      }
+      formSelect.innerHTML = '<option value="">-- Pilih Paket Umroh --</option>';
+      if (filterSelect) filterSelect.innerHTML = '<option value="">-- Semua Paket --</option>';
 
       window.state.pakets.forEach(p => {
-        const listInGroup = window.state.jemaahs.filter(j => (j.paket || j.paketId) === p.namaPaket);
-        const pria = listInGroup.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('l')).length;
-        const wanita = listInGroup.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('p')).length;
-
-        container.innerHTML += `
-          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-400 transition cursor-pointer" onclick="filterJemaahByPaket('${escapeHtml(p.namaPaket).replace(/'/g, "\\'")}')">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-bold text-slate-800 text-xs truncate max-w-[150px]">${escapeHtml(p.namaPaket)}</span>
-              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">${listInGroup.length} Jemaah</span>
-            </div>
-            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
-              <span><i class="fa-solid fa-plane text-emerald-600 mr-1"></i>${escapeHtml(p.pesawat || '-')}</span>
-              <span><i class="fa-solid fa-person mr-1 text-blue-600"></i>${pria} <i class="fa-solid fa-person-dress ml-1 text-pink-600"></i>${wanita}</span>
-            </div>
-          </div>
-        `;
+        const tglText = p.tglKeberangkatan ? ` (${formatDateIndo(p.tglKeberangkatan)})` : '';
+        const optionText = `${p.namaPaket}${tglText}`;
+        
+        formSelect.innerHTML += `<option value="${escapeHtml(p.namaPaket)}">${escapeHtml(optionText)}</option>`;
+        if (filterSelect) filterSelect.innerHTML += `<option value="${escapeHtml(p.namaPaket)}">${escapeHtml(p.namaPaket)}</option>`;
       });
-    }
 
-    window.filterJemaahByPaket = function(pName) {
-      const filterSelect = document.getElementById('tableFilterPaket');
-      if (filterSelect) {
-        filterSelect.value = pName;
-        renderJemaahTable();
-      }
-    };
-
-    function renderPaketTable() {
-      const tbodyAktif = document.getElementById('paketTableBody');
-      const tbodyRiwayat = document.getElementById('riwayatPaketTableBody');
-      const countEl = document.getElementById('paketCountText');
-      if (!tbodyAktif || !tbodyRiwayat) return;
-
-      tbodyAktif.innerHTML = '';
-      tbodyRiwayat.innerHTML = '';
-
-      const today = new Date().toISOString().split('T')[0];
-      const paketsAktif = window.state.pakets.filter(p => !p.tglKeberangkatan || p.tglKeberangkatan >= today);
-      const paketsRiwayat = window.state.pakets.filter(p => p.tglKeberangkatan && p.tglKeberangkatan < today);
-
-      if (countEl) countEl.textContent = paketsAktif.length;
-
-      // Render Paket Aktif
-      if (paketsAktif.length === 0) {
-        tbodyAktif.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Tidak ada paket umroh aktif.</td></tr>`;
-      } else {
-        paketsAktif.forEach(p => {
-          const count = window.state.jemaahs.filter(j => (j.paket || j.paketId) === p.namaPaket).length;
-          tbodyAktif.innerHTML += `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(p.namaPaket)}</td>
-              <td class="px-4 py-3">${p.tglKeberangkatan ? formatDateIndo(p.tglKeberangkatan) : '-'}</td>
-              <td class="px-4 py-3">${escapeHtml(p.pesawat || '-')} / ${escapeHtml(p.program || '-')}</td>
-              <td class="px-4 py-3">${escapeHtml(p.muthawwif)}</td>
-              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">${count} Jemaah</span></td>
-              <td class="px-4 py-3 text-center">
-                <button onclick="deletePaket('${p.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus Paket">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </td>
-            </tr>
-          `;
-        });
-      }
-
-      // Render Riwayat Paket Selesai
-      if (paketsRiwayat.length === 0) {
-        tbodyRiwayat.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada riwayat paket terlewat.</td></tr>`;
-      } else {
-        paketsRiwayat.forEach(p => {
-          const count = window.state.jemaahs.filter(j => (j.paket || j.paketId) === p.namaPaket).length;
-          tbodyRiwayat.innerHTML += `
-            <tr class="hover:bg-slate-50 transition bg-slate-50/50">
-              <td class="px-4 py-3 font-semibold text-slate-700">${escapeHtml(p.namaPaket)}</td>
-              <td class="px-4 py-3 text-slate-500">${formatDateIndo(p.tglKeberangkatan)}</td>
-              <td class="px-4 py-3 text-slate-500">${escapeHtml(p.pesawat || '-')} / ${escapeHtml(p.program || '-')}</td>
-              <td class="px-4 py-3 text-slate-500">${escapeHtml(p.muthawwif)}</td>
-              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold text-[10px]">${count} Jemaah</span></td>
-            </tr>
-          `;
-        });
-      }
+      if (prevFormVal) formSelect.value = prevFormVal;
+      if (filterSelect && prevFilterVal) filterSelect.value = prevFilterVal;
     }
 
     function formatDateIndo(dateStr) {
