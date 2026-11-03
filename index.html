@@ -326,22 +326,10 @@
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Filter Jenis Kelamin</label>
-          <select id="tableFilterGender" onchange="renderJemaahTable()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            <option value="">-- Semua Gender --</option>
-            <option value="Laki-laki">Laki-laki</option>
-            <option value="Perempuan">Perempuan</option>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Filter Tanggal Keberangkatan</label>
+          <select id="tableFilterDepartureDate" onchange="renderJemaahTable()" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="">-- Semua Tanggal --</option>
           </select>
-        </div>
-      </div>
-
-      <!-- KARTU RINGKASAN BERDASARKAN GROUP / PAKET (Diletakkan di bawah filter) -->
-      <div class="space-y-2">
-        <h3 class="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center">
-          <i class="fa-solid fa-layer-group text-emerald-600 mr-2"></i>Ringkasan Kelompok / Group Paket Umroh
-        </h3>
-        <div id="jemaahGroupCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <!-- Kartu-kartu grup akan dirender secara dinamis di sini -->
         </div>
       </div>
 
@@ -465,36 +453,12 @@
             </div>
           </div>
 
-          <!-- KARTU DAFTAR RIWAYAT PAKET UMROH (Diletakkan di bawah Paket Aktif) -->
-          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-4 border-b border-slate-200 bg-slate-100 flex items-center justify-between">
-              <h3 class="font-bold text-slate-700 text-sm flex items-center">
-                <i class="fa-solid fa-box-archive text-slate-500 mr-2"></i>Daftar Riwayat Paket Umroh (Selesai/Terlewat)
-              </h3>
-              <span class="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold">Arsip</span>
-            </div>
-
-            <div class="overflow-x-auto custom-scrollbar">
-              <table class="w-full text-left text-xs text-slate-600">
-                <thead class="bg-slate-50 text-slate-600 uppercase font-semibold text-[11px]">
-                  <tr>
-                    <th class="px-4 py-3">Nama Paket</th>
-                    <th class="px-4 py-3">Tgl Keberangkatan</th>
-                    <th class="px-4 py-3">Pesawat / Program</th>
-                    <th class="px-4 py-3">Muthawwif</th>
-                    <th class="px-4 py-3">Status</th>
-                    <th class="px-4 py-3">Total Jemaah</th>
-                  </tr>
-                </thead>
-                <tbody id="riwayatPaketTableBody" class="divide-y divide-slate-200">
-                  <tr>
-                    <td colspan="6" class="text-center py-6 text-slate-400">Memuat riwayat paket...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 4: LAPORAN & MANIFEST ==================== -->        </div>
 
       </div>
     </section>
@@ -1347,6 +1311,14 @@
       return typeof value === 'string' ? value.trim() : '';
     }
 
+    function getTodayLocalISODate() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     function getJemaahPackageName(jemaah) {
       const candidates = [
         jemaah?.paket,
@@ -1473,82 +1445,50 @@
 
     function renderPaketTable() {
       const tbodyAktif = document.getElementById('paketTableBody');
-      const tbodyRiwayat = document.getElementById('riwayatPaketTableBody');
       const countEl = document.getElementById('paketCountText');
-      if (!tbodyAktif || !tbodyRiwayat) return;
+      if (!tbodyAktif) return;
 
       tbodyAktif.innerHTML = '';
-      tbodyRiwayat.innerHTML = '';
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = getTodayLocalISODate();
       const allGroups = getAllPaketGroups();
-      const paketsAktif = [];
-      const paketsRiwayat = [];
 
-      allGroups.forEach(p => {
-        if (p.tglKeberangkatan) {
-          const pDate = new Date(`${p.tglKeberangkatan}T00:00:00`);
-          if (!Number.isNaN(pDate.getTime()) && pDate < today) paketsRiwayat.push(p);
-          else paketsAktif.push(p);
-        } else if (p.isLegacyGroup) {
-          // Hanya nama di data jemaah yang tersedia; tanggal tidak boleh dianggap sebagai tanggal yang sudah lewat.
-          paketsRiwayat.push(p);
-        } else {
-          paketsAktif.push(p);
-        }
+      // Tampilkan paket master yang belum berangkat. Group lama tanpa dokumen master
+      // tetap tersedia di filter dan ringkasan laporan, tetapi bukan daftar paket aktif.
+      const paketsAktif = allGroups.filter(p => {
+        if (p.isLegacyGroup) return false;
+        if (!p.tglKeberangkatan) return true;
+        return p.tglKeberangkatan >= today;
       });
 
       if (countEl) countEl.textContent = paketsAktif.length;
 
       if (paketsAktif.length === 0) {
         tbodyAktif.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Tidak ada paket umroh aktif.</td></tr>`;
-      } else {
-        paketsAktif.forEach(p => {
-          const count = getJemaahsForPaket(p.namaPaket).length;
-          const aksiHtml = p.id ? `
-            <button onclick="editPaket('${p.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="Edit Paket" aria-label="Edit paket">
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-            <button onclick="deletePaket('${p.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus Paket" aria-label="Hapus paket">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          ` : '<span class="text-slate-300">-</span>';
-
-          tbodyAktif.innerHTML += `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(p.namaPaket)}</td>
-              <td class="px-4 py-3">${p.tglKeberangkatan ? formatDateIndo(p.tglKeberangkatan) : '-'}</td>
-              <td class="px-4 py-3">${escapeHtml(p.pesawat || '-')} / ${escapeHtml(p.program || '-')}</td>
-              <td class="px-4 py-3">${escapeHtml(p.muthawwif || '-')}</td>
-              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">${count} Jemaah</span></td>
-              <td class="px-4 py-3 text-center whitespace-nowrap">${aksiHtml}</td>
-            </tr>
-          `;
-        });
+        return;
       }
 
-      if (paketsRiwayat.length === 0) {
-        tbodyRiwayat.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Belum ada riwayat paket terlewat.</td></tr>`;
-      } else {
-        paketsRiwayat.forEach(p => {
-          const count = getJemaahsForPaket(p.namaPaket).length;
-          const statusHtml = p.tglKeberangkatan
-            ? '<span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">Selesai / Terlewat</span>'
-            : '<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold">Tanggal tidak tercatat</span>';
+      paketsAktif.forEach(p => {
+        const count = getJemaahsForPaket(p.namaPaket).length;
+        const aksiHtml = p.id ? `
+          <button onclick="editPaket('${p.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="Edit Paket" aria-label="Edit paket">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button onclick="deletePaket('${p.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus Paket" aria-label="Hapus paket">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        ` : '<span class="text-slate-300">-</span>';
 
-          tbodyRiwayat.innerHTML += `
-            <tr class="hover:bg-slate-50 transition bg-slate-50/50">
-              <td class="px-4 py-3 font-semibold text-slate-700">${escapeHtml(p.namaPaket)}</td>
-              <td class="px-4 py-3 text-slate-500">${p.tglKeberangkatan ? formatDateIndo(p.tglKeberangkatan) : 'Tidak tersedia'}</td>
-              <td class="px-4 py-3 text-slate-500">${escapeHtml(p.pesawat || '-')} / ${escapeHtml(p.program || '-')}</td>
-              <td class="px-4 py-3 text-slate-500">${escapeHtml(p.muthawwif || '-')}</td>
-              <td class="px-4 py-3">${statusHtml}</td>
-              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold text-[10px]">${count} Jemaah</span></td>
-            </tr>
-          `;
-        });
-      }
+        tbodyAktif.innerHTML += `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(p.namaPaket)}</td>
+            <td class="px-4 py-3">${p.tglKeberangkatan ? formatDateIndo(p.tglKeberangkatan) : '-'}</td>
+            <td class="px-4 py-3">${escapeHtml(p.pesawat || '-')} / ${escapeHtml(p.program || '-')}</td>
+            <td class="px-4 py-3">${escapeHtml(p.muthawwif || '-')}</td>
+            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">${count} Jemaah</span></td>
+            <td class="px-4 py-3 text-center whitespace-nowrap">${aksiHtml}</td>
+          </tr>
+        `;
+      });
     }
 
     window.renderJemaahTable = function() {
@@ -1557,25 +1497,32 @@
 
       const search = (document.getElementById('tableSearchInput')?.value || '').toLowerCase();
       const filterPaket = document.getElementById('tableFilterPaket')?.value || '';
-      const filterGender = document.getElementById('tableFilterGender')?.value || '';
+      const filterDepartureDate = document.getElementById('tableFilterDepartureDate')?.value || '';
+      const today = getTodayLocalISODate();
+
+      // Siapkan tanggal keberangkatan untuk setiap nama paket agar filter dan aksi konsisten.
+      const departureDateByPackage = new Map(
+        getAllPaketGroups().map(p => [
+          normalizePaketName(p.namaPaket).toLocaleLowerCase('id-ID'),
+          p.tglKeberangkatan || ''
+        ])
+      );
 
       tbody.innerHTML = '';
 
       const filtered = window.state.jemaahs.filter(j => {
         const nama = j.nama || j.namaLengkap || '';
-        const matchSearch = nama.toLowerCase().includes(search) || 
-                            (j.nik || '').toLowerCase().includes(search) || 
+        const matchSearch = nama.toLowerCase().includes(search) ||
+                            (j.nik || '').toLowerCase().includes(search) ||
                             (j.noPaspor && j.noPaspor.toLowerCase().includes(search));
-        
-        const jPaketVal = getJemaahPackageName(j);
-        const matchPaket = !filterPaket || jPaketVal.toLocaleLowerCase('id-ID') === filterPaket.toLocaleLowerCase('id-ID');
-        
-        const g = (j.jenisKelamin || '').toLowerCase();
-        let matchGender = !filterGender;
-        if (filterGender === 'Laki-laki') matchGender = g.startsWith('l');
-        if (filterGender === 'Perempuan') matchGender = g.startsWith('p');
 
-        return matchSearch && matchPaket && matchGender;
+        const jPaketVal = getJemaahPackageName(j);
+        const packageKey = jPaketVal.toLocaleLowerCase('id-ID');
+        const matchPaket = !filterPaket || packageKey === filterPaket.toLocaleLowerCase('id-ID');
+        const departureDate = departureDateByPackage.get(packageKey) || '';
+        const matchDepartureDate = !filterDepartureDate || departureDate === filterDepartureDate;
+
+        return matchSearch && matchPaket && matchDepartureDate;
       });
 
       const countInfo = document.getElementById('jemaahCountInfo');
@@ -1587,9 +1534,18 @@
       }
 
       filtered.forEach((j, index) => {
-        const namaPaket = j.paket || j.paketId || 'Tanpa Paket';
+        const namaPaket = getJemaahPackageName(j) || 'Tanpa Paket';
         const nama = j.nama || j.namaLengkap || '-';
         const isMale = (j.jenisKelamin || '').toLowerCase().startsWith('l');
+        const packageKey = namaPaket.toLocaleLowerCase('id-ID');
+        const departureDate = departureDateByPackage.get(packageKey) || '';
+        const hasDeparted = Boolean(departureDate && departureDate <= today);
+
+        const editAction = hasDeparted ? '' : `
+          <button onclick="editJemaah('${j.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="Edit">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        `;
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition">
@@ -1607,9 +1563,7 @@
             <td class="px-4 py-3 font-medium text-emerald-700">${escapeHtml(namaPaket)}</td>
             <td class="px-4 py-3 text-slate-500 max-w-xs truncate" title="${escapeHtml(j.alamat)}">${escapeHtml(j.alamat || '-')}</td>
             <td class="px-4 py-3 text-center space-x-1">
-              <button onclick="editJemaah('${j.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="Edit">
-                <i class="fa-solid fa-pen-to-square"></i>
-              </button>
+              ${editAction}
               <button onclick="deleteJemaah('${j.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus">
                 <i class="fa-solid fa-trash"></i>
               </button>
@@ -1902,18 +1856,22 @@
     function populatePaketDropdowns() {
       const formSelect = document.getElementById('inputPaketId');
       const filterSelect = document.getElementById('tableFilterPaket');
-      if (!formSelect && !filterSelect) return;
+      const departureDateSelect = document.getElementById('tableFilterDepartureDate');
+      if (!formSelect && !filterSelect && !departureDateSelect) return;
 
       const prevFormVal = formSelect ? formSelect.value : '';
       const prevFilterVal = filterSelect ? filterSelect.value : '';
+      const prevDepartureDate = departureDateSelect ? departureDateSelect.value : '';
       const allGroups = getAllPaketGroups();
 
       if (formSelect) formSelect.innerHTML = '<option value="">-- Pilih Paket Umroh --</option>';
       if (filterSelect) filterSelect.innerHTML = '<option value="">-- Semua Paket --</option>';
+      if (departureDateSelect) departureDateSelect.innerHTML = '<option value="">-- Semua Tanggal --</option>';
 
       allGroups.forEach(p => {
         const tglText = p.tglKeberangkatan ? ` (${formatDateIndo(p.tglKeberangkatan)})` : '';
         const optionText = `${p.namaPaket}${tglText}`;
+
         if (formSelect) {
           formSelect.innerHTML += `<option value="${escapeHtml(p.namaPaket)}">${escapeHtml(optionText)}</option>`;
         }
@@ -1922,8 +1880,19 @@
         }
       });
 
+      if (departureDateSelect) {
+        const uniqueDates = [...new Set(
+          allGroups.map(p => p.tglKeberangkatan).filter(date => /^\d{4}-\d{2}-\d{2}$/.test(date || ''))
+        )].sort();
+
+        uniqueDates.forEach(date => {
+          departureDateSelect.innerHTML += `<option value="${date}">${formatDateIndo(date)}</option>`;
+        });
+      }
+
       if (formSelect && prevFormVal) formSelect.value = prevFormVal;
       if (filterSelect && prevFilterVal) filterSelect.value = prevFilterVal;
+      if (departureDateSelect && prevDepartureDate) departureDateSelect.value = prevDepartureDate;
     }
 
     function formatDateIndo(dateStr) {
