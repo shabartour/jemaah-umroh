@@ -54,99 +54,105 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- TOP HEADER / NAVBAR -->
-  <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        
-        <!-- Logo & Branding -->
-        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
-          <div class="w-12 h-12 rounded-xl overflow-hidden bg-white flex items-center justify-center p-0.5 shadow-lg border border-amber-400/50 shrink-0">
-            <img src="assets/logo-shabar-tour.svg" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fa-solid fa-kaaba text-emerald-800 text-xl\'></i>';" alt="Logo Shabar Tour" class="w-full h-full object-contain">
-          </div>
-          <div>
-            <h1 class="font-bold text-lg leading-tight tracking-wide text-amber-400">PT. SHABAR TOUR</h1>
-            <p class="text-xs text-slate-400 font-medium">Sistem Manajemen Jemaah Umroh</p>
-          </div>
+  <!-- APP SIDEBAR -->
+  <aside id="appSidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-[#0b1b2b] text-white shadow-2xl flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-out">
+    <div class="px-5 py-5 border-b border-white/10">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl overflow-hidden bg-white p-0.5 border border-amber-400/50 shadow-lg shrink-0">
+          <img src="assets/logo-shabar-tour.svg" onerror="this.onerror=null;this.parentElement.innerHTML='<i class=&quot;fa-solid fa-kaaba text-emerald-800 text-xl&quot;></i>';" alt="Logo Shabar Tour" class="w-full h-full object-contain">
         </div>
-
-        <!-- Global Quick Search & Firebase Status Badge & Auth -->
-        <div class="hidden md:flex items-center space-x-4">
-          <div class="relative">
-            <input type="text" id="globalSearchInput" placeholder="Cari nama / NIK jemaah..." 
-                   oninput="handleGlobalSearch(this.value)"
-                   class="bg-slate-800 text-xs text-white placeholder-slate-400 rounded-full pl-9 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-          </div>
-
-          <div id="firebaseStatusBadge" class="flex items-center px-3 py-1 rounded-full text-xs bg-emerald-950 text-emerald-400 border border-emerald-800">
-            <span id="firebaseStatusDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-2"></span>
-            <span id="firebaseStatusText">Firestore Realtime Mode</span>
-          </div>
-
-          <!-- Tombol Login / Logout -->
-          <div id="authContainer">
-            <button id="authBtn" onclick="window.handleAuthAction()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow">
-              <i class="fa-solid fa-right-to-bracket" id="authBtnIcon"></i>
-              <span id="authBtnText">Login Staf</span>
-            </button>
-          </div>
+        <div class="min-w-0">
+          <h1 class="font-bold text-base tracking-wide text-amber-300 leading-tight">PT. SHABAR TOUR</h1>
+          <p class="text-[10px] text-slate-400 mt-1 leading-snug">Sistem Manajemen Jemaah Umroh</p>
         </div>
-
-        <!-- Mobile Menu Toggle Button -->
-        <div class="flex md:hidden">
-          <button id="mobileMenuBtn" onclick="toggleMobileMenu()" class="text-slate-300 hover:text-white focus:outline-none p-2">
-            <i class="fa-solid fa-bars text-xl"></i>
-          </button>
-        </div>
+        <button onclick="closeSidebar()" class="lg:hidden ml-auto text-slate-400 hover:text-white p-2" aria-label="Tutup sidebar">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
       </div>
     </div>
 
-    <!-- MAIN NAVIGATION TABS (Desktop) -->
-    <nav class="hidden md:block bg-slate-800 border-t border-slate-700/50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex space-x-1">
-          <button id="tab-dashboard" onclick="switchTab('dashboard')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-amber-400 text-amber-400 flex items-center space-x-2">
-            <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
-          </button>
-          <button id="tab-dataJemaah" onclick="switchTab('dataJemaah')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
-            <i class="fa-solid fa-users"></i><span>Data Jemaah</span>
-          </button>
-          <button id="tab-kelolaPaket" onclick="switchTab('kelolaPaket')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
-            <i class="fa-solid fa-box-archive"></i><span>Kelola Paket</span>
-          </button>
-          <button id="tab-laporan" onclick="switchTab('laporan')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
-            <i class="fa-solid fa-file-lines"></i><span>Laporan</span>
-          </button>
-          <button id="tab-setting" onclick="switchTab('setting')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2">
-            <i class="fa-solid fa-gear"></i><span>Setting</span>
-          </button>
-        </div>
+    <div class="px-5 pt-6 pb-2">
+      <p class="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500">Menu Utama</p>
+    </div>
+    <nav class="flex-1 overflow-y-auto custom-scrollbar px-3 pb-4 space-y-1">
+      <button id="tab-dashboard" onclick="switchTab('dashboard')" class="nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-amber-400 bg-emerald-900/60 text-amber-300 text-sm font-semibold transition">
+        <i class="fa-solid fa-chart-pie w-5 text-center"></i><span>Dashboard</span>
+      </button>
+      <button id="tab-dataJemaah" onclick="switchTab('dataJemaah')" class="nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition">
+        <i class="fa-solid fa-users w-5 text-center"></i><span>Data Jemaah</span>
+      </button>
+      <button id="tab-kelolaPaket" onclick="switchTab('kelolaPaket')" class="nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition">
+        <i class="fa-solid fa-box-archive w-5 text-center"></i><span>Kelola Paket</span>
+      </button>
+      <button id="tab-laporan" onclick="switchTab('laporan')" class="nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition">
+        <i class="fa-solid fa-file-lines w-5 text-center"></i><span>Laporan</span>
+      </button>
+
+      <div class="pt-5 pb-2 px-3">
+        <p class="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500">Preferensi</p>
       </div>
+      <button id="tab-setting" onclick="switchTab('setting')" class="nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition">
+        <i class="fa-solid fa-gear w-5 text-center"></i><span>Setting</span>
+      </button>
     </nav>
 
-    <!-- MOBILE MENU DROPDOWN -->
-    <div id="mobileMenu" class="hidden md:hidden bg-slate-800 border-t border-slate-700 px-4 pt-2 pb-4 space-y-2">
-      <button onclick="switchTab('dashboard'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-amber-400 hover:bg-slate-700">
-        <i class="fa-solid fa-chart-pie mr-2"></i>Dashboard
-      </button>
-      <button onclick="switchTab('dataJemaah'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
-        <i class="fa-solid fa-users mr-2"></i>Data Jemaah
-      </button>
-      <button onclick="switchTab('kelolaPaket'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
-        <i class="fa-solid fa-box-archive mr-2"></i>Kelola Paket
-      </button>
-      <button onclick="switchTab('laporan'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
-        <i class="fa-solid fa-file-lines mr-2"></i>Laporan
-      </button>
-      <button onclick="switchTab('setting'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-700">
-        <i class="fa-solid fa-gear mr-2"></i>Setting
-      </button>
-      <div class="border-t border-slate-700 pt-3 mt-2">
-        <button id="authBtnMobile" onclick="window.handleAuthAction(); window.toggleMobileMenu();" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-2 rounded-lg text-sm font-semibold transition flex items-center justify-center space-x-2 shadow">
+    <div class="px-4 py-4 border-t border-white/10 bg-black/10">
+      <div class="hidden lg:flex items-center gap-2 text-[10px] text-emerald-300/80 mb-3 px-1">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Sistem terhubung ke Firestore
+      </div>
+      <div class="lg:hidden">
+        <button id="authBtnMobile" onclick="window.handleAuthAction(); closeSidebar();" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center space-x-2 shadow">
           <i class="fa-solid fa-right-to-bracket" id="authBtnMobileIcon"></i>
           <span id="authBtnMobileText">Login Staf</span>
         </button>
+      </div>
+      <p class="text-[10px] text-slate-600 text-center mt-3">© 2026 PT. SHABAR TOUR</p>
+    </div>
+  </aside>
+
+  <!-- SIDEBAR MOBILE OVERLAY -->
+  <div id="sidebarOverlay" class="hidden fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-[2px] lg:hidden" onclick="closeSidebar()"></div>
+
+  <!-- TOP BAR -->
+  <header id="topHeader" class="lg:ml-72 bg-white text-slate-800 sticky top-0 z-30 border-b border-slate-200 shadow-sm">
+    <div class="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <button id="sidebarToggleBtn" onclick="toggleSidebar()" class="lg:hidden w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center shrink-0" aria-label="Buka menu">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+        <div class="lg:hidden flex items-center gap-2 min-w-0">
+          <div class="w-9 h-9 rounded-lg bg-white border border-amber-300 p-0.5 shrink-0">
+            <img src="assets/logo-shabar-tour.svg" alt="Shabar Tour" class="w-full h-full object-contain">
+          </div>
+          <div class="min-w-0">
+            <p class="font-bold text-xs text-emerald-900 truncate">SHABAR TOUR</p>
+            <p id="currentPageTitle" class="text-[10px] text-slate-500 truncate">Dashboard</p>
+          </div>
+        </div>
+        <div class="hidden lg:block">
+          <p class="text-sm font-bold text-slate-800" id="currentPageTitleDesktop">Dashboard</p>
+          <p class="text-[10px] text-slate-400">Portal Administrasi Jemaah Umroh</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="relative hidden md:block">
+          <input type="text" id="globalSearchInput" placeholder="Cari nama / NIK jemaah..."
+                 oninput="handleGlobalSearch(this.value)"
+                 class="bg-slate-100 text-xs text-slate-700 placeholder-slate-400 rounded-full pl-9 pr-4 py-2.5 w-52 lg:w-64 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+        </div>
+        <div id="firebaseStatusBadge" class="hidden sm:flex items-center px-3 py-2 rounded-full text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
+          <span id="firebaseStatusDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-2"></span>
+          <span id="firebaseStatusText">Firestore Realtime Mode</span>
+        </div>
+        <div id="authContainer" class="hidden md:block">
+          <button id="authBtn" onclick="window.handleAuthAction()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow-sm">
+            <i class="fa-solid fa-right-to-bracket" id="authBtnIcon"></i>
+            <span id="authBtnText">Login Staf</span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -160,7 +166,7 @@
   </button>
 
   <!-- MAIN CONTAINER -->
-  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <main class="flex-grow w-full lg:ml-72 lg:w-[calc(100%-18rem)] px-4 sm:px-6 lg:px-8 py-6">
 
     <!-- ==================== VIEW 1: DASHBOARD ==================== -->
     <section id="view-dashboard" class="space-y-6">
@@ -806,7 +812,7 @@
   </section>
 
 
-  <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-12">
+  <footer class="lg:ml-72 bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-12">
     <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
       <p class="font-medium text-slate-300">&copy; 2026 PT. SHABAR TOUR. Hak Cipta Dilindungi Undang-Undang.</p>
       <p class="text-slate-500 text-[11px]">Sistem Manajemen Jemaah Umroh terintegrasi Google Firebase Cloud Database.</p>
@@ -1045,25 +1051,40 @@
        ========================================================================== */
     window.switchTab = function(tabId) {
       const views = ['dashboard', 'dataJemaah', 'kelolaPaket', 'laporan', 'setting'];
+      const titles = {
+        dashboard: 'Dashboard',
+        dataJemaah: 'Data Jemaah',
+        kelolaPaket: 'Kelola Paket',
+        laporan: 'Laporan Paket Umroh',
+        setting: 'Pengaturan Aplikasi'
+      };
+
+      const inactiveClass = 'nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition';
+      const activeClass = 'nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-amber-400 bg-emerald-900/60 text-amber-300 text-sm font-semibold shadow-sm transition';
+
       views.forEach(v => {
         const sec = document.getElementById(`view-${v}`);
         const btn = document.getElementById(`tab-${v}`);
         if (sec) sec.classList.add('hidden');
-        if (btn) {
-          btn.className = "nav-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-300 hover:text-white hover:border-slate-500 flex items-center space-x-2";
-        }
+        if (btn) btn.className = inactiveClass;
       });
 
       const activeSec = document.getElementById(`view-${tabId}`);
       const activeBtn = document.getElementById(`tab-${tabId}`);
       if (activeSec) activeSec.classList.remove('hidden');
-      if (activeBtn) {
-        activeBtn.className = "nav-tab px-4 py-3 text-sm font-medium border-b-2 border-amber-400 text-amber-400 flex items-center space-x-2";
-      }
+      if (activeBtn) activeBtn.className = activeClass;
+
+      const title = titles[tabId] || 'Sistem Manajemen Jemaah Umroh';
+      const mobileTitle = document.getElementById('currentPageTitle');
+      const desktopTitle = document.getElementById('currentPageTitleDesktop');
+      if (mobileTitle) mobileTitle.textContent = title;
+      if (desktopTitle) desktopTitle.textContent = title;
 
       if (tabId === 'dashboard') renderDashboard();
       if (tabId === 'dataJemaah') renderJemaahTable();
       if (tabId === 'laporan') renderLaporanList();
+
+      closeSidebar();
     };
 
     /* ==========================================================================
@@ -2015,10 +2036,31 @@
     /* ==========================================================================
        HELPERS & UI RENDERING
        ========================================================================== */
-    window.toggleMobileMenu = function() {
-      const menu = document.getElementById('mobileMenu');
-      if (menu) menu.classList.toggle('hidden');
+    window.toggleSidebar = function() {
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (!sidebar || !overlay) return;
+
+      const isClosed = sidebar.classList.contains('-translate-x-full');
+      if (isClosed) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+      } else {
+        window.closeSidebar();
+      }
     };
+
+    window.closeSidebar = function() {
+      const sidebar = document.getElementById('appSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (sidebar) sidebar.classList.add('-translate-x-full');
+      if (overlay) overlay.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    };
+
+    // Alias untuk kompatibilitas jika masih ada pemanggilan fungsi menu lama.
+    window.toggleMobileMenu = window.toggleSidebar;
 
     function showAlert(message, type = 'success') {
       const container = document.getElementById('alertContainer');
