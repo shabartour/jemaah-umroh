@@ -1099,6 +1099,7 @@
         renderDashboard();
         renderJemaahTable();
         renderJemaahGroupCards();
+        renderLaporanList();
       }, (error) => {
         console.error('Gagal memuat koleksi paket:', error);
         showAlert(`Gagal memuat paket: ${getAuthErrorMessage(error)}`, 'error');
@@ -1135,6 +1136,7 @@
         renderJemaahTable();
         renderPaketTable();
         renderJemaahGroupCards();
+        renderLaporanList();
       }, (error) => {
         console.error('Gagal memuat koleksi jemaah:', error);
         showAlert(`Gagal memuat data jemaah: ${getAuthErrorMessage(error)}`, 'error');
