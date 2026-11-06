@@ -465,22 +465,86 @@
 
     <!-- ==================== VIEW 4: LAPORAN & MANIFEST ==================== -->
     <section id="view-laporan" class="hidden space-y-6">
-      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-lg font-bold text-slate-800">Laporan Riwayat Paket Umroh</h2>
-          <p class="text-xs text-slate-500">Daftar seluruh paket keberangkatan (baik yang sudah terlewat maupun akan datang) lengkap dengan unduhan PDF & XLSX.</p>
+      <!-- Header / hero -->
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0b3d32] via-emerald-900 to-slate-900 p-6 sm:p-7 text-white shadow-lg">
+        <div class="absolute -right-8 -top-10 opacity-[0.08] pointer-events-none">
+          <i class="fa-solid fa-kaaba text-[11rem]"></i>
         </div>
-        <div class="flex items-center space-x-2">
-          <button onclick="renderLaporanList()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center">
-            <i class="fa-solid fa-rotate mr-1.5"></i>Muat Ulang
+        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-200 mb-3">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+              Monitoring Perjalanan
+            </div>
+            <h2 class="text-xl sm:text-2xl font-bold text-white">Laporan Paket Umroh</h2>
+            <p class="text-xs sm:text-sm text-emerald-50/75 mt-1 max-w-2xl">Pantau keberangkatan, komposisi jemaah, dan manifest seluruh program PT. Shabar Tour dalam satu tampilan.</p>
+          </div>
+          <button onclick="renderLaporanList()" class="shrink-0 bg-white/10 hover:bg-white/20 border border-white/15 text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-rotate"></i> Sinkronkan Data
           </button>
         </div>
       </div>
 
-      <!-- Container Daftar Paket Laporan -->
-      <div id="laporanPaketContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm text-center py-8 text-slate-400">
-          Memuat data laporan paket...
+      <!-- Summary statistics -->
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-layer-group"></i></div>
+          <div class="min-w-0">
+            <p class="text-[11px] text-slate-500 font-medium">Total Paket</p>
+            <p id="laporanStatTotalPaket" class="text-2xl font-bold text-slate-900 leading-tight">0</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Semua program</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-users"></i></div>
+          <div class="min-w-0">
+            <p class="text-[11px] text-slate-500 font-medium">Total Jemaah</p>
+            <p id="laporanStatTotalJemaah" class="text-2xl font-bold text-slate-900 leading-tight">0</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Terdaftar di semua paket</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-plane-departure"></i></div>
+          <div class="min-w-0">
+            <p class="text-[11px] text-slate-500 font-medium">Paket Aktif</p>
+            <p id="laporanStatAktif" class="text-2xl font-bold text-slate-900 leading-tight">0</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Akan berangkat</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-box-archive"></i></div>
+          <div class="min-w-0">
+            <p class="text-[11px] text-slate-500 font-medium">Paket Riwayat</p>
+            <p id="laporanStatRiwayat" class="text-2xl font-bold text-slate-900 leading-tight">0</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Keberangkatan terlewat</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Package list toolbar -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">Daftar Program Keberangkatan</h3>
+            <p class="text-[11px] text-slate-500 mt-1">Pilih kategori atau cari nama paket untuk melihat detail rombongan.</p>
+          </div>
+          <div class="relative w-full lg:max-w-xs">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input id="laporanSearchInput" type="search" oninput="renderLaporanList()" placeholder="Cari nama paket, maskapai..."
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400">
+          </div>
+        </div>
+
+        <div id="laporanFilterTabs" class="flex flex-wrap gap-2">
+          <!-- Tab filter dibangun berdasarkan jumlah paket pada setiap kategori. -->
+        </div>
+      </div>
+
+      <!-- Package cards -->
+      <div id="laporanPaketContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div class="md:col-span-2 xl:col-span-3 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center text-slate-400">
+          <i class="fa-solid fa-spinner fa-spin text-2xl mb-3"></i>
+          <p class="text-xs">Memuat data laporan paket...</p>
         </div>
       </div>
     </section>
@@ -1681,71 +1745,197 @@
     /* ==========================================================================
        LAPORAN & EXPORT PDF / XLSX
        ========================================================================== */
+    window.setLaporanFilter = function(filter) {
+      window.laporanFilter = filter;
+      window.renderLaporanList();
+    };
+
+    window.viewPackageManifest = function(packageName) {
+      const packageFilter = document.getElementById('tableFilterPaket');
+      const dateFilter = document.getElementById('tableFilterDepartureDate');
+      const searchInput = document.getElementById('tableSearchInput');
+
+      if (packageFilter) packageFilter.value = packageName;
+      if (dateFilter) dateFilter.value = '';
+      if (searchInput) searchInput.value = '';
+
+      window.switchTab('dataJemaah');
+      window.renderJemaahTable();
+    };
+
+    window.laporanFilter = window.laporanFilter || 'all';
+
     window.renderLaporanList = function() {
       const container = document.getElementById('laporanPaketContainer');
-      if (!container) return;
+      const tabsContainer = document.getElementById('laporanFilterTabs');
+      if (!container || !tabsContainer) return;
 
-      container.innerHTML = '';
       const allGroups = getAllPaketGroups();
+      const today = getTodayLocalISODate();
+      const searchInput = document.getElementById('laporanSearchInput');
+      const search = (searchInput?.value || '').trim().toLocaleLowerCase('id-ID');
+      const activeFilter = window.laporanFilter || 'all';
 
-      if (allGroups.length === 0) {
-        container.innerHTML = `<div class="col-span-2 bg-white p-6 rounded-xl border border-slate-200 text-center text-slate-400">Belum ada data paket atau riwayat keberangkatan.</div>`;
+      const getPackageStatus = (paket) => {
+        const date = (paket.tglKeberangkatan || '').trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return 'incomplete';
+        return date < today ? 'history' : 'upcoming';
+      };
+
+      const categorized = allGroups.map(paket => ({
+        paket,
+        status: getPackageStatus(paket),
+        jemaah: getJemaahsForPaket(paket.namaPaket)
+      }));
+
+      const totalJemaah = window.state.jemaahs.length;
+      const upcomingCount = categorized.filter(item => item.status === 'upcoming').length;
+      const historyCount = categorized.filter(item => item.status === 'history').length;
+      const incompleteCount = categorized.filter(item => item.status === 'incomplete').length;
+
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      setText('laporanStatTotalPaket', allGroups.length);
+      setText('laporanStatTotalJemaah', totalJemaah);
+      setText('laporanStatAktif', upcomingCount);
+      setText('laporanStatRiwayat', historyCount);
+
+      const filters = [
+        { id: 'all', label: 'Semua Paket', count: allGroups.length, icon: 'fa-layer-group' },
+        { id: 'upcoming', label: 'Akan Datang', count: upcomingCount, icon: 'fa-plane-departure' },
+        { id: 'history', label: 'Riwayat', count: historyCount, icon: 'fa-box-archive' },
+        { id: 'incomplete', label: 'Perlu Dilengkapi', count: incompleteCount, icon: 'fa-circle-exclamation' }
+      ];
+
+      tabsContainer.innerHTML = filters.map(filter => {
+        const selected = activeFilter === filter.id;
+        const classes = selected
+          ? 'bg-emerald-800 text-white border-emerald-800 shadow-sm'
+          : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-800';
+        return `
+          <button type="button" onclick="setLaporanFilter('${filter.id}')" class="inline-flex items-center gap-2 border rounded-xl px-3 py-2 text-[11px] font-semibold transition ${classes}" aria-pressed="${selected}">
+            <i class="fa-solid ${filter.icon}"></i>
+            <span>${filter.label}</span>
+            <span class="rounded-full px-1.5 py-0.5 text-[10px] ${selected ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-600'}">${filter.count}</span>
+          </button>
+        `;
+      }).join('');
+
+      const filtered = categorized.filter(item => {
+        const paket = item.paket;
+        const matchesFilter = activeFilter === 'all' || item.status === activeFilter;
+        const haystack = [
+          paket.namaPaket,
+          paket.pesawat,
+          paket.program,
+          paket.muthawwif,
+          paket.tglKeberangkatan
+        ].join(' ').toLocaleLowerCase('id-ID');
+        return matchesFilter && (!search || haystack.includes(search));
+      });
+
+      if (filtered.length === 0) {
+        const message = allGroups.length === 0
+          ? 'Belum ada data paket atau riwayat keberangkatan.'
+          : 'Tidak ada paket yang cocok dengan pencarian atau filter ini.';
+        container.innerHTML = `
+          <div class="md:col-span-2 xl:col-span-3 bg-white p-10 rounded-2xl border border-dashed border-slate-300 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-xl"><i class="fa-solid fa-folder-open"></i></div>
+            <h3 class="text-sm font-semibold text-slate-700">Paket tidak ditemukan</h3>
+            <p class="text-xs text-slate-400 mt-1">${message}</p>
+          </div>
+        `;
         return;
       }
 
-      allGroups.forEach(paket => {
+      container.innerHTML = filtered.map(item => {
+        const paket = item.paket;
         const pName = paket.namaPaket;
         const packageNameArg = encodeURIComponent(pName).replace(/'/g, '%27');
         const tgl = paket.tglKeberangkatan || '';
-        const muthawwif = paket.muthawwif || '-';
-        const jemaahList = getJemaahsForPaket(pName);
+        const longDate = tgl
+          ? new Date(`${tgl}T00:00:00`).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+          : 'Tanggal belum tercatat';
+        const pesawat = paket.pesawat && paket.pesawat !== '-' ? paket.pesawat : 'Maskapai belum diatur';
+        const program = paket.program && paket.program !== '-' ? paket.program : 'Program belum diatur';
+        const muthawwif = paket.muthawwif && paket.muthawwif !== '-' ? paket.muthawwif : 'Belum ditentukan';
+        const jemaahList = item.jemaah;
         const totalJ = jemaahList.length;
         const pria = jemaahList.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('l')).length;
         const wanita = jemaahList.filter(j => (j.jenisKelamin || '').toLowerCase().startsWith('p')).length;
 
-        let statusBadge = '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">Akan Datang / Aktif</span>';
-        if (tgl && tgl < new Date().toISOString().split('T')[0]) {
-          statusBadge = '<span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold">Selesai / Terlewat</span>';
-        } else if (!tgl && paket.isLegacyGroup) {
-          statusBadge = '<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold">Tanggal tidak tercatat</span>';
+        let statusBadge = '';
+        if (item.status === 'upcoming') {
+          statusBadge = '<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 px-2.5 py-1 text-[10px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Akan Datang</span>';
+        } else if (item.status === 'history') {
+          statusBadge = '<span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 text-[10px] font-bold"><i class="fa-solid fa-check text-[9px]"></i>Riwayat</span>';
+        } else {
+          statusBadge = '<span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-100 px-2.5 py-1 text-[10px] font-bold"><i class="fa-solid fa-circle-exclamation text-[9px]"></i>Perlu Dilengkapi</span>';
         }
 
-        container.innerHTML += `
-          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4 hover:border-emerald-300 transition">
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <h3 class="font-bold text-slate-800 text-sm">${escapeHtml(pName)}</h3>
-                <p class="text-xs text-slate-500 mt-0.5">Keberangkatan: ${tgl ? formatDateIndo(tgl) : 'Belum tercatat'} | Muthawwif: ${escapeHtml(muthawwif)}</p>
+        const metaValueClass = 'text-xs font-semibold text-slate-700 truncate';
+        return `
+          <article class="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-emerald-200 transition-all duration-200 overflow-hidden flex flex-col">
+            <div class="h-1.5 bg-gradient-to-r ${item.status === 'upcoming' ? 'from-emerald-600 to-teal-400' : item.status === 'history' ? 'from-slate-400 to-slate-300' : 'from-amber-400 to-yellow-300'}"></div>
+            <div class="p-4 sm:p-5 flex-1 space-y-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-[10px] uppercase tracking-[0.16em] font-bold text-slate-400 mb-1">Program Umroh</p>
+                  <h3 class="font-bold text-slate-900 text-sm sm:text-base leading-snug break-words">${escapeHtml(pName)}</h3>
+                </div>
+                <div class="shrink-0">${statusBadge}</div>
               </div>
-              <div class="shrink-0">${statusBadge}</div>
+
+              <div class="rounded-xl bg-[#f7faf8] border border-emerald-50 p-3 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white border border-emerald-100 text-emerald-700 flex items-center justify-center shrink-0"><i class="fa-regular fa-calendar-days"></i></div>
+                <div class="min-w-0">
+                  <p class="text-[10px] text-slate-400 font-medium">Tanggal Keberangkatan</p>
+                  <p class="text-sm font-bold text-slate-800 truncate">${escapeHtml(longDate)}</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-x-3 gap-y-3">
+                <div class="min-w-0 flex items-start gap-2">
+                  <i class="fa-solid fa-plane text-emerald-700 text-xs mt-0.5"></i>
+                  <div class="min-w-0"><p class="text-[10px] text-slate-400">Maskapai</p><p class="${metaValueClass}">${escapeHtml(pesawat)}</p></div>
+                </div>
+                <div class="min-w-0 flex items-start gap-2">
+                  <i class="fa-solid fa-moon text-amber-500 text-xs mt-0.5"></i>
+                  <div class="min-w-0"><p class="text-[10px] text-slate-400">Program</p><p class="${metaValueClass}">${escapeHtml(program)}</p></div>
+                </div>
+                <div class="min-w-0 flex items-start gap-2 col-span-2">
+                  <i class="fa-solid fa-user-tie text-slate-400 text-xs mt-0.5"></i>
+                  <div class="min-w-0"><p class="text-[10px] text-slate-400">Pembimbing / Muthawwif</p><p class="${metaValueClass}">${escapeHtml(muthawwif)}</p></div>
+                </div>
+              </div>
+
+              <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div><p class="text-[10px] text-slate-400">Total Jemaah</p><p class="text-xl font-bold text-slate-900 tabular-nums">${totalJ}</p></div>
+                  <div><p class="text-[10px] text-slate-400">Laki-laki</p><p class="text-xl font-bold text-blue-600 tabular-nums">${pria}</p></div>
+                  <div><p class="text-[10px] text-slate-400">Perempuan</p><p class="text-xl font-bold text-pink-600 tabular-nums">${wanita}</p></div>
+                </div>
+              </div>
+
+              ${totalJ === 0 ? '<p class="text-[10px] text-slate-400"><i class="fa-solid fa-circle-info mr-1"></i>Belum ada jemaah terdaftar pada paket ini.</p>' : ''}
             </div>
 
-            <div class="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg text-center text-xs">
-              <div>
-                <span class="text-slate-400 block text-[10px]">Total Jemaah</span>
-                <span class="font-bold text-slate-800 text-sm">${totalJ}</span>
-              </div>
-              <div>
-                <span class="text-slate-400 block text-[10px]">Laki-laki</span>
-                <span class="font-bold text-blue-600 text-sm">${pria}</span>
-              </div>
-              <div>
-                <span class="text-slate-400 block text-[10px]">Perempuan</span>
-                <span class="font-bold text-pink-600 text-sm">${wanita}</span>
-              </div>
-            </div>
-
-            <div class="flex items-center space-x-2 pt-2 border-t border-slate-100">
-              <button onclick="exportPackageXLSX(decodeURIComponent('${packageNameArg}'))" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center shadow-sm">
-                <i class="fa-solid fa-file-excel mr-1.5 text-emerald-200"></i>Unduh XLSX
+            <div class="border-t border-slate-100 p-3 sm:p-4 grid grid-cols-3 gap-2">
+              <button onclick="exportPackageXLSX(decodeURIComponent('${packageNameArg}'))" class="rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white px-2 py-2.5 text-[10px] sm:text-xs font-semibold transition flex items-center justify-center gap-1.5" title="Unduh manifest Excel">
+                <i class="fa-solid fa-file-excel"></i><span>Excel</span>
               </button>
-              <button onclick="exportPackagePDF(decodeURIComponent('${packageNameArg}'))" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center shadow-sm">
-                <i class="fa-solid fa-file-pdf mr-1.5 text-red-400"></i>Unduh PDF
+              <button onclick="exportPackagePDF(decodeURIComponent('${packageNameArg}'))" class="rounded-xl bg-slate-800 hover:bg-slate-900 text-white px-2 py-2.5 text-[10px] sm:text-xs font-semibold transition flex items-center justify-center gap-1.5" title="Unduh manifest PDF">
+                <i class="fa-solid fa-file-pdf text-red-300"></i><span>PDF</span>
+              </button>
+              <button onclick="viewPackageManifest(decodeURIComponent('${packageNameArg}'))" class="rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-100 text-amber-900 px-2 py-2.5 text-[10px] sm:text-xs font-semibold transition flex items-center justify-center gap-1.5" title="Lihat daftar jemaah">
+                <i class="fa-solid fa-users"></i><span>Manifest</span>
               </button>
             </div>
-          </div>
+          </article>
         `;
-      });
+      }).join('');
     };
 
     window.exportPackageXLSX = function(packageName) {
