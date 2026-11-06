@@ -65,7 +65,7 @@
           <h1 class="font-bold text-base tracking-wide text-amber-300 leading-tight">PT. SHABAR TOUR</h1>
           <p class="text-[10px] text-slate-400 mt-1 leading-snug">Sistem Manajemen Jemaah Umroh</p>
         </div>
-        <button onclick="closeSidebar()" class="lg:hidden ml-auto text-slate-400 hover:text-white p-2" aria-label="Tutup sidebar">
+        <button onclick="window.closeSidebar()" class="lg:hidden ml-auto text-slate-400 hover:text-white p-2" aria-label="Tutup sidebar">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
@@ -102,7 +102,7 @@
         Sistem terhubung ke Firestore
       </div>
       <div class="lg:hidden">
-        <button id="authBtnMobile" onclick="window.handleAuthAction(); closeSidebar();" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center space-x-2 shadow">
+        <button id="authBtnMobile" onclick="window.handleAuthAction(); window.closeSidebar();" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center space-x-2 shadow">
           <i class="fa-solid fa-right-to-bracket" id="authBtnMobileIcon"></i>
           <span id="authBtnMobileText">Login Staf</span>
         </button>
@@ -112,13 +112,13 @@
   </aside>
 
   <!-- SIDEBAR MOBILE OVERLAY -->
-  <div id="sidebarOverlay" class="hidden fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-[2px] lg:hidden" onclick="closeSidebar()"></div>
+  <div id="sidebarOverlay" class="hidden fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-[2px] lg:hidden" onclick="window.closeSidebar()"></div>
 
   <!-- TOP BAR -->
   <header id="topHeader" class="lg:ml-72 bg-white text-slate-800 sticky top-0 z-30 border-b border-slate-200 shadow-sm">
     <div class="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0">
-        <button id="sidebarToggleBtn" onclick="toggleSidebar()" class="lg:hidden w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center shrink-0" aria-label="Buka menu">
+        <button id="sidebarToggleBtn" onclick="window.toggleSidebar()" class="lg:hidden w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center shrink-0" aria-label="Buka menu">
           <i class="fa-solid fa-bars text-lg"></i>
         </button>
         <div class="lg:hidden flex items-center gap-2 min-w-0">
@@ -1084,7 +1084,7 @@
       if (tabId === 'dataJemaah') renderJemaahTable();
       if (tabId === 'laporan') renderLaporanList();
 
-      closeSidebar();
+      window.closeSidebar();
     };
 
     /* ==========================================================================
