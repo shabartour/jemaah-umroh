@@ -2203,6 +2203,18 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       if (window.state.isLoggedIn) initRealtimeListeners();
+
+      // Pada ponsel sidebar tertutup saat awal dimuat; sesuaikan status tombol.
+      if (window.innerWidth < 1024) {
+        const button = document.getElementById('sidebarToggleBtn');
+        const icon = document.getElementById('sidebarToggleIcon');
+        if (button) {
+          button.setAttribute('aria-expanded', 'false');
+          button.setAttribute('aria-label', 'Buka sidebar');
+          button.title = 'Buka sidebar';
+        }
+        if (icon) icon.className = 'fa-solid fa-bars text-lg';
+      }
     });
   </script>
 </body>
