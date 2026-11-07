@@ -1552,7 +1552,9 @@
 
         const safe = value => escapeHtml(String(value ?? '-'));
         const valueOrDash = value => (value === undefined || value === null || String(value).trim() === '') ? '-' : safe(value);
-        const gender = (jemaah.jenisKelamin || '').toLowerCase().startsWith('p') ? 'Perempuan' : 'Laki-Laki';
+        const genderValue = (jemaah.jenisKelamin || '').toLowerCase();
+        const isMale = genderValue.startsWith('l');
+        const isFemale = genderValue.startsWith('p');
         const dpValue = jemaah.dp ?? jemaah.uangMuka ?? jemaah.uangMukaDP ?? null;
         const dpText = dpValue !== null && dpValue !== '' && Number.isFinite(Number(dpValue))
           ? 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(dpValue))
@@ -1646,7 +1648,7 @@
         <td class="field-label">Tempat Lahir</td><td class="colon">:</td><td class="field-value" style="width:27%">${e(jemaah.tempatLahir)}</td>
         <td class="field-label" style="width:15%">Tanggal Lahir</td><td class="colon">:</td><td class="field-value">${safe(formatLongDateIndonesia(jemaah.tanggalLahir))}</td>
       </tr>
-      <tr><td class="field-label">Jenis Kelamin</td><td class="colon">:</td><td class="field-value" colspan="4">${checkbox(gender === 'Laki-Laki')} Laki-Laki&nbsp;&nbsp;&nbsp;&nbsp; ${checkbox(gender === 'Perempuan')} Perempuan</td></tr>
+      <tr><td class="field-label">Jenis Kelamin</td><td class="colon">:</td><td class="field-value" colspan="4">${checkbox(isMale)} Laki-Laki&nbsp;&nbsp;&nbsp;&nbsp; ${checkbox(isFemale)} Perempuan</td></tr>
       <tr><td class="field-label">Alamat</td><td class="colon">:</td><td class="field-value" colspan="4">${e(jemaah.alamat)}</td></tr>
       <tr>
         <td class="field-label">Desa/Kelurahan</td><td class="colon">:</td><td class="field-value" style="width:27%">${e(jemaah.desaKelurahan)}</td>
