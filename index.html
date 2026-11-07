@@ -918,7 +918,7 @@
     let originalWilayahDuringEdit = null;
 
     async function fetchWilayahData(endpoint) {
-      const key = String(endpoint || '').replace(/^\\/+/, '');
+      const key = String(endpoint || '');
       if (wilayahRequestCache.has(key)) return wilayahRequestCache.get(key);
 
       const request = fetch(`${WILAYAH_API_BASE}/${key}`, { cache: 'default' })
