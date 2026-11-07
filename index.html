@@ -1449,16 +1449,16 @@
       const selectedKabupatenKota = getSelectedWilayah('inputKabupatenKota');
       const selectedKecamatan = getSelectedWilayah('inputKecamatan');
       const selectedDesaKelurahan = getSelectedWilayah('inputDesaKelurahan');
-      const keepLegacyWilayah = Boolean(editId && !wilayahSelectionDirty && !selectedProvinsi.id && originalWilayahDuringEdit);
-      const wilayahFields = keepLegacyWilayah ? originalWilayahDuringEdit : {
-        provinsi: selectedProvinsi.name,
-        provinsiId: selectedProvinsi.id,
-        kabupatenKota: selectedKabupatenKota.name,
-        kabupatenKotaId: selectedKabupatenKota.id,
-        kecamatan: selectedKecamatan.name,
-        kecamatanId: selectedKecamatan.id,
-        desaKelurahan: selectedDesaKelurahan.name,
-        desaKelurahanId: selectedDesaKelurahan.id
+      const preserveOriginalWilayah = Boolean(editId && !wilayahSelectionDirty && originalWilayahDuringEdit);
+      const wilayahFields = {
+        provinsi: selectedProvinsi.name || (preserveOriginalWilayah ? originalWilayahDuringEdit.provinsi : ''),
+        provinsiId: selectedProvinsi.id || (preserveOriginalWilayah ? originalWilayahDuringEdit.provinsiId : ''),
+        kabupatenKota: selectedKabupatenKota.name || (preserveOriginalWilayah ? originalWilayahDuringEdit.kabupatenKota : ''),
+        kabupatenKotaId: selectedKabupatenKota.id || (preserveOriginalWilayah ? originalWilayahDuringEdit.kabupatenKotaId : ''),
+        kecamatan: selectedKecamatan.name || (preserveOriginalWilayah ? originalWilayahDuringEdit.kecamatan : ''),
+        kecamatanId: selectedKecamatan.id || (preserveOriginalWilayah ? originalWilayahDuringEdit.kecamatanId : ''),
+        desaKelurahan: selectedDesaKelurahan.name || (preserveOriginalWilayah ? originalWilayahDuringEdit.desaKelurahan : ''),
+        desaKelurahanId: selectedDesaKelurahan.id || (preserveOriginalWilayah ? originalWilayahDuringEdit.desaKelurahanId : '')
       };
       const dpInput = document.getElementById('inputDP').value;
       const dp = dpInput === '' ? null : Number(dpInput);
