@@ -1549,6 +1549,7 @@
           day: '2-digit', month: 'long', year: 'numeric'
         });
         const logoUrl = new URL('assets/logo-shabar-tour.svg', window.location.href).href;
+        const himpuLogoUrl = new URL('assets/himpu-404.svg', window.location.href).href;
 
         const safe = value => escapeHtml(String(value ?? '-'));
         const valueOrDash = value => (value === undefined || value === null || String(value).trim() === '') ? '-' : safe(value);
@@ -1580,7 +1581,7 @@
     .brand-name { color: #08752d; font-family: Georgia, 'Times New Roman', serif; font-size: 27pt; font-weight: 700; line-height: 1; white-space: nowrap; letter-spacing: .2px; }
     .permit { margin-top: 2mm; font-size: 10pt; color: #111; }
     .himpu { text-align: center; color: #111; font-size: 8pt; font-weight: 800; line-height: 1.1; }
-    .himpu-mark { width: 16mm; height: 16mm; margin: 0 auto 1mm; background: #111; color: #eab308; display: flex; align-items: center; justify-content: center; border: 1px solid #b89116; font-size: 17pt; }
+    .himpu-image { display: block; width: 16mm; height: 20mm; object-fit: contain; margin: 0 auto 1mm; }
     .color-rule { height: 2.5mm; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .5mm; margin: 2mm 0 7mm 31mm; }
     .color-rule span:nth-child(1) { background: #f2b632; }
     .color-rule span:nth-child(2) { background: #087a23; }
@@ -1627,8 +1628,7 @@
         <div class="permit">PPIU No. Izin 91201091434130002</div>
       </div>
       <div class="himpu">
-        <div class="himpu-mark">ح</div>
-        HIMPUH<br>404
+        <img class="himpu-image" src="${himpuLogoUrl}" alt="HIMPUH 404">
       </div>
     </header>
     <div class="color-rule"><span></span><span></span><span></span></div>
@@ -1698,8 +1698,7 @@
         <div class="permit">PPIU No. Izin 91201091434130002</div>
       </div>
       <div class="himpu">
-        <div class="himpu-mark">ح</div>
-        HIMPUH<br>404
+        <img class="himpu-image" src="${himpuLogoUrl}" alt="HIMPUH 404">
       </div>
     </header>
     <div class="color-rule"><span></span><span></span><span></span></div>
