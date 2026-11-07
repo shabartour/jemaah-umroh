@@ -1502,7 +1502,16 @@
 
     async function ensureRegistrationNumber(jemaah) {
       if (jemaah.noRegistrasi) return jemaah.noRegistrasi;
-      const noRegistrasi = generateRegistrationNumber(jemaah.id);
+
+      let registrationDate = new Date();
+      if (typeof jemaah.createdAt?.toDate === 'function') {
+        registrationDate = jemaah.createdAt.toDate();
+      } else if (jemaah.createdAt) {
+        const parsedDate = new Date(jemaah.createdAt);
+        if (!Number.isNaN(parsedDate.getTime())) registrationDate = parsedDate;
+      }
+
+      const noRegistrasi = generateRegistrationNumber(jemaah.id, registrationDate);
       await updateDoc(doc(db, 'jemaah', jemaah.id), {
         noRegistrasi,
         updatedAt: serverTimestamp()
@@ -1560,7 +1569,8 @@
         const dpText = dpValue !== null && dpValue !== '' && Number.isFinite(Number(dpValue))
           ? 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(dpValue))
           : 'Rp. -';
-        const passportAvailable = Boolean(jemaah.noPaspor);
+        const passportNumber = String(jemaah.noPaspor ?? '').trim();
+        const passportAvailable = Boolean(passportNumber && passportNumber !== '-');
         const checkbox = (checked) => checked ? '☑' : '☐';
         const e = valueOrDash;
 
