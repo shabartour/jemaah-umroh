@@ -643,6 +643,11 @@
           <select id="inputPaketId" required class="w-full text-xs bg-white border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
             <option value="">-- Pilih Paket Umroh --</option>
           </select>
+          <div class="mt-3">
+            <label for="inputDP" class="block text-xs font-semibold text-slate-700 mb-1">Uang Muka / DP (Rp) <span class="text-slate-400 font-normal">(Opsional)</span></label>
+            <input type="number" id="inputDP" min="0" step="1000" inputmode="numeric" placeholder="Contoh: 5000000"
+              class="w-full text-xs bg-white border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
         </div>
 
         <!-- Identitas Diri -->
@@ -657,6 +662,12 @@
             <input type="text" id="inputNik" required placeholder="16 Digit Angka NIK" maxlength="16"
                    class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
           </div>
+        </div>
+
+        <div>
+          <label for="inputNamaAyah" class="block text-xs font-semibold text-slate-700 mb-1">Nama Ayah <span class="text-slate-400 font-normal">(Opsional)</span></label>
+          <input type="text" id="inputNamaAyah" placeholder="Nama ayah kandung"
+            class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -696,6 +707,24 @@
           <label for="inputAlamat" class="block text-xs font-semibold text-slate-700 mb-1">Alamat Lengkap <span class="text-red-500">*</span></label>
           <textarea id="inputAlamat" required rows="2" placeholder="Jl. Raya Kedawung No. 87, Cirebon" 
                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label for="inputDesaKelurahan" class="block text-xs font-semibold text-slate-700 mb-1">Desa / Kelurahan</label>
+            <input type="text" id="inputDesaKelurahan" placeholder="Nama desa / kelurahan"
+              class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="inputKecamatan" class="block text-xs font-semibold text-slate-700 mb-1">Kecamatan</label>
+            <input type="text" id="inputKecamatan" placeholder="Nama kecamatan"
+              class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="inputKabupatenKota" class="block text-xs font-semibold text-slate-700 mb-1">Kabupaten / Kota</label>
+            <input type="text" id="inputKabupatenKota" placeholder="Kabupaten / kota"
+              class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
         </div>
 
         <div>
@@ -842,6 +871,7 @@
       collection, 
       addDoc, 
       doc, 
+      setDoc,
       updateDoc, 
       deleteDoc, 
       onSnapshot, 
@@ -1213,6 +1243,12 @@
       const telepon = document.getElementById('inputNoHp').value.trim();
       const noPaspor = document.getElementById('inputNoPaspor').value.trim();
       const alamat = document.getElementById('inputAlamat').value.trim();
+      const namaAyah = document.getElementById('inputNamaAyah').value.trim();
+      const desaKelurahan = document.getElementById('inputDesaKelurahan').value.trim();
+      const kecamatan = document.getElementById('inputKecamatan').value.trim();
+      const kabupatenKota = document.getElementById('inputKabupatenKota').value.trim();
+      const dpInput = document.getElementById('inputDP').value;
+      const dp = dpInput === '' ? null : Number(dpInput);
       const catatan = document.getElementById('inputCatatan').value.trim();
 
       if (!paketVal || !namaVal || !nikVal) {
@@ -1233,6 +1269,11 @@
         tanggalLahir: tanggalLahir,
         noPaspor: noPaspor,
         alamat: alamat,
+        namaAyah: namaAyah,
+        desaKelurahan: desaKelurahan,
+        kecamatan: kecamatan,
+        kabupatenKota: kabupatenKota,
+        dp: Number.isFinite(dp) ? dp : null,
         catatan: catatan || '-',
         updatedAt: serverTimestamp()
       };
@@ -1243,8 +1284,10 @@
           showAlert('Data jemaah berhasil diperbarui!', 'success');
         } else {
           jemaahPayload.createdAt = serverTimestamp();
-          await addDoc(collection(db, "jemaah"), jemaahPayload);
-          showAlert('Jemaah baru berhasil ditambahkan!', 'success');
+          const newJemaahRef = doc(collection(db, "jemaah"));
+          jemaahPayload.noRegistrasi = generateRegistrationNumber(newJemaahRef.id);
+          await setDoc(newJemaahRef, jemaahPayload);
+          showAlert(`Jemaah baru berhasil ditambahkan. No. Registrasi: ${jemaahPayload.noRegistrasi}`, 'success');
         }
 
         window.closeAddJemaahModal();
@@ -1269,6 +1312,11 @@
       document.getElementById('inputNoHp').value = jemaah.telepon || jemaah.noHp || '';
       document.getElementById('inputNoPaspor').value = jemaah.noPaspor || '';
       document.getElementById('inputAlamat').value = jemaah.alamat || '';
+      document.getElementById('inputNamaAyah').value = jemaah.namaAyah || '';
+      document.getElementById('inputDesaKelurahan').value = jemaah.desaKelurahan || '';
+      document.getElementById('inputKecamatan').value = jemaah.kecamatan || '';
+      document.getElementById('inputKabupatenKota').value = jemaah.kabupatenKota || jemaah.kabupaten || '';
+      document.getElementById('inputDP').value = jemaah.dp ?? jemaah.uangMuka ?? '';
       document.getElementById('inputCatatan').value = jemaah.catatan || '';
 
       document.getElementById('modalFormTitleText').textContent = "Edit Data Jemaah";
@@ -1443,6 +1491,275 @@
         getJemaahPackageName(j).toLocaleLowerCase('id-ID') === target
       );
     }
+
+    // Nomor tetap diturunkan dari ID dokumen Firestore sehingga unik dan stabil.
+    // Format: ST/UMR/TAHUN/ID-DOKUMEN.
+    function generateRegistrationNumber(jemaahId, date = new Date()) {
+      const year = date.getFullYear();
+      const uniqueId = String(jemaahId || '').replace(/[^a-z0-9]/gi, '').toUpperCase();
+      return `ST/UMR/${year}/${uniqueId}`;
+    }
+
+    async function ensureRegistrationNumber(jemaah) {
+      if (jemaah.noRegistrasi) return jemaah.noRegistrasi;
+      const noRegistrasi = generateRegistrationNumber(jemaah.id);
+      await updateDoc(doc(db, 'jemaah', jemaah.id), {
+        noRegistrasi,
+        updatedAt: serverTimestamp()
+      });
+      jemaah.noRegistrasi = noRegistrasi;
+      return noRegistrasi;
+    }
+
+    function formatLongDateIndonesia(dateValue) {
+      if (!dateValue) return 'Belum tercatat';
+      const date = new Date(`${dateValue}T00:00:00`);
+      if (Number.isNaN(date.getTime())) return String(dateValue);
+      return date.toLocaleDateString('id-ID', {
+        day: '2-digit', month: 'long', year: 'numeric'
+      });
+    }
+
+    window.printRegistrationLetter = async function(jemaahId) {
+      if (!requireStaffLogin()) return;
+
+      // Buka jendela secara langsung dari klik tombol agar tidak diblokir browser.
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        showAlert('Popup diblokir browser. Izinkan popup untuk situs aplikasi Shabar Tour, lalu coba lagi.', 'error');
+        return;
+      }
+      printWindow.document.open();
+      printWindow.document.write('<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Menyiapkan Surat Pendaftaran...</title></head><body style="font-family:Arial,sans-serif;padding:32px">Menyiapkan surat pendaftaran...</body></html>');
+      printWindow.document.close();
+
+      try {
+        const jemaah = window.state.jemaahs.find(item => item.id === jemaahId);
+        if (!jemaah) throw new Error('Data jemaah tidak ditemukan. Muat ulang data terlebih dahulu.');
+
+        const noRegistrasi = await ensureRegistrationNumber(jemaah);
+        const packageName = getJemaahPackageName(jemaah) || '-';
+        const packageKey = packageName.toLocaleLowerCase('id-ID');
+        const packageData = getAllPaketGroups().find(item =>
+          normalizePaketName(item.namaPaket).toLocaleLowerCase('id-ID') === packageKey
+        );
+        const departureDate = packageData?.tglKeberangkatan || '';
+        const today = new Date();
+        const printDate = today.toLocaleDateString('id-ID', {
+          day: '2-digit', month: 'long', year: 'numeric'
+        });
+        const logoUrl = new URL('assets/logo-shabar-tour.svg', window.location.href).href;
+
+        const safe = value => escapeHtml(String(value ?? '-'));
+        const valueOrDash = value => (value === undefined || value === null || String(value).trim() === '') ? '-' : safe(value);
+        const gender = (jemaah.jenisKelamin || '').toLowerCase().startsWith('p') ? 'Perempuan' : 'Laki-Laki';
+        const dpValue = jemaah.dp ?? jemaah.uangMuka ?? jemaah.uangMukaDP ?? null;
+        const dpText = dpValue !== null && dpValue !== '' && Number.isFinite(Number(dpValue))
+          ? 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(dpValue))
+          : 'Rp. -';
+        const passportAvailable = Boolean(jemaah.noPaspor);
+        const checkbox = (checked) => checked ? '☑' : '☐';
+        const e = valueOrDash;
+
+        const printHtml = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Surat Pendaftaran Umroh - ${safe(jemaah.nama || jemaah.namaLengkap || '')}</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #e5e7eb; color: #111827; font-family: Arial, Helvetica, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page { width: 210mm; height: 297mm; margin: 0 auto 8mm; padding: 10mm 14mm 19mm; background: #fff; position: relative; overflow: hidden; page-break-after: always; break-after: page; }
+    .page:last-child { page-break-after: auto; break-after: auto; }
+    .letterhead { display: grid; grid-template-columns: 27mm 1fr 24mm; align-items: center; gap: 4mm; min-height: 28mm; }
+    .brand-logo { width: 26mm; height: 26mm; object-fit: contain; }
+    .brand-name { color: #08752d; font-family: Georgia, 'Times New Roman', serif; font-size: 27pt; font-weight: 700; line-height: 1; white-space: nowrap; letter-spacing: .2px; }
+    .permit { margin-top: 2mm; font-size: 10pt; color: #111; }
+    .himpu { text-align: center; color: #111; font-size: 8pt; font-weight: 800; line-height: 1.1; }
+    .himpu-mark { width: 16mm; height: 16mm; margin: 0 auto 1mm; background: #111; color: #eab308; display: flex; align-items: center; justify-content: center; border: 1px solid #b89116; font-size: 17pt; }
+    .color-rule { height: 2.5mm; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .5mm; margin: 2mm 0 7mm 31mm; }
+    .color-rule span:nth-child(1) { background: #f2b632; }
+    .color-rule span:nth-child(2) { background: #087a23; }
+    .color-rule span:nth-child(3) { background: #111; }
+    .form-title { text-align: center; font-size: 16pt; line-height: 1.4; font-weight: 700; margin: 0 0 7mm; }
+    .reg-meta { display: flex; justify-content: space-between; align-items: center; font-size: 9pt; margin-bottom: 3mm; border: 1px solid #d1d5db; border-radius: 2mm; padding: 2.2mm 3mm; background: #fafafa; }
+    .form-table { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
+    .form-table td { border-bottom: .25mm solid #777; padding: 2.15mm 2mm; vertical-align: middle; line-height: 1.25; }
+    .form-table tr:first-child td { border-top: .25mm solid #777; }
+    .field-label { width: 21%; white-space: nowrap; }
+    .field-value { font-weight: 500; }
+    .colon { width: 2%; text-align: center; }
+    .checklist { margin-top: 6mm; font-size: 10pt; }
+    .checklist-title, .notes-title { font-weight: 700; margin-bottom: 2mm; }
+    .checklist-row { display: grid; grid-template-columns: 1fr 42mm; gap: 3mm; margin: 1.8mm 0; line-height: 1.25; }
+    .check-pair { white-space: nowrap; }
+    .notes { font-size: 9.4pt; line-height: 1.4; margin-top: 4mm; }
+    .notes ol { margin: 1mm 0 0; padding-left: 7mm; }
+    .notes li { margin: 1mm 0; }
+    .terms-heading { text-align: center; font-size: 13pt; font-weight: 700; margin: 4mm 0 7mm; }
+    .terms { font-size: 9.7pt; line-height: 1.42; }
+    .terms ol { padding-left: 7mm; margin: 0; }
+    .terms li { padding-left: 1.5mm; margin-bottom: 3mm; text-align: justify; }
+    .terms strong { font-weight: 700; }
+    .terms-sublist { list-style: none; margin: 1.5mm 0 1mm; padding-left: 0; }
+    .terms-sublist li { margin: 1mm 0; padding-left: 0; }
+    .terms-sublist li::before { content: '- '; }
+    .footer { position: absolute; left: 14mm; right: 14mm; bottom: 6mm; border-top: .45mm solid #111; text-align: center; padding-top: 2mm; font-size: 9pt; line-height: 1.4; }
+    @media screen {
+      .page { box-shadow: 0 2px 12px rgba(15,23,42,.14); }
+    }
+    @media print {
+      html, body { background: #fff; }
+      .page { margin: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <header class="letterhead">
+      <img class="brand-logo" src="${logoUrl}" alt="Logo Shabar Tour">
+      <div>
+        <div class="brand-name">PT. SHABAR TOUR</div>
+        <div class="permit">PPIU No. Izin 91201091434130002</div>
+      </div>
+      <div class="himpu">
+        <div class="himpu-mark">ح</div>
+        HIMPUH<br>404
+      </div>
+    </header>
+    <div class="color-rule"><span></span><span></span><span></span></div>
+
+    <h1 class="form-title">FORMULIR PENDAFTARAN<br>JAMAAH UMRAH</h1>
+
+    <div class="reg-meta">
+      <span><strong>No. Registrasi:</strong> ${safe(noRegistrasi)}</span>
+      <span><strong>Tanggal Cetak:</strong> ${safe(printDate)}</span>
+    </div>
+
+    <table class="form-table">
+      <tr><td class="field-label">Nomor NIK</td><td class="colon">:</td><td class="field-value" colspan="4">${e(jemaah.nik)}</td></tr>
+      <tr><td class="field-label">Nama (sesuai KTP)</td><td class="colon">:</td><td class="field-value" colspan="4">${e(jemaah.nama || jemaah.namaLengkap)}</td></tr>
+      <tr><td class="field-label">Nama Ayah</td><td class="colon">:</td><td class="field-value" colspan="4">${e(jemaah.namaAyah)}</td></tr>
+      <tr>
+        <td class="field-label">Tempat Lahir</td><td class="colon">:</td><td class="field-value" style="width:27%">${e(jemaah.tempatLahir)}</td>
+        <td class="field-label" style="width:15%">Tanggal Lahir</td><td class="colon">:</td><td class="field-value">${safe(formatLongDateIndonesia(jemaah.tanggalLahir))}</td>
+      </tr>
+      <tr><td class="field-label">Jenis Kelamin</td><td class="colon">:</td><td class="field-value" colspan="4">${checkbox(gender === 'Laki-Laki')} Laki-Laki&nbsp;&nbsp;&nbsp;&nbsp; ${checkbox(gender === 'Perempuan')} Perempuan</td></tr>
+      <tr><td class="field-label">Alamat</td><td class="colon">:</td><td class="field-value" colspan="4">${e(jemaah.alamat)}</td></tr>
+      <tr>
+        <td class="field-label">Desa/Kelurahan</td><td class="colon">:</td><td class="field-value" style="width:27%">${e(jemaah.desaKelurahan)}</td>
+        <td class="field-label" style="width:15%">Kab./Kota</td><td class="colon">:</td><td class="field-value">${e(jemaah.kabupatenKota || jemaah.kabupaten)}</td>
+      </tr>
+      <tr>
+        <td class="field-label">Kecamatan</td><td class="colon">:</td><td class="field-value" style="width:27%">${e(jemaah.kecamatan)}</td>
+        <td class="field-label" style="width:15%">No. HP/WA</td><td class="colon">:</td><td class="field-value">${e(jemaah.telepon || jemaah.noHp)}</td>
+      </tr>
+      <tr>
+        <td class="field-label">Paket Umroh</td><td class="colon">:</td><td class="field-value" colspan="4">${e(packageName)}</td>
+      </tr>
+      <tr>
+        <td class="field-label">Keberangkatan</td><td class="colon">:</td><td class="field-value" colspan="4">${safe(formatLongDateIndonesia(departureDate))}</td>
+      </tr>
+      <tr><td class="field-label">Uang Muka/DP</td><td class="colon">:</td><td class="field-value" colspan="4">${safe(dpText)}</td></tr>
+    </table>
+
+    <div class="checklist">
+      <div class="checklist-title">Persyaratan:</div>
+      <div class="checklist-row"><span>1. Paspor (minimal 2 suku kata)</span><span class="check-pair">${checkbox(passportAvailable)} Ada&nbsp;&nbsp;&nbsp; ${checkbox(!passportAvailable)} Belum</span></div>
+      <div class="checklist-row"><span>2. Sertifikat Suntik meningitis dan Polio</span><span class="check-pair">☐ Ada&nbsp;&nbsp;&nbsp; ☐ Belum</span></div>
+      <div class="checklist-row"><span>3. Copy KTP dan Kartu Keluarga</span><span class="check-pair">☐ Ada&nbsp;&nbsp;&nbsp; ☐ Belum</span></div>
+      <div class="checklist-row"><span>4. Copy Buku Nikah/ Akte Lahir/ Ijazah</span><span class="check-pair">☐ Ada&nbsp;&nbsp;&nbsp; ☐ Belum</span></div>
+      <div class="checklist-row"><span>5. Pas Photo 4 X 6</span><span class="check-pair">☐ Ada&nbsp;&nbsp;&nbsp; ☐ Belum</span></div>
+    </div>
+
+    <div class="notes">
+      <div class="notes-title">Keterangan</div>
+      <ol>
+        <li>Jamaah diwajibkan untuk <em>Booking Seat</em> terlebih dahulu dengan nominal minimal Rp 5.000.000/orang dan pelunasan 20 hari sebelum keberangkatan dengan harga sesuai pilihan paket.</li>
+        <li>Pendaftaran dianggap <strong>SAH</strong> apabila calon jemaah telah terinput di Form Pendaftaran dan melakukan setoran awal/ DP baik secara <em>cash</em> ataupun <em>transfer</em> dengan bukti terlampir.</li>
+      </ol>
+    </div>
+
+    <footer class="footer">
+      Kantor Pusat: Jalan Garuda No. 45 Tuparev, Cirebon 45153<br>
+      Telp. 0231-210250 | info@shabartour.id | https://shabartour.id
+    </footer>
+  </section>
+
+  <section class="page">
+    <header class="letterhead">
+      <img class="brand-logo" src="${logoUrl}" alt="Logo Shabar Tour">
+      <div>
+        <div class="brand-name">PT. SHABAR TOUR</div>
+        <div class="permit">PPIU No. Izin 91201091434130002</div>
+      </div>
+      <div class="himpu">
+        <div class="himpu-mark">ح</div>
+        HIMPUH<br>404
+      </div>
+    </header>
+    <div class="color-rule"><span></span><span></span><span></span></div>
+
+    <h2 class="terms-heading">KETENTUAN PEMBATALAN DAN PENGEMBALIAN DANA</h2>
+    <div class="terms">
+      <ol>
+        <li>Pembatalan pendaftaran oleh jemaah yang dilakukan dalam rentang waktu 46 (empat puluh enam) sampai dengan 59 (lima puluh sembilan) hari sebelum tanggal keberangkatan, dikenakan biaya pembatalan sesuai dengan jumlah biaya riil yang telah dikeluarkan oleh Pihak Pertama (PT. SHABAR TOUR), berdasarkan bukti pengeluaran yang sah.</li>
+        <li>Pembatalan pendaftaran oleh jemaah yang dilakukan dalam rentang waktu <strong>31 (tiga puluh satu) sampai dengan 45 (empat puluh lima) hari</strong> sebelum tanggal keberangkatan, dikenakan biaya pembatalan sebesar <strong>50% (lima puluh persen)</strong> dari harga paket.</li>
+        <li>Pembatalan pendaftaran oleh jemaah yang dilakukan dalam rentang waktu <strong>15 (lima belas) sampai dengan 30 (tiga puluh) hari</strong> sebelum tanggal keberangkatan, dikenakan biaya pembatalan sebesar <strong>75% (tujuh puluh lima persen)</strong> dari harga paket.</li>
+        <li>Pembatalan pendaftaran oleh jemaah yang dilakukan dalam rentang waktu <strong>14 (empat belas) hari atau kurang sebelum tanggal keberangkatan</strong>, dikenakan biaya pembatalan sebesar 100% (seratus persen) dari harga paket.</li>
+        <li>Jemaah yang mengundurkan diri atau membatalkan pendaftaran wajib mengajukan permohonan pembatalan secara tertulis kepada Pihak Pertama (PT. SHABAR TOUR).</li>
+        <li>Pengembalian dana kepada jemaah dilakukan paling cepat <strong>30 (tiga puluh) hari kerja</strong>, terhitung sejak surat permohonan pembatalan diterima dan disetujui secara tertulis oleh Pihak Pertama.</li>
+        <li>Besaran dana yang dikembalikan kepada jemaah merupakan sisa pembayaran setelah dikurangi biaya pembatalan sebagaimana diatur dalam ketentuan di atas serta biaya-biaya lain yang telah dikeluarkan oleh Pihak Pertama sesuai dengan ketentuan yang berlaku dan kesepakatan para pihak.</li>
+      </ol>
+    </div>
+
+    <h2 class="terms-heading" style="margin-top:8mm">PERUBAHAN JADWAL KEBERANGKATAN</h2>
+    <div class="terms">
+      <ol>
+        <li>Perubahan jadwal keberangkatan, baik berupa percepatan maupun penundaan, dapat terjadi karena berbagai kondisi yang berada di luar kendali PT. SHABAR TOUR, antara lain:
+          <ul class="terms-sublist">
+            <li>Visa jemaah belum atau tidak diterbitkan oleh pihak berwenang;</li>
+            <li>Keterlambatan atau perubahan jadwal penerbangan (<em>delay</em>);</li>
+            <li>Kelengkapan administrasi dan dokumen persyaratan jemaah yang belum terpenuhi;</li>
+            <li>Adanya perubahan kebijakan atau peraturan dari pemerintah negara asal maupun negara tujuan; dan/atau</li>
+            <li>Kondisi lain yang berada di luar kendali dan kemampuan Pihak PT. SHABAR TOUR.</li>
+          </ul>
+        </li>
+        <li>Apabila terjadi perubahan jadwal keberangkatan sebagaimana dimaksud pada poin (1), kami akan menginformasikan perubahan tersebut kepada jemaah dan melakukan koordinasi untuk penyesuaian jadwal keberangkatan sesuai dengan kondisi yang memungkinkan.</li>
+      </ol>
+    </div>
+
+    <footer class="footer">
+      Kantor Pusat: Jalan Garuda No. 45 Tuparev, Cirebon 45153<br>
+      Telp. 0231-210250 | info@shabartour.id | https://shabartour.id
+    </footer>
+  </section>
+
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        window.focus();
+        window.print();
+      }, 500);
+    });
+  </script>
+</body>
+</html>`;
+
+        printWindow.document.open();
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
+        showAlert(`Surat pendaftaran ${noRegistrasi} siap dicetak. Pilih "Save as PDF" pada dialog printer untuk menyimpan PDF.`, 'success');
+      } catch (error) {
+        console.error('Gagal menyiapkan surat pendaftaran:', error);
+        printWindow.document.open();
+        printWindow.document.write(`<!DOCTYPE html><html lang="id"><meta charset="UTF-8"><body style="font-family:Arial;padding:24px"><h3>Surat tidak dapat disiapkan</h3><p>${escapeHtml(error.message || 'Terjadi kesalahan.')}</p></body></html>`);
+        printWindow.document.close();
+        showAlert(`Gagal menyiapkan surat: ${error.message || 'Kesalahan tidak diketahui.'}`, 'error');
+      }
+    };
 
     // Gabungkan koleksi master paket dengan nama paket yang tersimpan pada data jemaah.
     // Paket lama tanpa dokumen master tetap ditampilkan sebagai grup arsip.
@@ -1648,6 +1965,11 @@
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
         `;
+        const printAction = `
+          <button onclick="printRegistrationLetter('${j.id}')" class="text-emerald-700 hover:text-emerald-900 p-1" title="Cetak Surat Pendaftaran" aria-label="Cetak surat pendaftaran">
+            <i class="fa-solid fa-print"></i>
+          </button>
+        `;
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition">
@@ -1664,8 +1986,9 @@
             <td class="px-4 py-3 text-slate-600">${j.noPaspor ? escapeHtml(j.noPaspor) : '<span class="text-slate-300">-</span>'}</td>
             <td class="px-4 py-3 font-medium text-emerald-700">${escapeHtml(namaPaket)}</td>
             <td class="px-4 py-3 text-slate-500 max-w-xs truncate" title="${escapeHtml(j.alamat)}">${escapeHtml(j.alamat || '-')}</td>
-            <td class="px-4 py-3 text-center space-x-1">
+            <td class="px-4 py-3 text-center space-x-1 whitespace-nowrap">
               ${editAction}
+              ${printAction}
               <button onclick="deleteJemaah('${j.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus">
                 <i class="fa-solid fa-trash"></i>
               </button>
