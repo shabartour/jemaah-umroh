@@ -1549,7 +1549,6 @@
           day: '2-digit', month: 'long', year: 'numeric'
         });
         const logoUrl = new URL('assets/logo-shabar-tour.svg', window.location.href).href;
-        const himpuLogoData = 'data:image/jpeg;base64,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';
 
         const safe = value => escapeHtml(String(value ?? '-'));
         const valueOrDash = value => (value === undefined || value === null || String(value).trim() === '') ? '-' : safe(value);
@@ -1581,7 +1580,7 @@
     .brand-name { color: #08752d; font-family: Georgia, 'Times New Roman', serif; font-size: 27pt; font-weight: 700; line-height: 1; white-space: nowrap; letter-spacing: .2px; }
     .permit { margin-top: 2mm; font-size: 10pt; color: #111; }
     .himpu { text-align: center; color: #111; font-size: 8pt; font-weight: 800; line-height: 1.1; }
-    .himpu-image { display: block; width: 16mm; height: 20mm; object-fit: contain; margin: 0 auto 1mm; }
+    .himpu-mark { width: 16mm; height: 16mm; margin: 0 auto 1mm; background: #111; color: #eab308; display: flex; align-items: center; justify-content: center; border: 1px solid #b89116; font-size: 17pt; }
     .color-rule { height: 2.5mm; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .5mm; margin: 2mm 0 7mm 31mm; }
     .color-rule span:nth-child(1) { background: #f2b632; }
     .color-rule span:nth-child(2) { background: #087a23; }
@@ -1628,7 +1627,8 @@
         <div class="permit">PPIU No. Izin 91201091434130002</div>
       </div>
       <div class="himpu">
-        <img class="himpu-image" src="${himpuLogoData}" alt="HIMPUH 404">
+        <div class="himpu-mark">ح</div>
+        HIMPUH<br>404
       </div>
     </header>
     <div class="color-rule"><span></span><span></span><span></span></div>
@@ -1698,7 +1698,8 @@
         <div class="permit">PPIU No. Izin 91201091434130002</div>
       </div>
       <div class="himpu">
-        <img class="himpu-image" src="${himpuLogoData}" alt="HIMPUH 404">
+        <div class="himpu-mark">ح</div>
+        HIMPUH<br>404
       </div>
     </header>
     <div class="color-rule"><span></span><span></span><span></span></div>
