@@ -115,7 +115,7 @@ exports.scanKtpDocument = onCall({
       method: "POST",
       body: JSON.stringify({ rawDocument: { content: imageBuffer.toString("base64"), mimeType } })
     });
-    const ocrText = clean(ocrResponse?.document?.text, 20000);
+    const ocrText = String(ocrResponse?.document?.text || "").replace(/\r/g, "\n").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim().slice(0, 20000);
     if (ocrText.length < 20) throw new HttpsError("data-loss", "Tulisan KTP belum terbaca. Coba foto yang lebih terang, lurus, dan tidak terpotong.");
 
     // Tahap 2: Gemini pada Vertex AI hanya menerima teks hasil OCR, bukan foto KTP.
