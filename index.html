@@ -1072,15 +1072,30 @@
       wilayahSelectionDirty = true;
     };
 
+    function normalizeWilayahName(value) {
+      return String(value || '').toLocaleLowerCase('id-ID')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/^(?:provinsi|kabupaten|kab\.?|kota|kecamatan|kelurahan|kel\.?|desa)\s+/i, '')
+        .replace(/[^a-z0-9]+/g, '');
+    }
+
     function findWilayahItem(rows, id, name) {
       const idText = String(id || '');
       if (idText) {
         const byId = rows.find(row => String(row.id) === idText);
         if (byId) return byId;
       }
-      const normalizedName = String(name || '').trim().toLocaleLowerCase('id-ID');
-      return normalizedName
-        ? rows.find(row => String(row.name || '').trim().toLocaleLowerCase('id-ID') === normalizedName)
+
+      const requested = String(name || '').trim();
+      if (!requested) return null;
+
+      const exact = requested.toLocaleLowerCase('id-ID');
+      const exactMatch = rows.find(row => String(row.name || '').trim().toLocaleLowerCase('id-ID') === exact);
+      if (exactMatch) return exactMatch;
+
+      const normalized = normalizeWilayahName(requested);
+      return normalized
+        ? rows.find(row => normalizeWilayahName(row.name) === normalized)
         : null;
     }
 
@@ -1567,12 +1582,18 @@
     }
 
     function parseKtpDate(value) {
-      const match = String(value || '').match(/\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})\b/);
+      const normalized = String(value || '')
+        .toUpperCase()
+        .replace(/[OQ]/g, '0')
+        .replace(/[IL]/g, '1');
+      const match = normalized.match(/\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})\b/);
       if (!match) return '';
       const day = Number(match[1]);
       const month = Number(match[2]);
       const year = Number(match[3]);
-      if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > new Date().getFullYear()) return '';
+      const parsed = new Date(year, month - 1, day);
+      if (year < 1900 || year > new Date().getFullYear() ||
+          parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) return '';
       return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
     }
 
@@ -1581,17 +1602,31 @@
         .map(line => line.replace(/\s+/g, ' ').trim())
         .filter(Boolean);
 
-      const getLabeledValue = (labelRegex) => {
+      const labelStart = /^(?:NIK\b|NAMA\b|TEMPAT\b|TGL\b|JENIS\b|KELAMIN\b|ALAMAT\b|RT\s*[/ ]?\s*RW\b|KEL(?:URAHAN)?\b|DESA\b|KECAMATAN\b|KAB(?:UPATEN)?\b|KOTA\b|PROVINSI\b|AGAMA\b|STATUS\b|PEKERJAAN\b|KEWARGANEGARAAN\b|BERLAKU\b)/i;
+
+      const cleanValue = value => String(value || '')
+        .replace(/^[\s:：=\-–]+/, '')
+        .replace(/[|]/g, 'I')
+        .trim();
+
+      const getLabeledValue = (labelRegex, maxNextLines = 2) => {
         for (let index = 0; index < lines.length; index++) {
           const line = lines[index];
-          if (!labelRegex.test(line)) continue;
-          const colonPart = line.split(/[:：]/).slice(1).join(':').trim();
-          const afterLabel = colonPart || line.replace(labelRegex, '').replace(/^[-\s]+/, '').trim();
-          if (afterLabel && !/^(NIK|NAMA|ALAMAT|TEMPAT|TGL|JENIS|KEL|DESA|KECAMATAN|PROVINSI|KABUPATEN|KOTA)\b/i.test(afterLabel)) {
-            return afterLabel.replace(/^[:：\-\s]+/, '').trim();
+          const match = line.match(labelRegex);
+          if (!match) continue;
+
+          let remainder = cleanValue(line.slice(match.index + match[0].length));
+          // Hindari salah mengambil token label yang tertinggal setelah label utama.
+          remainder = remainder.replace(/^(?:[:：=\-–]|TEMPAT\s*[/]?\s*TGL\s*LAHIR)\s*/i, '').trim();
+          if (remainder && !labelStart.test(remainder)) return remainder;
+
+          const following = [];
+          for (let next = index + 1; next < lines.length && next <= index + maxNextLines; next++) {
+            const candidate = cleanValue(lines[next]);
+            if (!candidate || labelStart.test(candidate)) break;
+            following.push(candidate);
           }
-          const nextLine = lines[index + 1] || '';
-          if (nextLine && !/^(NIK|NAMA|ALAMAT|TEMPAT|TGL|JENIS|KEL|DESA|KECAMATAN|PROVINSI|KABUPATEN|KOTA)\b/i.test(nextLine)) return nextLine;
+          if (following.length) return following.join(' ');
         }
         return '';
       };
@@ -1601,51 +1636,86 @@
       nikLines.concat(lines).forEach(line => {
         const candidates = line.match(/[0-9OQILSBG][0-9OQILSBG\s]{14,22}[0-9OQILSBG]/gi) || [];
         candidates.forEach(candidate => {
-          const normalized = candidate.toUpperCase().replace(/[OQ]/g, '0').replace(/[IL]/g, '1').replace(/S/g, '5').replace(/B/g, '8').replace(/G/g, '6').replace(/\D/g, '');
+          const normalized = candidate.toUpperCase()
+            .replace(/[OQ]/g, '0')
+            .replace(/[IL]/g, '1')
+            .replace(/S/g, '5')
+            .replace(/B/g, '8')
+            .replace(/G/g, '6')
+            .replace(/\D/g, '');
           if (normalized.length === 16) digitRuns.push(normalized);
         });
       });
       const nik = digitRuns[0] || '';
 
+      // Pada sebagian foto, label TEMPAT/TGL LAHIR terpisah dari nilai tempat dan tanggalnya.
+      const birthLabel = /^(?:TEMPAT\s*[/,]?\s*TGL\s*LAHIR|TEMPAT\s*LAHIR|TGL\s*LAHIR)\b/i;
+      let birthValue = getLabeledValue(birthLabel, 3);
+      if (!birthValue) {
+        const labelIndex = lines.findIndex(line => birthLabel.test(line));
+        if (labelIndex >= 0) birthValue = lines.slice(labelIndex + 1, labelIndex + 4)
+          .filter(line => !labelStart.test(line)).join(' ');
+      }
+
+      const dateMatch = birthValue.match(/(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})/);
       let tempatLahir = '';
-      let tanggalLahir = '';
-      const birthLine = lines.find(line => /TEMPAT\s*[/,]?\s*TGL\s*LAHIR|TEMPAT\s*LAHIR/i.test(line)) || '';
-      if (birthLine) {
-        const value = birthLine.split(/[:：]/).slice(1).join(':').trim() || birthLine.replace(/TEMPAT\s*[/,]?\s*TGL\s*LAHIR|TEMPAT\s*LAHIR/i, '').trim();
-        const dateMatch = value.match(/(.+?)[,\s]+(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})/);
-        if (dateMatch) {
-          tempatLahir = dateMatch[1].replace(/[,\s]+$/, '').trim();
-          tanggalLahir = parseKtpDate(dateMatch[2]);
-        } else {
-          tempatLahir = value.replace(/\d{1,2}[-/.]\d{1,2}[-/.]\d{4}/, '').replace(/[,\s]+$/, '').trim();
+      let tanggalLahir = dateMatch ? parseKtpDate(dateMatch[1]) : '';
+      if (dateMatch) {
+        tempatLahir = birthValue.slice(0, dateMatch.index).replace(/[,;:\s]+$/, '').trim();
+      } else {
+        // Cadangan jika tanggal terbaca di baris sesudah label, namun tidak menyatu pada hasil OCR.
+        const birthIndex = lines.findIndex(line => birthLabel.test(line));
+        if (birthIndex >= 0) {
+          for (let index = birthIndex + 1; index < Math.min(lines.length, birthIndex + 4); index++) {
+            const possibleDate = lines[index].match(/\d{1,2}[-/.]\d{1,2}[-/.]\d{4}/);
+            if (possibleDate) {
+              tanggalLahir = parseKtpDate(possibleDate[0]);
+              const prior = lines.slice(birthIndex + 1, index).join(' ').trim();
+              tempatLahir = prior || lines[index].slice(0, possibleDate.index).replace(/[,;:\s]+$/, '').trim();
+              break;
+            }
+          }
         }
       }
-      if (!tanggalLahir) {
-        const dateValue = getLabeledValue(/\bTGL\s*LAHIR\b/i);
-        tanggalLahir = parseKtpDate(dateValue) || parseKtpDate(birthLine);
+      if (!tempatLahir && birthValue) {
+        tempatLahir = birthValue.replace(/\d{1,2}[-/.]\d{1,2}[-/.]\d{4}/, '').replace(/[,;:\s]+$/, '').trim();
       }
 
       let jenisKelamin = '';
-      const genderLine = lines.find(line => /JENIS\s*KELAMIN|LAKI[-\s]?LAKI|PEREMPUAN/i.test(line)) || '';
-      if (/PEREMPUAN/i.test(genderLine)) jenisKelamin = 'Perempuan';
-      else if (/LAKI[-\s]?LAKI/i.test(genderLine)) jenisKelamin = 'Laki-laki';
+      const genderText = lines.find(line => /PEREMPUAN|LAKI[-\s]?LAKI/i.test(line)) || '';
+      if (/PEREMPUAN/i.test(genderText)) jenisKelamin = 'Perempuan';
+      else if (/LAKI[-\s]?LAKI/i.test(genderText)) jenisKelamin = 'Laki-laki';
+      if (!jenisKelamin) {
+        const genderValue = getLabeledValue(/^JENIS\s*KELAMIN\b/i, 1);
+        if (/PEREMPUAN/i.test(genderValue)) jenisKelamin = 'Perempuan';
+        else if (/LAKI[-\s]?LAKI/i.test(genderValue)) jenisKelamin = 'Laki-laki';
+      }
 
-      const name = getLabeledValue(/\bNAMA\b/i).replace(/\s+(?:TEMPAT|TGL|JENIS|ALAMAT)\b.*$/i, '').trim();
-      const alamat = getLabeledValue(/^ALAMAT\b/i).replace(/\s+(?:RT\s*[/ ]\s*RW|RT\s*RW)\b.*$/i, '').trim();
-      const desaKelurahan = getLabeledValue(/(?:KEL(?:URAHAN)?\s*[/]?\s*DESA|DESA)\b/i);
-      const kecamatan = getLabeledValue(/\bKECAMATAN\b/i);
-      const kabupatenLine = lines.find(line => /^\s*(?:KABUPATEN|KOTA)\b/i.test(line)) || '';
-      const kabupatenPrefix = (kabupatenLine.match(/^\s*(KABUPATEN|KOTA)\b/i) || [])[1] || '';
-      const kabupatenValue = getLabeledValue(/\b(?:KABUPATEN|KOTA)\b/i);
-      const kabupatenKota = kabupatenPrefix && kabupatenValue
-        ? kabupatenPrefix.toUpperCase() + ' ' + kabupatenValue
-        : kabupatenValue;
-      const provinsi = getLabeledValue(/\bPROVINSI\b/i);
+      const name = getLabeledValue(/^NAMA\b/i, 1)
+        .replace(/\s+(?:TEMPAT|TGL|JENIS|ALAMAT)\b.*$/i, '').trim();
+
+      // Alamat pada KTP kadang menyambung ke baris RT/RW sebelum label Kel/Desa.
+      let alamat = getLabeledValue(/^ALAMAT\b/i, 3)
+        .replace(/\s+(?:KEL(?:URAHAN)?\s*[/]?\s*DESA|DESA|KECAMATAN)\b.*$/i, '').trim();
+
+      const desaKelurahan = getLabeledValue(/^(?:KEL\s*[/]\s*DESA|KEL(?:URAHAN)?(?:\s*[/]\s*DESA)?|DESA)\b/i, 2);
+      const kecamatan = getLabeledValue(/^KECAMATAN\b/i, 2);
+
+      const kabupatenLine = lines.find(line => /^(?:KABUPATEN|KAB\.?|KOTA)\b/i.test(line)) || '';
+      const kabupatenPrefix = (kabupatenLine.match(/^(KABUPATEN|KAB\.?|KOTA)\b/i) || [])[1] || '';
+      const kabupatenValue = getLabeledValue(/^(?:KABUPATEN|KAB\.?|KOTA)\b/i, 2);
+      let kabupatenKota = kabupatenValue;
+      if (kabupatenPrefix && kabupatenValue) {
+        const normalizedPrefix = /^KOTA$/i.test(kabupatenPrefix) ? 'Kota' : 'Kabupaten';
+        kabupatenKota = normalizedPrefix + ' ' + kabupatenValue.replace(/^(?:KABUPATEN|KAB\.?|KOTA)\s*/i, '');
+      }
+
+      const provinsi = getLabeledValue(/^PROVINSI\b/i, 2);
 
       return { nik, nama: name, tempatLahir, tanggalLahir, jenisKelamin, alamat, desaKelurahan, kecamatan, kabupatenKota, provinsi };
     }
 
-    window.scanKtpAndFillForm = async function() {
+        window.scanKtpAndFillForm = async function() {
       if (!selectedKtpFile) {
         setKtpOcrStatus('Pilih foto KTP terlebih dahulu.', true);
         return;
