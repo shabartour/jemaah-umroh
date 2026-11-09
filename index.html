@@ -1775,7 +1775,7 @@
       const blob = await new Promise((resolve, reject) => {
         outputCanvas.toBlob(result => result ? resolve(result) : reject(new Error('Gagal mengompres foto KTP.')), 'image/jpeg', 0.88);
       });
-      if (blob.size > 8 * 1024 * 1024) throw new Error('Ukuran foto masih terlalu besar setelah kompresi. Gunakan foto dengan resolusi lebih rendah.');
+      if (blob.size > 6 * 1024 * 1024) throw new Error('Ukuran foto masih terlalu besar setelah kompresi (maksimal 6 MB). Gunakan foto dengan resolusi lebih rendah.');
       const dataUrl = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result || ''));
