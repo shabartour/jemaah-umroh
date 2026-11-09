@@ -670,7 +670,7 @@
               <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>Pindai dan Isi Form
             </button>
           </div>
-          <div id="ktpFilePreview" class="hidden flex items-center gap-3 rounded-lg bg-white border border-slate-200 p-2">
+          <div id="ktpFilePreview" class="hidden items-center gap-3 rounded-lg bg-white border border-slate-200 p-2">
             <img id="ktpPreviewImage" alt="Pratinjau foto KTP" class="w-20 h-14 object-cover rounded border border-slate-200">
             <div class="min-w-0">
               <p id="ktpFileName" class="text-[11px] font-semibold text-slate-700 truncate"></p>
@@ -1486,7 +1486,10 @@
       const scanButton = document.getElementById('btnScanKtp');
       if (image) image.src = ktpPreviewObjectUrl;
       if (name) name.textContent = file.name || 'Foto KTP';
-      if (preview) preview.classList.remove('hidden');
+      if (preview) {
+        preview.classList.remove('hidden');
+        preview.classList.add('flex');
+      }
       if (scanButton) scanButton.disabled = false;
 
       const progressTrack = document.getElementById('ktpOcrProgressTrack');
@@ -1500,7 +1503,10 @@
       const preview = document.getElementById('ktpFilePreview');
       const scanButton = document.getElementById('btnScanKtp');
       if (input) input.value = '';
-      if (preview) preview.classList.add('hidden');
+      if (preview) {
+        preview.classList.add('hidden');
+        preview.classList.remove('flex');
+      }
       if (scanButton) scanButton.disabled = true;
       if (ktpPreviewObjectUrl) {
         URL.revokeObjectURL(ktpPreviewObjectUrl);
@@ -1611,7 +1617,12 @@
       const alamat = getLabeledValue(/^ALAMAT\b/i).replace(/\s+(?:RT\s*[/ ]\s*RW|RT\s*RW)\b.*$/i, '').trim();
       const desaKelurahan = getLabeledValue(/(?:KEL(?:URAHAN)?\s*[/]?\s*DESA|DESA)\b/i);
       const kecamatan = getLabeledValue(/\bKECAMATAN\b/i);
-      const kabupatenKota = getLabeledValue(/\b(?:KABUPATEN|KOTA)\b/i);
+      const kabupatenLine = lines.find(line => /^\s*(?:KABUPATEN|KOTA)\b/i.test(line)) || '';
+      const kabupatenPrefix = (kabupatenLine.match(/^\s*(KABUPATEN|KOTA)\b/i) || [])[1] || '';
+      const kabupatenValue = getLabeledValue(/\b(?:KABUPATEN|KOTA)\b/i);
+      const kabupatenKota = kabupatenPrefix && kabupatenValue
+        ? kabupatenPrefix.toUpperCase() + ' ' + kabupatenValue
+        : kabupatenValue;
       const provinsi = getLabeledValue(/\bPROVINSI\b/i);
 
       return { nik, nama: name, tempatLahir, tanggalLahir, jenisKelamin, alamat, desaKelurahan, kecamatan, kabupatenKota, provinsi };
@@ -1804,6 +1815,7 @@
       if (!jemaah) return;
 
       document.getElementById('formJemaahSederhana').reset();
+      window.clearKtpFile();
       wilayahSelectionDirty = false;
       originalWilayahDuringEdit = {
         provinsi: jemaah.provinsi || '',
