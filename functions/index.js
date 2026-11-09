@@ -1,0 +1,166 @@
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { initializeApp } = require("firebase-admin/app");
+const { GoogleAuth } = require("google-auth-library");
+
+initializeApp();
+
+const REGION = process.env.FUNCTION_REGION || "asia-southeast1";
+const DOCUMENT_AI_LOCATION = process.env.DOCUMENT_AI_LOCATION || "asia-southeast1";
+const VERTEX_LOCATION = process.env.VERTEX_LOCATION || "asia-southeast1";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const googleAuth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
+
+const responseSchema = {
+  type: "OBJECT",
+  properties: {
+    nik: { type: "STRING" },
+    nama: { type: "STRING" },
+    tempatLahir: { type: "STRING" },
+    tanggalLahir: { type: "STRING" },
+    jenisKelamin: { type: "STRING" },
+    alamat: { type: "STRING" },
+    rtRw: { type: "STRING" },
+    desaKelurahan: { type: "STRING" },
+    kecamatan: { type: "STRING" },
+    kabupatenKota: { type: "STRING" },
+    provinsi: { type: "STRING" }
+  },
+  required: [
+    "nik", "nama", "tempatLahir", "tanggalLahir", "jenisKelamin",
+    "alamat", "rtRw", "desaKelurahan", "kecamatan", "kabupatenKota", "provinsi"
+  ]
+};
+
+function clean(value, max = 180) {
+  return String(value || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function normalizeKtpFields(data) {
+  const result = {};
+  for (const key of Object.keys(responseSchema.properties)) result[key] = clean(data?.[key], key === "alamat" ? 300 : 180);
+
+  const nik = result.nik.replace(/\D/g, "");
+  result.nik = nik.length === 16 ? nik : "";
+
+  const date = result.tanggalLahir.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!date) {
+    result.tanggalLahir = "";
+  } else {
+    const year = Number(date[1]), month = Number(date[2]), day = Number(date[3]);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day || year < 1900 || year > new Date().getFullYear()) result.tanggalLahir = "";
+  }
+
+  const gender = result.jenisKelamin.toLocaleLowerCase("id-ID");
+  if (gender.includes("perempuan") || gender === "p") result.jenisKelamin = "Perempuan";
+  else if (gender.includes("laki") || gender === "l") result.jenisKelamin = "Laki-laki";
+  else result.jenisKelamin = "";
+
+  return result;
+}
+
+async function googleFetch(url, options = {}) {
+  const client = await googleAuth.getClient();
+  const accessTokenResult = await client.getAccessToken();
+  const accessToken = typeof accessTokenResult === "string" ? accessTokenResult : accessTokenResult?.token;
+  if (!accessToken) throw new Error("Tidak dapat memperoleh kredensial layanan Google Cloud.");
+  const response = await fetch(url, {
+    ...options,
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", ...(options.headers || {}) }
+  });
+  const bodyText = await response.text();
+  let body = {};
+  try { body = bodyText ? JSON.parse(bodyText) : {}; } catch (_) { body = { raw: bodyText.slice(0, 500) }; }
+  if (!response.ok) {
+    const detail = body?.error?.message || `Google API mengembalikan HTTP ${response.status}`;
+    throw new Error(detail);
+  }
+  return body;
+}
+
+exports.scanKtpDocument = onCall({
+  region: REGION,
+  timeoutSeconds: 90,
+  memory: "512MiB",
+  maxInstances: 3,
+  enforceAppCheck: false
+}, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Silakan login sebagai staf sebelum memindai KTP.");
+
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+  const processorId = process.env.DOCUMENT_AI_PROCESSOR_ID;
+  if (!projectId || !processorId) {
+    throw new HttpsError("failed-precondition", "Layanan OCR belum dikonfigurasi. Administrator perlu mengatur DOCUMENT_AI_PROCESSOR_ID pada Cloud Functions.");
+  }
+
+  const mimeType = clean(request.data?.mimeType, 40).toLowerCase();
+  if (!["image/jpeg", "image/png"].includes(mimeType)) {
+    throw new HttpsError("invalid-argument", "Format foto harus JPG atau PNG.");
+  }
+  const imageBase64 = String(request.data?.imageBase64 || "").replace(/^data:image\/(?:jpeg|png);base64,/i, "");
+  if (!imageBase64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(imageBase64)) {
+    throw new HttpsError("invalid-argument", "Data foto KTP tidak valid.");
+  }
+  const imageBuffer = Buffer.from(imageBase64, "base64");
+  if (!imageBuffer.length || imageBuffer.length > MAX_IMAGE_BYTES) {
+    throw new HttpsError("invalid-argument", "Ukuran foto setelah kompresi harus maksimal 8 MB.");
+  }
+
+  try {
+    // Tahap 1: Document AI OCR. Foto dikirim langsung ke processor dan tidak disimpan ke Cloud Storage.
+    const processorName = `projects/${projectId}/locations/${DOCUMENT_AI_LOCATION}/processors/${processorId}`;
+    const documentUrl = `https://${DOCUMENT_AI_LOCATION}-documentai.googleapis.com/v1/${processorName}:process`;
+    const ocrResponse = await googleFetch(documentUrl, {
+      method: "POST",
+      body: JSON.stringify({ rawDocument: { content: imageBuffer.toString("base64"), mimeType } })
+    });
+    const ocrText = clean(ocrResponse?.document?.text, 20000);
+    if (ocrText.length < 20) throw new HttpsError("data-loss", "Tulisan KTP belum terbaca. Coba foto yang lebih terang, lurus, dan tidak terpotong.");
+
+    // Tahap 2: Gemini pada Vertex AI hanya menerima teks hasil OCR, bukan foto KTP.
+    const prompt = [
+      "Ekstrak data dari teks OCR KTP elektronik Indonesia berikut.",
+      "Kembalikan hanya nilai yang benar-benar tertulis atau dapat dipastikan dari teks.",
+      "Jangan menebak, melengkapi, atau menyimpulkan alamat dari NIK.",
+      "Jika suatu field tidak terbaca atau meragukan, isi string kosong.",
+      "NIK harus 16 digit. tanggalLahir harus YYYY-MM-DD. jenisKelamin hanya Laki-laki atau Perempuan.",
+      "Pertahankan nama wilayah sesuai teks KTP; jangan mengganti dengan nama wilayah lain.",
+      "Pisahkan RT/RW ke field rtRw jika terbaca.",
+      "",
+      "TEKS OCR KTP:",
+      ocrText
+    ].join("\n");
+    const vertexUrl = `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${VERTEX_LOCATION}/publishers/google/models/${GEMINI_MODEL}:generateContent`;
+    const geminiResponse = await googleFetch(vertexUrl, {
+      method: "POST",
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0,
+          responseMimeType: "application/json",
+          responseSchema
+        }
+      })
+    });
+    const answerText = (geminiResponse?.candidates?.[0]?.content?.parts || []).map(part => part.text || "").join("").trim();
+    if (!answerText) throw new Error("Gemini tidak mengembalikan data terstruktur.");
+    let parsed;
+    try { parsed = JSON.parse(answerText); }
+    catch (_) { throw new Error("Format jawaban AI tidak valid. Silakan pindai ulang."); }
+
+    const fields = normalizeKtpFields(parsed);
+    const filledCount = Object.values(fields).filter(Boolean).length;
+    if (!filledCount) throw new HttpsError("data-loss", "Data KTP belum berhasil diekstrak. Coba foto yang lebih jelas.");
+    return { fields, provider: "document-ai+vertex-gemini", model: GEMINI_MODEL, ocrCharacters: ocrText.length };
+  } catch (error) {
+    console.error("scanKtpDocument failed", { code: error.code || "unknown", message: error.message });
+    if (error instanceof HttpsError) throw error;
+    const message = /PERMISSION_DENIED|permission/i.test(error.message)
+      ? "Akun layanan belum memiliki izin Document AI atau Vertex AI. Periksa IAM pada Google Cloud."
+      : /NOT_FOUND|not found/i.test(error.message)
+        ? "Processor Document AI atau model Gemini tidak ditemukan. Periksa ID processor dan lokasi layanan."
+        : "Pemindaian AI gagal. Periksa konfigurasi Google Cloud lalu coba kembali.";
+    throw new HttpsError("internal", message);
+  }
+});
