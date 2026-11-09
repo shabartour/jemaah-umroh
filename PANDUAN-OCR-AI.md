@@ -26,7 +26,7 @@ Berikan role berikut kepada service account runtime Cloud Functions:
 - `roles/documentai.apiUser`
 - `roles/aiplatform.user`
 
-Service account default biasanya berbentuk `PROJECT_NUMBER-compute@developer.gserviceaccount.com`. Pastikan role diberikan pada service account yang benar-benar digunakan oleh Cloud Function.
+Buka detail Cloud Function setelah deploy untuk melihat runtime service account yang digunakan, lalu berikan kedua role tersebut kepada akun itu. Jangan menebak service account jika project sudah memiliki konfigurasi khusus.
 
 ## Deploy
 
@@ -49,7 +49,7 @@ Atur konfigurasi environment function sebelum deploy jika menggunakan lokasi ata
 Variabel wajib:
 - `DOCUMENT_AI_PROCESSOR_ID`: Processor ID dari Document AI
 
-Set melalui Firebase Functions environment configuration/parameter atau environment variables pada Cloud Functions. Jangan menaruh API key atau kredensial service account di `index.html`, GitHub, atau browser. Function menggunakan Application Default Credentials milik service account runtime.
+Salin `functions/.env.example` menjadi `functions/.env.umroh-app-database`, lalu isi Processor ID yang benar. File `.env.umroh-app-database` sudah diabaikan Git dan tidak boleh diunggah ke repository. Firebase CLI akan membaca file `.env.<project-id>` saat deploy. Jangan menaruh API key atau kredensial service account di `index.html`, GitHub, atau browser. Function menggunakan Application Default Credentials milik service account runtime.
 
 ## Biaya dan privasi
 
