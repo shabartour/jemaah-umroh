@@ -8,7 +8,7 @@ const REGION = process.env.FUNCTION_REGION || "asia-southeast1";
 const DOCUMENT_AI_LOCATION = process.env.DOCUMENT_AI_LOCATION || "asia-southeast1";
 const VERTEX_LOCATION = process.env.VERTEX_LOCATION || "asia-southeast1";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
 const googleAuth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
 
 const responseSchema = {
@@ -104,7 +104,7 @@ exports.scanKtpDocument = onCall({
   }
   const imageBuffer = Buffer.from(imageBase64, "base64");
   if (!imageBuffer.length || imageBuffer.length > MAX_IMAGE_BYTES) {
-    throw new HttpsError("invalid-argument", "Ukuran foto setelah kompresi harus maksimal 8 MB.");
+    throw new HttpsError("invalid-argument", "Ukuran foto setelah kompresi harus maksimal 6 MB.");
   }
 
   try {
