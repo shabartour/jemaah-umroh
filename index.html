@@ -1695,7 +1695,7 @@
           .filter(line => !labelStart.test(line)).join(' ');
       }
 
-      const dateMatch = birthValue.match(/(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})/);
+      const dateMatch = birthValue.match(/([0-9OQIL]{1,2}[-/.][0-9OQIL]{1,2}[-/.][0-9OQIL]{4})/i);
       let tempatLahir = '';
       let tanggalLahir = dateMatch ? parseKtpDate(dateMatch[1]) : '';
       if (dateMatch) {
@@ -1705,7 +1705,7 @@
         const birthIndex = lines.findIndex(line => birthLabel.test(line));
         if (birthIndex >= 0) {
           for (let index = birthIndex + 1; index < Math.min(lines.length, birthIndex + 4); index++) {
-            const possibleDate = lines[index].match(/\d{1,2}[-/.]\d{1,2}[-/.]\d{4}/);
+            const possibleDate = lines[index].match(/[0-9OQIL]{1,2}[-/.][0-9OQIL]{1,2}[-/.][0-9OQIL]{4}/i);
             if (possibleDate) {
               tanggalLahir = parseKtpDate(possibleDate[0]);
               const prior = lines.slice(birthIndex + 1, index).join(' ').trim();
