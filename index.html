@@ -1635,7 +1635,10 @@
     }
 
     function parseKtpOcrText(rawText) {
-      const lines = String(rawText || '').split(/\r?\n/)
+      const expandedOcrText = String(rawText || '')
+        .replace(/\r/g, '\n')
+        .replace(/[ \t]+(?=(?:TEMPAT\s*[/,]?\s*TGL\s*LAHIR|TEMPAT\s*LAHIR|TGL\s*LAHIR|JENIS\s*KELAMIN|KEL\s*[/]\s*DESA|KELURAHAN|KECAMATAN|PROVINSI|KABUPATEN|KOTA|NIK|NAMA|ALAMAT|RT\s*[/]\s*RW)\b)/gi, '\n');
+      const lines = expandedOcrText.split(/\n+/)
         .map(line => line.replace(/\s+/g, ' ').trim())
         .map(line => line.replace(/^(PROVINSI|KABUPATEN|KECAMATAN|NAMA|NIK|ALAMAT|KEL\s*[/]\s*DESA|KELURAHAN|DESA|JENIS\s*KELAMIN|TEMPAT\s*[/,]?\s*TGL\s*LAHIR|TEMPAT\s*LAHIR|TGL\s*LAHIR)(?=[A-Z0-9])/i, '$1 '))
         .filter(Boolean);
