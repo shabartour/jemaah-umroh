@@ -7,8 +7,6 @@
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- OCR KTP: diaktifkan saat staf menekan tombol pindai -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js" defer></script>
   <!-- Google Fonts: Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Font Awesome Icons -->
@@ -1447,6 +1445,25 @@
     let selectedKtpFile = null;
     let ktpPreviewObjectUrl = null;
     let ktpOcrWorker = null;
+    let tesseractScriptPromise = null;
+
+    function loadTesseractLibrary() {
+      if (window.Tesseract?.createWorker) return Promise.resolve();
+      if (tesseractScriptPromise) return tesseractScriptPromise;
+
+      tesseractScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js';
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => {
+          tesseractScriptPromise = null;
+          reject(new Error('Pustaka OCR gagal dimuat. Periksa koneksi internet, lalu coba kembali.'));
+        };
+        document.head.appendChild(script);
+      });
+      return tesseractScriptPromise;
+    }
 
     function setKtpOcrStatus(message, isError = false) {
       const status = document.getElementById('ktpOcrStatus');
@@ -1639,7 +1656,8 @@
       setKtpOcrStatus('Menyiapkan mesin OCR Bahasa Indonesia dan Inggris...');
 
       try {
-        if (!window.Tesseract?.createWorker) throw new Error('Pustaka OCR belum berhasil dimuat. Periksa koneksi internet, lalu muat ulang halaman.');
+        await loadTesseractLibrary();
+        if (!window.Tesseract?.createWorker) throw new Error('Pustaka OCR belum tersedia setelah dimuat. Silakan coba kembali.');
         if (!ktpOcrWorker) {
           ktpOcrWorker = await window.Tesseract.createWorker('ind+eng', 1, {
             logger: message => {
