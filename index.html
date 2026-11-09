@@ -1687,7 +1687,7 @@
       const nik = digitRuns[0] || '';
 
       // Pada sebagian foto, label TEMPAT/TGL LAHIR terpisah dari nilai tempat dan tanggalnya.
-      const birthLabel = /^(?:TEMPAT\s*[/,]?\s*TGL\s*LAHIR|TEMPAT\s*LAHIR|TGL\s*LAHIR)\b/i;
+      const birthLabel = /(?:^|\s)(?:TEMPAT\s*[/,]?\s*TGL\s*LAHIR|TEMPAT\s*LAHIR|TGL\s*LAHIR)\b/i;
       let birthValue = getLabeledValue(birthLabel, 3);
       if (!birthValue) {
         const labelIndex = lines.findIndex(line => birthLabel.test(line));
@@ -1729,26 +1729,26 @@
         else if (/LAKI[-\s]?LAKI/i.test(genderValue)) jenisKelamin = 'Laki-laki';
       }
 
-      const name = getLabeledValue(/^NAMA\b/i, 1)
+      const name = getLabeledValue(/(?:^|\s)NAMA\b/i, 1)
         .replace(/\s+(?:TEMPAT|TGL|JENIS|ALAMAT)\b.*$/i, '').trim();
 
       // Alamat pada KTP kadang menyambung ke baris RT/RW sebelum label Kel/Desa.
-      let alamat = getLabeledValue(/^ALAMAT\b/i, 3)
+      let alamat = getLabeledValue(/(?:^|\s)ALAMAT\b/i, 3)
         .replace(/\s+(?:KEL(?:URAHAN)?\s*[/]?\s*DESA|DESA|KECAMATAN)\b.*$/i, '').trim();
 
-      const desaKelurahan = getLabeledValue(/^(?:KEL\s*[/]\s*DESA|KEL(?:URAHAN)?(?:\s*[/]\s*DESA)?|DESA)\b/i, 2);
-      const kecamatan = getLabeledValue(/^KECAMATAN\b/i, 2);
+      const desaKelurahan = getLabeledValue(/(?:^|\s)(?:KEL\s*[/]\s*DESA|KEL(?:URAHAN)?(?:\s*[/]\s*DESA)?|DESA)\b/i, 2);
+      const kecamatan = getLabeledValue(/(?:^|\s)KECAMATAN\b/i, 2);
 
-      const kabupatenLine = lines.find(line => /^(?:KABUPATEN|KAB\.?|KOTA)\b/i.test(line)) || '';
-      const kabupatenPrefix = (kabupatenLine.match(/^(KABUPATEN|KAB\.?|KOTA)\b/i) || [])[1] || '';
-      const kabupatenValue = getLabeledValue(/^(?:KABUPATEN|KAB\.?|KOTA)\b/i, 2);
+      const kabupatenLine = lines.find(line => /(?:^|\s)(?:KABUPATEN|KAB\.?|KOTA)\b/i.test(line)) || '';
+      const kabupatenPrefix = (kabupatenLine.match(/(?:^|\s)(KABUPATEN|KAB\.?|KOTA)\b/i) || [])[1] || '';
+      const kabupatenValue = getLabeledValue(/(?:^|\s)(?:KABUPATEN|KAB\.?|KOTA)\b/i, 2);
       let kabupatenKota = kabupatenValue;
       if (kabupatenPrefix && kabupatenValue) {
         const normalizedPrefix = /^KOTA$/i.test(kabupatenPrefix) ? 'Kota' : 'Kabupaten';
         kabupatenKota = normalizedPrefix + ' ' + kabupatenValue.replace(/^(?:KABUPATEN|KAB\.?|KOTA)\s*/i, '');
       }
 
-      const provinsi = getLabeledValue(/^PROVINSI\b/i, 2);
+      const provinsi = getLabeledValue(/(?:^|\s)PROVINSI\b/i, 2);
 
       return { nik, nama: name, tempatLahir, tanggalLahir, jenisKelamin, alamat, desaKelurahan, kecamatan, kabupatenKota, provinsi };
     }
