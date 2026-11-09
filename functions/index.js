@@ -220,7 +220,8 @@ exports.adminCreateUser = onCall({
   const role = roleInput === "staff" ? "Staff" : roleInput === "viewer" ? "Viewer" : "";
 
   if (!nama) throw new HttpsError("invalid-argument", "Nama pengguna wajib diisi.");
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  const emailParts = email.split("@");
+  if (emailParts.length !== 2 || !emailParts[0] || !emailParts[1].includes(".") || email.includes(" ")) {
     throw new HttpsError("invalid-argument", "Format email tidak valid.");
   }
   if (password.length < 10) {
