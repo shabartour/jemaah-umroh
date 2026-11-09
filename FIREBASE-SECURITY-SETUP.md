@@ -44,17 +44,38 @@ Pembuatan akun baru hanya mengizinkan role Staff atau Viewer. Role Admin awal/be
 
 ## Urutan penerapan
 
-1. Periksa dokumen Admin pertama di `users/{UID}` dan pastikan field `role = "Admin"` serta `aktif = true`.
-2. Pastikan Firebase CLI sudah login ke akun yang memiliki akses proyek `umroh-app-database`.
-3. Dari root repository, jalankan:
+### A. Persiapan kredensial deployment
 
-   ```bash
-   npm --prefix functions install
-   firebase deploy --only firestore:rules,functions
-   ```
+Repository menyediakan GitHub Actions manual untuk deploy backend Firebase. Sebelum menjalankannya:
 
-4. Setelah deployment berhasil, deploy ulang frontend `index.html` dan folder `assets` ke hosting aplikasi.
-5. Login kembali sebagai Admin dan uji menu Manajemen Pengguna. Buat akun uji Staff dan Viewer sebelum memindahkan seluruh staf.
+1. Pastikan dokumen Admin pertama ada di `users/{UID}`, dengan Document ID sama persis dengan UID pada Firebase Authentication.
+2. Pastikan `role` bertipe string bernilai `Admin`, dan `aktif` bertipe Boolean bernilai `true`.
+3. Jika ada akun Authentication lama lain yang masih perlu dipakai, buat juga dokumen `users/{UID}` masing-masing dengan role dan status aktif yang tepat. Akun tanpa dokumen profil akan ditolak saat login.
+4. Buat service account khusus deployment pada Google Cloud untuk proyek `umroh-app-database`. Berikan izin deployment Firestore Rules dan Cloud Functions yang diperlukan, termasuk izin menggunakan service account runtime Functions. Terapkan prinsip hak akses minimum.
+5. Simpan isi JSON key service account sebagai GitHub repository secret bernama `FIREBASE_SERVICE_ACCOUNT_UMROH_APP_DATABASE` melalui **Settings → Secrets and variables → Actions → New repository secret**. Jangan memasukkan JSON key ke source code, issue, commit, atau chat.
+
+### B. Deploy backend
+
+Setelah perubahan ini sudah berada di branch `main`:
+
+1. Buka tab **Actions** pada repository GitHub.
+2. Pilih workflow **Deploy Firebase backend**.
+3. Klik **Run workflow** pada branch `main`.
+4. Pilih konfirmasi `yes` hanya setelah dokumen Admin dan profil pengguna lama diperiksa.
+5. Jalankan workflow dan periksa hasilnya. Workflow ini melakukan deploy `firestore.rules` dan Cloud Functions saja.
+
+Alternatif menggunakan Firebase CLI dari komputer yang sudah login dengan akun Google berizin:
+
+```bash
+npm --prefix functions install
+firebase deploy --only firestore:rules,functions --project umroh-app-database
+```
+
+### C. Deploy frontend
+
+`firebase.json` pada repository ini belum memiliki konfigurasi Firebase Hosting. Karena itu workflow backend tidak menerbitkan `index.html`. Frontend perlu diterbitkan melalui hosting yang saat ini digunakan aplikasi. Jangan menganggap backend deployment otomatis memperbarui website.
+
+Setelah backend dan frontend diterbitkan, login sebagai Admin dan uji menu Manajemen Pengguna. Buat akun uji Staff dan Viewer, lalu periksa hak aksesnya sebelum penggunaan staf secara luas.
 
 ## Catatan keamanan dan operasional
 
