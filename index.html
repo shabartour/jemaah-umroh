@@ -657,7 +657,7 @@
               <p class="text-xs font-bold text-emerald-900"><i class="fa-solid fa-id-card mr-1.5"></i>Input Otomatis dari KTP</p>
               <p class="text-[10px] text-slate-600 mt-1">Foto KTP bagian depan dengan jelas, lalu pindai untuk mengisi formulir.</p>
             </div>
-            <span class="text-[10px] text-emerald-800 bg-white/80 border border-emerald-100 rounded-full px-2.5 py-1">OCR di browser</span>
+            <span class="text-[10px] text-emerald-800 bg-white/80 border border-emerald-100 rounded-full px-2.5 py-1">AI OCR · Document AI + Gemini</span>
           </div>
           <input id="inputKtpFile" type="file" accept="image/*" capture="environment" class="hidden" onchange="handleKtpFileSelected(this.files && this.files[0])">
           <div class="flex flex-wrap gap-2">
@@ -665,14 +665,14 @@
               <i class="fa-solid fa-camera mr-1.5 text-emerald-700"></i>Pilih Foto / Kamera
             </button>
             <button id="btnScanKtp" type="button" onclick="scanKtpAndFillForm()" disabled class="px-3 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 disabled:text-slate-500 text-white text-xs font-semibold transition">
-              <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>Pindai dan Isi Form
+              <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>Pindai dengan AI
             </button>
           </div>
           <div id="ktpFilePreview" class="hidden items-center gap-3 rounded-lg bg-white border border-slate-200 p-2">
             <img id="ktpPreviewImage" alt="Pratinjau foto KTP" class="w-20 h-14 object-cover rounded border border-slate-200">
             <div class="min-w-0">
               <p id="ktpFileName" class="text-[11px] font-semibold text-slate-700 truncate"></p>
-              <p class="text-[10px] text-slate-400">Foto hanya diproses di browser dan tidak disimpan ke Firestore.</p>
+              <p class="text-[10px] text-slate-400">Foto dikirim sementara ke layanan OCR Google melalui koneksi aman dan tidak disimpan ke Firestore atau Cloud Storage.</p>
             </div>
             <button type="button" onclick="clearKtpFile()" class="ml-auto text-slate-400 hover:text-red-600 p-2" aria-label="Hapus foto KTP"><i class="fa-solid fa-trash"></i></button>
           </div>
@@ -910,6 +910,7 @@
   <!-- ==================== JAVASCRIPT LOGIC & FIREBASE SDK INTEGRATION ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
     import { 
       getFirestore, 
       collection, 
@@ -940,6 +941,8 @@
     };
 
     let app = null, db = null, auth = null;
+    let functionsClient = null;
+    let scanKtpCallable = null;
     let firebaseInitError = null;
     let unsubscribePaket = null;
     let unsubscribeJemaah = null;
@@ -1186,6 +1189,8 @@
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
       auth = getAuth(app);
+      functionsClient = getFunctions(app, "asia-southeast1");
+      scanKtpCallable = httpsCallable(functionsClient, "scanKtpDocument", { timeout: 90000 });
     } catch (error) {
       firebaseInitError = error;
       console.error("Gagal menginisialisasi Firebase SDK:", error);
@@ -1756,38 +1761,71 @@
       return { nik, nama: name, tempatLahir, tanggalLahir, jenisKelamin, alamat, desaKelurahan, kecamatan, kabupatenKota, provinsi };
     }
 
-        window.scanKtpAndFillForm = async function() {
+        async function prepareKtpAiPayload(file) {
+      const canvas = await prepareKtpImage(file);
+      const maxDimension = 2200;
+      const scale = Math.min(1, maxDimension / Math.max(canvas.width, canvas.height));
+      let outputCanvas = canvas;
+      if (scale < 1) {
+        outputCanvas = document.createElement('canvas');
+        outputCanvas.width = Math.max(1, Math.round(canvas.width * scale));
+        outputCanvas.height = Math.max(1, Math.round(canvas.height * scale));
+        outputCanvas.getContext('2d').drawImage(canvas, 0, 0, outputCanvas.width, outputCanvas.height);
+      }
+      const blob = await new Promise((resolve, reject) => {
+        outputCanvas.toBlob(result => result ? resolve(result) : reject(new Error('Gagal mengompres foto KTP.')), 'image/jpeg', 0.88);
+      });
+      if (blob.size > 8 * 1024 * 1024) throw new Error('Ukuran foto masih terlalu besar setelah kompresi. Gunakan foto dengan resolusi lebih rendah.');
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Foto KTP gagal disiapkan untuk pemindaian.'));
+        reader.readAsDataURL(blob);
+      });
+      return { imageBase64: dataUrl.split(',')[1] || '', mimeType: 'image/jpeg' };
+    }
+
+    window.scanKtpAndFillForm = async function() {
       if (!selectedKtpFile) {
         setKtpOcrStatus('Pilih foto KTP terlebih dahulu.', true);
         return;
       }
+      if (!auth?.currentUser || !scanKtpCallable) {
+        setKtpOcrStatus('Sesi staf belum aktif atau layanan OCR AI belum terhubung. Login kembali dan pastikan Cloud Function sudah dideploy.', true);
+        return;
+      }
+
       const button = document.getElementById('btnScanKtp');
       if (button) button.disabled = true;
       setKtpOcrProgress(0);
-      setKtpOcrStatus('Menyiapkan mesin OCR Bahasa Indonesia dan Inggris...');
+      setKtpOcrStatus('Mengoptimalkan foto KTP sebelum dikirim ke Document AI...');
 
       try {
-        await loadTesseractLibrary();
-        if (!window.Tesseract?.createWorker) throw new Error('Pustaka OCR belum tersedia setelah dimuat. Silakan coba kembali.');
-        if (!ktpOcrWorker) {
-          ktpOcrWorker = await window.Tesseract.createWorker('ind+eng', 1, {
-            logger: message => {
-              if (message.status === 'loading language traineddata' || message.status === 'initializing tesseract') {
-                setKtpOcrStatus('Menyiapkan mesin OCR: ' + message.status + '...');
-              } else if (message.status === 'recognizing text') {
-                setKtpOcrStatus('Membaca tulisan pada KTP...');
-                setKtpOcrProgress(message.progress);
-              }
-            }
-          });
+        const imagePayload = await prepareKtpAiPayload(selectedKtpFile);
+        setKtpOcrProgress(0.15);
+        setKtpOcrStatus('Document AI sedang membaca teks pada KTP...');
+        const response = await scanKtpCallable(imagePayload);
+        const fields = response?.data?.fields || {};
+        const parsed = {
+          nik: String(fields.nik || ''),
+          nama: String(fields.nama || ''),
+          tempatLahir: String(fields.tempatLahir || ''),
+          tanggalLahir: String(fields.tanggalLahir || ''),
+          jenisKelamin: String(fields.jenisKelamin || ''),
+          alamat: String(fields.alamat || ''),
+          rtRw: String(fields.rtRw || ''),
+          desaKelurahan: String(fields.desaKelurahan || ''),
+          kecamatan: String(fields.kecamatan || ''),
+          kabupatenKota: String(fields.kabupatenKota || ''),
+          provinsi: String(fields.provinsi || '')
+        };
+        setKtpOcrProgress(0.75);
+        setKtpOcrStatus('Gemini sedang menyusun data identitas dan mencocokkan wilayah...');
+
+        if (parsed.alamat && parsed.rtRw && !/RT\s*\/?\s*RW/i.test(parsed.alamat)) {
+          parsed.alamat = parsed.alamat + ', RT/RW ' + parsed.rtRw;
         }
-
-        const canvas = await prepareKtpImage(selectedKtpFile);
-        setKtpOcrStatus('Membaca tulisan pada KTP...');
-        const result = await ktpOcrWorker.recognize(canvas);
-        const parsed = parseKtpOcrText(result?.data?.text || '');
-
-        const fields = [
+        const inputFields = [
           ['inputNik', parsed.nik],
           ['inputNamaLengkap', parsed.nama],
           ['inputTempatLahir', parsed.tempatLahir],
@@ -1796,7 +1834,7 @@
           ['inputAlamat', parsed.alamat]
         ];
         let filled = 0;
-        fields.forEach(([id, value]) => {
+        inputFields.forEach(([id, value]) => {
           if (!value) return;
           const field = document.getElementById(id);
           if (!field) return;
@@ -1806,32 +1844,43 @@
 
         const hasWilayahText = parsed.provinsi || parsed.kabupatenKota || parsed.kecamatan || parsed.desaKelurahan;
         let regionResult = { selectedCount: 0, usedNikFallback: false };
-        if (hasWilayahText || /^\d{16}$/.test(parsed.nik)) {
+        if (hasWilayahText) {
           regionResult = await restoreWilayahSelections({
             nik: parsed.nik,
             provinsi: parsed.provinsi,
             kabupatenKota: parsed.kabupatenKota,
             kecamatan: parsed.kecamatan,
             desaKelurahan: parsed.desaKelurahan
-          }, { allowNikFallback: true });
+          }, { allowNikFallback: false });
           if (regionResult.selectedCount > 0) wilayahSelectionDirty = true;
         }
 
         setKtpOcrProgress(1);
-        if (filled > 0 || hasWilayahText || regionResult.selectedCount > 0) {
-          const regionMessage = regionResult.selectedCount
-            ? ` dan ${regionResult.selectedCount} tingkat wilayah`
-            : '';
-          const warning = regionResult.usedNikFallback
-            ? ' Kode wilayah dari NIK hanya menunjukkan wilayah saat NIK didaftarkan, bukan jaminan alamat domisili sekarang; cocokkan dengan tulisan alamat pada KTP.'
-            : '';
-          setKtpOcrStatus(`Pemindaian selesai. ${filled} kolom identitas${regionMessage} terisi/disarankan. Periksa kembali seluruh hasil sebelum menyimpan.${warning}`);
-        } else {
-          setKtpOcrStatus('Teks KTP belum terbaca dengan baik. Coba foto yang lebih terang, lurus, dan dekat.', true);
-        }
+        const regionMessage = regionResult.selectedCount
+          ? ' dan ' + regionResult.selectedCount + ' tingkat wilayah'
+          : '';
+        const missingFields = [
+          !parsed.tempatLahir && 'tempat lahir',
+          !parsed.tanggalLahir && 'tanggal lahir',
+          !parsed.provinsi && 'provinsi',
+          !parsed.kabupatenKota && 'kabupaten/kota',
+          !parsed.kecamatan && 'kecamatan',
+          !parsed.desaKelurahan && 'desa/kelurahan'
+        ].filter(Boolean);
+        const warning = missingFields.length
+          ? ' Belum terbaca: ' + missingFields.join(', ') + '. Silakan lengkapi manual.'
+          : '';
+        setKtpOcrStatus('Pemindaian AI selesai. ' + filled + ' kolom identitas' + regionMessage + ' berhasil diisi. Periksa seluruh data sebelum menyimpan.' + warning);
       } catch (error) {
-        console.error('Gagal memindai KTP:', error);
-        setKtpOcrStatus(error.message || 'Pemindaian KTP gagal. Silakan coba lagi.', true);
+        console.error('Gagal memindai KTP dengan AI:', error);
+        const code = error?.code || '';
+        let message = error?.message || 'Pemindaian AI gagal. Silakan coba lagi.';
+        if (code === 'functions/not-found') {
+          message = 'Cloud Function OCR belum dideploy. Administrator perlu menyelesaikan aktivasi layanan OCR AI terlebih dahulu.';
+        } else if (code === 'functions/unauthenticated') {
+          message = 'Sesi login staf tidak ditemukan. Silakan login kembali.';
+        }
+        setKtpOcrStatus(message, true);
       } finally {
         if (button) button.disabled = !selectedKtpFile;
       }
