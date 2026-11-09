@@ -1093,46 +1093,83 @@
       const exactMatch = rows.find(row => String(row.name || '').trim().toLocaleLowerCase('id-ID') === exact);
       if (exactMatch) return exactMatch;
 
+      // Cocokkan tanpa awalan administratif hanya jika hasilnya unik.
       const normalized = normalizeWilayahName(requested);
-      return normalized
-        ? rows.find(row => normalizeWilayahName(row.name) === normalized)
-        : null;
+      if (!normalized) return null;
+      const matches = rows.filter(row => normalizeWilayahName(row.name) === normalized);
+      return matches.length === 1 ? matches[0] : null;
     }
 
-    async function restoreWilayahSelections(jemaah) {
+    async function restoreWilayahSelections(jemaah, options = {}) {
       const provinceSelect = document.getElementById('inputProvinsi');
       const regencySelect = document.getElementById('inputKabupatenKota');
       const districtSelect = document.getElementById('inputKecamatan');
       const villageSelect = document.getElementById('inputDesaKelurahan');
 
+      const nikPrefix = String(jemaah.nik || '').replace(/\D/g, '').slice(0, 6);
+      let usedNikFallback = false;
+      let selectedCount = 0;
+
       try {
         await initializeWilayahDropdown();
         const provinces = await fetchWilayahData('provinces.json');
-        const province = findWilayahItem(provinces, jemaah.provinsiId, jemaah.provinsi);
-        if (!province) return;
+        let province = findWilayahItem(provinces, jemaah.provinsiId, jemaah.provinsi);
+        if (!province && options.allowNikFallback && nikPrefix.length === 6) {
+          province = findWilayahItem(provinces, nikPrefix.slice(0, 2), '');
+          usedNikFallback = Boolean(province);
+        }
+        if (!province) return { selectedCount, usedNikFallback };
 
         provinceSelect.value = String(province.id);
+        selectedCount++;
         const regencies = await fetchWilayahData(`regencies/${province.id}.json`);
         setWilayahOptions('inputKabupatenKota', regencies, '-- Pilih Kabupaten / Kota --', false);
-        const regency = findWilayahItem(regencies, jemaah.kabupatenKotaId, jemaah.kabupatenKota || jemaah.kabupaten);
-        if (!regency) return;
+        let regency = findWilayahItem(regencies, jemaah.kabupatenKotaId, jemaah.kabupatenKota || jemaah.kabupaten);
+        if (!regency && options.allowNikFallback && nikPrefix.length === 6) {
+          regency = findWilayahItem(regencies, nikPrefix.slice(0, 4), '');
+          usedNikFallback = usedNikFallback || Boolean(regency);
+        }
+        if (!regency) {
+          setWilayahStatus(usedNikFallback
+            ? 'Provinsi disarankan dari kode awal NIK. Pilih kabupaten/kota sesuai alamat yang tercetak pada KTP.'
+            : 'Provinsi terpilih. Kabupaten/kota belum berhasil dicocokkan; silakan pilih manual.');
+          return { selectedCount, usedNikFallback };
+        }
 
         regencySelect.value = String(regency.id);
+        selectedCount++;
         const districts = await fetchWilayahData(`districts/${regency.id}.json`);
         setWilayahOptions('inputKecamatan', districts, '-- Pilih Kecamatan --', false);
-        const district = findWilayahItem(districts, jemaah.kecamatanId, jemaah.kecamatan);
-        if (!district) return;
+        let district = findWilayahItem(districts, jemaah.kecamatanId, jemaah.kecamatan);
+        if (!district && options.allowNikFallback && nikPrefix.length === 6) {
+          district = findWilayahItem(districts, nikPrefix, '');
+          usedNikFallback = usedNikFallback || Boolean(district);
+        }
+        if (!district) {
+          setWilayahStatus(usedNikFallback
+            ? 'Wilayah asal NIK disarankan. Periksa kabupaten/kota dan pilih kecamatan sesuai alamat KTP.'
+            : 'Kabupaten/kota terpilih. Kecamatan belum berhasil dicocokkan; silakan pilih manual.');
+          return { selectedCount, usedNikFallback };
+        }
 
         districtSelect.value = String(district.id);
+        selectedCount++;
         const villages = await fetchWilayahData(`villages/${district.id}.json`);
         setWilayahOptions('inputDesaKelurahan', villages, '-- Pilih Desa / Kelurahan --', false);
         const village = findWilayahItem(villages, jemaah.desaKelurahanId, jemaah.desaKelurahan);
-        if (village) villageSelect.value = String(village.id);
+        if (village) {
+          villageSelect.value = String(village.id);
+          selectedCount++;
+        }
 
-        setWilayahStatus('Data wilayah jemaah berhasil dimuat. Pilihan dapat diubah.');
+        setWilayahStatus(usedNikFallback
+          ? 'Sebagian wilayah disarankan dari kode asal NIK. Pastikan semua pilihan sama dengan alamat KTP; kode NIK tidak mengikuti perpindahan alamat.'
+          : (village ? 'Provinsi hingga desa/kelurahan berhasil dicocokkan.' : 'Provinsi hingga kecamatan berhasil dicocokkan. Pilih desa/kelurahan sesuai KTP.'));
+        return { selectedCount, usedNikFallback };
       } catch (error) {
         console.error('Gagal memulihkan pilihan wilayah jemaah:', error);
-        setWilayahStatus('Data wilayah belum dapat dimuat. Data wilayah lama tetap dipertahankan saat disimpan.', true);
+        setWilayahStatus('Data wilayah belum dapat dimuat. Periksa koneksi, lalu pilih wilayah secara manual.', true);
+        return { selectedCount, usedNikFallback };
       }
     }
 
@@ -1600,6 +1637,7 @@
     function parseKtpOcrText(rawText) {
       const lines = String(rawText || '').split(/\r?\n/)
         .map(line => line.replace(/\s+/g, ' ').trim())
+        .map(line => line.replace(/^(PROVINSI|KABUPATEN|KECAMATAN|NAMA|NIK|ALAMAT|KEL\s*[/]\s*DESA|KELURAHAN|DESA|JENIS\s*KELAMIN|TEMPAT\s*[/,]?\s*TGL\s*LAHIR|TEMPAT\s*LAHIR|TGL\s*LAHIR)(?=[A-Z0-9])/i, '$1 '))
         .filter(Boolean);
 
       const labelStart = /^(?:NIK\b|NAMA\b|TEMPAT\b|TGL\b|JENIS\b|KELAMIN\b|ALAMAT\b|RT\s*[/ ]?\s*RW\b|KEL(?:URAHAN)?\b|DESA\b|KECAMATAN\b|KAB(?:UPATEN)?\b|KOTA\b|PROVINSI\b|AGAMA\b|STATUS\b|PEKERJAAN\b|KEWARGANEGARAAN\b|BERLAKU\b)/i;
@@ -1764,21 +1802,27 @@
         });
 
         const hasWilayahText = parsed.provinsi || parsed.kabupatenKota || parsed.kecamatan || parsed.desaKelurahan;
-        if (hasWilayahText) {
-          await restoreWilayahSelections({
+        let regionResult = { selectedCount: 0, usedNikFallback: false };
+        if (hasWilayahText || /^\d{16}$/.test(parsed.nik)) {
+          regionResult = await restoreWilayahSelections({
+            nik: parsed.nik,
             provinsi: parsed.provinsi,
             kabupatenKota: parsed.kabupatenKota,
             kecamatan: parsed.kecamatan,
             desaKelurahan: parsed.desaKelurahan
-          });
-          const allRegionSelected = ['inputProvinsi', 'inputKabupatenKota', 'inputKecamatan', 'inputDesaKelurahan']
-            .every(id => Boolean(document.getElementById(id)?.value));
-          if (allRegionSelected) wilayahSelectionDirty = true;
+          }, { allowNikFallback: true });
+          if (regionResult.selectedCount > 0) wilayahSelectionDirty = true;
         }
 
         setKtpOcrProgress(1);
-        if (filled > 0 || hasWilayahText) {
-          setKtpOcrStatus(`Pemindaian selesai. ${filled} kolom identitas terisi otomatis. Periksa kembali NIK, nama, tanggal lahir, dan alamat sebelum menyimpan.`);
+        if (filled > 0 || hasWilayahText || regionResult.selectedCount > 0) {
+          const regionMessage = regionResult.selectedCount
+            ? ` dan ${regionResult.selectedCount} tingkat wilayah`
+            : '';
+          const warning = regionResult.usedNikFallback
+            ? ' Kode wilayah dari NIK hanya menunjukkan wilayah saat NIK didaftarkan, bukan jaminan alamat domisili sekarang; cocokkan dengan tulisan alamat pada KTP.'
+            : '';
+          setKtpOcrStatus(`Pemindaian selesai. ${filled} kolom identitas${regionMessage} terisi/disarankan. Periksa kembali seluruh hasil sebelum menyimpan.${warning}`);
         } else {
           setKtpOcrStatus('Teks KTP belum terbaca dengan baik. Coba foto yang lebih terang, lurus, dan dekat.', true);
         }
