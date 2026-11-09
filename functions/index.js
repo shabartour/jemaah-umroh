@@ -1,8 +1,12 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { GoogleAuth } = require("google-auth-library");
 
 initializeApp();
+const adminAuth = getAuth();
+const adminDb = getFirestore();
 
 const REGION = process.env.FUNCTION_REGION || "asia-southeast1";
 const DOCUMENT_AI_LOCATION = process.env.DOCUMENT_AI_LOCATION || "asia-southeast1";
@@ -34,6 +38,38 @@ const responseSchema = {
 
 function clean(value, max = 180) {
   return String(value || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function normalizedRole(profile) {
+  return String(profile?.role || "").trim().toLowerCase();
+}
+
+function isProfileActive(profile) {
+  return profile?.aktif === true;
+}
+
+async function requireActiveStaff(request) {
+  if (!request.auth?.uid) {
+    throw new HttpsError("unauthenticated", "Silakan login terlebih dahulu.");
+  }
+  const snapshot = await adminDb.collection("users").doc(request.auth.uid).get();
+  const profile = snapshot.exists ? snapshot.data() : null;
+  if (!profile || !isProfileActive(profile) || !["admin", "staff"].includes(normalizedRole(profile))) {
+    throw new HttpsError("permission-denied", "Akun tidak aktif atau tidak memiliki hak akses Staff.");
+  }
+  return profile;
+}
+
+async function requireAdmin(request) {
+  if (!request.auth?.uid) {
+    throw new HttpsError("unauthenticated", "Silakan login terlebih dahulu.");
+  }
+  const snapshot = await adminDb.collection("users").doc(request.auth.uid).get();
+  const profile = snapshot.exists ? snapshot.data() : null;
+  if (!profile || !isProfileActive(profile) || normalizedRole(profile) !== "admin") {
+    throw new HttpsError("permission-denied", "Fitur ini hanya dapat digunakan oleh Admin aktif.");
+  }
+  return profile;
 }
 
 function normalizeKtpFields(data) {
@@ -86,7 +122,7 @@ exports.scanKtpDocument = onCall({
   maxInstances: 3,
   enforceAppCheck: false
 }, async (request) => {
-  if (!request.auth) throw new HttpsError("unauthenticated", "Silakan login sebagai staf sebelum memindai KTP.");
+  await requireActiveStaff(request);
 
   const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
   const processorId = process.env.DOCUMENT_AI_PROCESSOR_ID;
@@ -163,4 +199,130 @@ exports.scanKtpDocument = onCall({
         : "Pemindaian AI gagal. Periksa konfigurasi Google Cloud lalu coba kembali.";
     throw new HttpsError("internal", message);
   }
+});
+
+
+/**
+ * Admin-only user provisioning. Firebase Admin SDK creates accounts
+ * without replacing the Admin's browser authentication session.
+ * Admin role assignment remains a manual bootstrap operation.
+ */
+exports.adminCreateUser = onCall({
+  region: REGION,
+  enforceAppCheck: false
+}, async (request) => {
+  await requireAdmin(request);
+
+  const nama = clean(request.data?.nama, 100);
+  const email = clean(request.data?.email, 254).toLowerCase();
+  const password = String(request.data?.password || "");
+  const roleInput = String(request.data?.role || "").trim().toLowerCase();
+  const role = roleInput === "staff" ? "Staff" : roleInput === "viewer" ? "Viewer" : "";
+
+  if (!nama) throw new HttpsError("invalid-argument", "Nama pengguna wajib diisi.");
+  const emailParts = email.split("@");
+  if (emailParts.length !== 2 || !emailParts[0] || !emailParts[1].includes(".") || email.includes(" ")) {
+    throw new HttpsError("invalid-argument", "Format email tidak valid.");
+  }
+  if (password.length < 10) {
+    throw new HttpsError("invalid-argument", "Password awal minimal 10 karakter.");
+  }
+  if (!role) {
+    throw new HttpsError("invalid-argument", "Role akun hanya boleh Staff atau Viewer.");
+  }
+
+  let createdUser;
+  try {
+    createdUser = await adminAuth.createUser({ email, password, displayName: nama, disabled: false });
+    await adminDb.collection("users").doc(createdUser.uid).create({
+      nama,
+      email,
+      role,
+      aktif: true,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      createdBy: request.auth.uid
+    });
+    return { uid: createdUser.uid, email, role };
+  } catch (error) {
+    if (createdUser?.uid) {
+      await adminAuth.deleteUser(createdUser.uid).catch(rollbackError => {
+        console.error("Rollback user Auth gagal:", rollbackError.message);
+      });
+    }
+    if (error.code === "auth/email-already-exists") {
+      throw new HttpsError("already-exists", "Email sudah terdaftar di Firebase Authentication.");
+    }
+    console.error("adminCreateUser failed:", error);
+    throw new HttpsError("internal", "Akun gagal dibuat. Periksa log Cloud Functions.");
+  }
+});
+
+exports.adminSetUserActive = onCall({
+  region: REGION,
+  enforceAppCheck: false
+}, async (request) => {
+  await requireAdmin(request);
+  const uid = clean(request.data?.uid, 128);
+  const aktif = request.data?.aktif;
+  if (!uid || typeof aktif !== "boolean") {
+    throw new HttpsError("invalid-argument", "UID dan status aktif tidak valid.");
+  }
+  if (uid === request.auth.uid) {
+    throw new HttpsError("failed-precondition", "Admin tidak dapat menonaktifkan akunnya sendiri.");
+  }
+
+  const userRef = adminDb.collection("users").doc(uid);
+  const snapshot = await userRef.get();
+  if (!snapshot.exists) throw new HttpsError("not-found", "Profil pengguna tidak ditemukan.");
+  if (normalizedRole(snapshot.data()) === "admin") {
+    throw new HttpsError("failed-precondition", "Akun Admin tidak dapat dinonaktifkan dari menu ini.");
+  }
+
+  try {
+    if (aktif) {
+      await adminAuth.updateUser(uid, { disabled: false });
+      await userRef.update({ aktif: true, updatedAt: FieldValue.serverTimestamp() });
+    } else {
+      // Tutup akses Firestore terlebih dahulu agar token/sesi lama langsung ditolak Rules.
+      await userRef.update({ aktif: false, updatedAt: FieldValue.serverTimestamp() });
+      await adminAuth.updateUser(uid, { disabled: true });
+    }
+    return { uid, aktif };
+  } catch (error) {
+    console.error("adminSetUserActive failed:", error);
+    throw new HttpsError("internal", "Status akun gagal diperbarui. Periksa log Cloud Functions.");
+  }
+});
+
+exports.adminDeleteUser = onCall({
+  region: REGION,
+  enforceAppCheck: false
+}, async (request) => {
+  await requireAdmin(request);
+  const uid = clean(request.data?.uid, 128);
+  if (!uid) throw new HttpsError("invalid-argument", "UID pengguna wajib diisi.");
+  if (uid === request.auth.uid) {
+    throw new HttpsError("failed-precondition", "Admin tidak dapat menghapus akunnya sendiri.");
+  }
+
+  const userRef = adminDb.collection("users").doc(uid);
+  const snapshot = await userRef.get();
+  if (!snapshot.exists) throw new HttpsError("not-found", "Profil pengguna tidak ditemukan.");
+  if (normalizedRole(snapshot.data()) === "admin") {
+    throw new HttpsError("failed-precondition", "Akun Admin tidak dapat dihapus dari menu ini.");
+  }
+
+  // Profile dikunci dahulu; jika hapus Auth gagal, akses Firestore tetap tertutup.
+  await userRef.update({ aktif: false, updatedAt: FieldValue.serverTimestamp() });
+  try {
+    await adminAuth.deleteUser(uid);
+  } catch (error) {
+    if (error.code !== "auth/user-not-found") {
+      console.error("adminDeleteUser Auth delete failed:", error);
+      throw new HttpsError("internal", "Akun sudah dikunci di Firestore, tetapi penghapusan Authentication gagal.");
+    }
+  }
+  await userRef.delete();
+  return { uid, deleted: true };
 });

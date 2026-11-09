@@ -1,0 +1,71 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profilePath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function profileExists(uid) {
+      return exists(profilePath(uid));
+    }
+
+    function profile(uid) {
+      return get(profilePath(uid)).data;
+    }
+
+    function activeUser() {
+      return signedIn()
+        && profileExists(request.auth.uid)
+        && profile(request.auth.uid).aktif == true;
+    }
+
+    function roleIs(roles) {
+      return profile(request.auth.uid).role in roles;
+    }
+
+    function isAdmin() {
+      return activeUser() && roleIs(['Admin', 'admin']);
+    }
+
+    function isStaff() {
+      return activeUser() && roleIs(['Admin', 'admin', 'Staff', 'staff']);
+    }
+
+    function canReadBusinessData() {
+      return activeUser()
+        && roleIs(['Admin', 'admin', 'Staff', 'staff', 'Viewer', 'viewer']);
+    }
+
+    // Profil hanya dapat dibaca oleh pemilik akun; daftar profil hanya oleh Admin.
+    // Semua penulisan profil wajib melalui Cloud Functions/Admin SDK.
+    match /users/{userId} {
+      allow get: if signedIn()
+        && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /jemaah/{jemaahId} {
+      allow read: if canReadBusinessData();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    match /paket/{paketId} {
+      allow read: if canReadBusinessData();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // Koleksi yang belum didefinisikan ditolak secara default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

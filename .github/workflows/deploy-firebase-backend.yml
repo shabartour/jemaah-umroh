@@ -1,0 +1,40 @@
+name: Deploy Firebase backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_production_deploy:
+        description: "Pilih yes hanya setelah akun Admin dan user profiles diperiksa."
+        required: true
+        type: choice
+        options:
+          - "no"
+          - "yes"
+        default: "no"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' && inputs.confirm_production_deploy == 'yes'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_UMROH_APP_DATABASE }}
+
+      - name: Install Cloud Functions dependencies
+        run: npm install --prefix functions
+
+      - name: Deploy Firestore Rules and Cloud Functions
+        run: npx --yes firebase-tools@latest deploy --only firestore:rules,functions --project umroh-app-database --non-interactive

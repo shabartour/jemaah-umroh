@@ -109,6 +109,9 @@
       <button id="tab-setting" onclick="switchTab('setting')" class="nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition">
         <i class="fa-solid fa-gear w-5 text-center"></i><span>Setting</span>
       </button>
+      <button id="tab-users" onclick="switchTab('users')" class="hidden nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition">
+        <i class="fa-solid fa-user-shield w-5 text-center"></i><span>Manajemen Pengguna</span>
+      </button>
     </nav>
 
     <div class="px-4 py-4 border-t border-white/10 bg-black/10">
@@ -176,7 +179,7 @@
   <div id="alertContainer" class="fixed top-20 right-4 z-50 max-w-md w-full space-y-2 pointer-events-none"></div>
 
   <!-- FLOATING ACTION BUTTON (+) FOR ADD JEMAAH -->
-  <button onclick="openAddJemaahModal()" class="fixed bottom-6 right-6 z-40 bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl transition transform hover:scale-105 focus:outline-none" title="Tambah Jemaah Baru">
+  <button id="floatingAddJemaahBtn" onclick="openAddJemaahModal()" class="hidden fixed bottom-6 right-6 z-40 bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl transition transform hover:scale-105 focus:outline-none" title="Tambah Jemaah Baru">
     <i class="fa-solid fa-plus"></i>
   </button>
 
@@ -193,7 +196,7 @@
           <h2 class="text-2xl font-bold text-amber-400 mb-1" id="welcomeTravelName">Selamat Datang di Portal Admin Shabar Tour</h2>
           <p class="text-sm text-slate-200 mb-4">Kelola pendaftaran jemaah, manifest rombongan, serta rekapitulasi data umroh secara terpusat dan aman di Firestore.</p>
           <div class="flex flex-wrap gap-3">
-            <button onclick="openAddJemaahModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs transition flex items-center shadow">
+            <button id="dashboardAddJemaahBtn" onclick="openAddJemaahModal()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold px-4 py-2 rounded-lg text-xs transition flex items-center shadow">
               <i class="fa-solid fa-user-plus mr-2"></i>Tambah Jemaah Baru
             </button>
             <button onclick="switchTab('dataJemaah')" class="bg-slate-800 hover:bg-slate-700 text-white font-medium px-4 py-2 rounded-lg text-xs border border-slate-600 transition flex items-center">
@@ -319,7 +322,7 @@
         </div>
         
         <div class="flex flex-wrap items-center gap-2">
-          <button onclick="openAddJemaahModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow-sm">
+          <button id="dataAddJemaahBtn" onclick="openAddJemaahModal()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow-sm">
             <i class="fa-solid fa-plus mr-1.5"></i>Tambah Jemaah
           </button>
           <button onclick="switchTab('laporan')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow-sm">
@@ -389,7 +392,7 @@
     <section id="view-kelolaPaket" class="hidden space-y-6 max-w-5xl mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        <div class="md:col-span-1 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div id="packageFormCard" class="hidden md:col-span-1 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
           <div>
             <h2 id="formPaketTitle" class="text-md font-bold text-slate-800">Tambah Paket Baru</h2>
             <p class="text-xs text-slate-500">Buat grup / rombongan keberangkatan umroh.</p>
@@ -616,6 +619,67 @@
             </button>
           </div>
         </form>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 6: MANAJEMEN PENGGUNA ==================== -->
+    <section id="view-users" class="hidden space-y-6 max-w-6xl mx-auto">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+          <div>
+            <h2 class="text-lg font-bold text-slate-800">Manajemen Pengguna</h2>
+            <p class="text-xs text-slate-500 mt-1">Admin dapat membuat akun Staff dan Viewer. Pendaftaran mandiri tidak tersedia.</p>
+          </div>
+          <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1.5 text-[10px] font-bold">
+            <i class="fa-solid fa-shield-halved"></i> Khusus Admin
+          </span>
+        </div>
+        <form id="formCreateUser" onsubmit="window.handleCreateUser(event)" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
+          <div>
+            <label for="newUserName" class="block text-xs font-semibold text-slate-700 mb-1">Nama Pengguna</label>
+            <input id="newUserName" type="text" required maxlength="100" autocomplete="off" placeholder="Nama staf" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="newUserEmail" class="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+            <input id="newUserEmail" type="email" required maxlength="254" autocomplete="off" placeholder="nama@shabartour.id" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="newUserPassword" class="block text-xs font-semibold text-slate-700 mb-1">Password Awal (min. 10 karakter)</label>
+            <input id="newUserPassword" type="password" required minlength="10" autocomplete="new-password" placeholder="Password awal" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="newUserRole" class="block text-xs font-semibold text-slate-700 mb-1">Hak Akses</label>
+            <select id="newUserRole" required class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <option value="Staff">Staff — tambah dan ubah</option>
+              <option value="Viewer">Viewer — hanya melihat</option>
+            </select>
+          </div>
+          <div class="md:col-span-2 xl:col-span-4 flex justify-end">
+            <button id="createUserButton" type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-lg text-xs font-semibold transition">
+              <i class="fa-solid fa-user-plus mr-1.5"></i>Buat Akun Pengguna
+            </button>
+          </div>
+        </form>
+        <p class="text-[10px] text-slate-500 mt-3">Setelah akun dibuat, kirim instruksi kepada pengguna untuk mengganti password awal melalui email reset password.</p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-sm text-slate-800">Daftar Akun</h3>
+            <p class="text-[10px] text-slate-500 mt-1">Role Admin hanya dapat ditetapkan secara manual melalui Firestore Console.</p>
+          </div>
+          <button type="button" onclick="window.loadUserDirectory()" class="text-xs font-semibold text-emerald-700 hover:text-emerald-900"><i class="fa-solid fa-rotate mr-1"></i>Segarkan</button>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs text-slate-600">
+            <thead class="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold">
+              <tr><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Role</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-center">Aksi</th></tr>
+            </thead>
+            <tbody id="usersTableBody" class="divide-y divide-slate-200">
+              <tr><td colspan="5" class="text-center py-8 text-slate-400">Buka menu ini untuk memuat akun.</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -920,13 +984,16 @@
       updateDoc, 
       deleteDoc, 
       onSnapshot, 
-      serverTimestamp 
+      serverTimestamp,
+      getDoc,
+      getDocs
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { 
       getAuth, 
       signInWithEmailAndPassword, 
-      signOut, 
-      onAuthStateChanged 
+      signOut,
+      onAuthStateChanged,
+      sendPasswordResetEmail
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     // Konfigurasi Firebase Firestore proyek
@@ -943,6 +1010,9 @@
     let app = null, db = null, auth = null;
     let functionsClient = null;
     let scanKtpCallable = null;
+    let adminCreateUserCallable = null;
+    let adminSetUserActiveCallable = null;
+    let adminDeleteUserCallable = null;
     let firebaseInitError = null;
     let unsubscribePaket = null;
     let unsubscribeJemaah = null;
@@ -1191,6 +1261,9 @@
       auth = getAuth(app);
       functionsClient = getFunctions(app, "asia-southeast1");
       scanKtpCallable = httpsCallable(functionsClient, "scanKtpDocument", { timeout: 90000 });
+      adminCreateUserCallable = httpsCallable(functionsClient, "adminCreateUser");
+      adminSetUserActiveCallable = httpsCallable(functionsClient, "adminSetUserActive");
+      adminDeleteUserCallable = httpsCallable(functionsClient, "adminDeleteUser");
     } catch (error) {
       firebaseInitError = error;
       console.error("Gagal menginisialisasi Firebase SDK:", error);
@@ -1203,6 +1276,8 @@
       isLoggedIn: false,
       isAuthReady: false,
       currentUser: null,
+      userProfile: null,
+      userDirectory: [],
       chartPaketInstance: null,
       chartGenderInstance: null
     };
@@ -1230,12 +1305,32 @@
       return messages[error?.code] || `Proses Firebase gagal${error?.code ? ` (${error.code})` : ''}: ${error?.message || 'Kesalahan tidak diketahui.'}`;
     }
 
-    function updateAuthUI(user) {
-      const loggedIn = Boolean(user);
-      const username = user?.email ? user.email.split('@')[0] : '';
-      const loginCover = document.getElementById('loginCover');
+    function getCurrentRole() {
+      return String(window.state.userProfile?.role || '').trim().toLowerCase();
+    }
 
-      // Cover selalu tampil untuk pengguna tanpa sesi staf, dan hilang setelah login.
+    function isCurrentUserActive() {
+      return window.state.isLoggedIn === true && window.state.userProfile?.aktif === true;
+    }
+
+    function updateRoleUI() {
+      const role = getCurrentRole();
+      const isAdmin = role === 'admin';
+      const canWrite = isAdmin || role === 'staff';
+      document.getElementById('tab-users')?.classList.toggle('hidden', !isAdmin);
+      ['floatingAddJemaahBtn', 'dashboardAddJemaahBtn', 'dataAddJemaahBtn', 'packageFormCard'].forEach(id => {
+        document.getElementById(id)?.classList.toggle('hidden', !canWrite);
+      });
+      if (!isAdmin && document.getElementById('view-users') && !document.getElementById('view-users').classList.contains('hidden')) {
+        window.switchTab('dashboard');
+      }
+    }
+
+    function updateAuthUI(user, profile = null) {
+      const loggedIn = Boolean(user && profile && profile.aktif === true);
+      const username = profile?.nama || (user?.email ? user.email.split('@')[0] : '');
+      const role = profile?.role ? String(profile.role) : '';
+      const loginCover = document.getElementById('loginCover');
       if (loginCover) loginCover.classList.toggle('hidden', loggedIn);
 
       const buttonSets = [
@@ -1257,17 +1352,32 @@
 
       buttonSets.forEach(({ button, text, icon, loggedClass, guestClass }) => {
         if (!button || !text || !icon) return;
-        text.textContent = loggedIn ? `Logout (${username || 'Staf'})` : 'Login Staf';
+        text.textContent = loggedIn ? `Logout (${username} · ${role})` : 'Login Staf';
         icon.className = loggedIn ? 'fa-solid fa-right-from-bracket' : 'fa-solid fa-right-to-bracket';
         button.className = loggedIn ? loggedClass : guestClass;
-        button.setAttribute('aria-label', loggedIn ? 'Logout staf' : 'Login staf');
+        button.setAttribute('aria-label', loggedIn ? 'Logout pengguna' : 'Login pengguna');
       });
+      updateRoleUI();
+    }
+
+    function requireAuthenticated() {
+      if (isCurrentUserActive() && auth) return true;
+      showAlert('Silakan login menggunakan akun yang aktif.', 'error');
+      document.getElementById('loginCover')?.classList.remove('hidden');
+      return false;
     }
 
     function requireStaffLogin() {
-      if (window.state.isLoggedIn && auth) return true;
-      showAlert('Silakan login menggunakan akun staf sebelum mengakses fitur ini.', 'error');
-      if (auth) document.getElementById('loginCover')?.classList.remove('hidden');
+      if (!requireAuthenticated()) return false;
+      if (['admin', 'staff'].includes(getCurrentRole())) return true;
+      showAlert('Akun Viewer hanya memiliki akses membaca data.', 'error');
+      return false;
+    }
+
+    function requireAdminLogin() {
+      if (!requireAuthenticated()) return false;
+      if (getCurrentRole() === 'admin') return true;
+      showAlert('Fitur ini hanya dapat digunakan oleh Admin.', 'error');
       return false;
     }
 
@@ -1288,29 +1398,60 @@
     }
 
     if (auth) {
-      onAuthStateChanged(auth, (user) => {
+      onAuthStateChanged(auth, async (user) => {
         window.state.isAuthReady = true;
-        window.state.isLoggedIn = Boolean(user);
         window.state.currentUser = user || null;
-        updateAuthUI(user || null);
+        window.state.userProfile = null;
+        window.state.isLoggedIn = false;
+        updateAuthUI(null, null);
 
-        if (user) {
-          initRealtimeListeners();
-        } else {
+        if (!user) {
           stopRealtimeListeners();
+          return;
+        }
+
+        try {
+          const profileSnapshot = await getDoc(doc(db, 'users', user.uid));
+          if (!profileSnapshot.exists()) {
+            throw new Error('Akun berhasil login, tetapi profil pengguna belum terdaftar di Firestore users. Hubungi Admin.');
+          }
+
+          const profile = profileSnapshot.data() || {};
+          const role = String(profile.role || '').trim().toLowerCase();
+          if (profile.aktif !== true) {
+            throw new Error('Akun Anda belum aktif atau telah dinonaktifkan. Hubungi Admin Shabar Tour.');
+          }
+          if (!['admin', 'staff', 'viewer'].includes(role)) {
+            throw new Error('Role akun belum valid. Atur field role menjadi Admin, Staff, atau Viewer.');
+          }
+
+          window.state.userProfile = { uid: user.uid, ...profile };
+          window.state.isLoggedIn = true;
+          updateAuthUI(user, window.state.userProfile);
+          initRealtimeListeners();
+          showAlert(`Selamat datang, ${profile.nama || user.email || 'Pengguna'}!`, 'success');
+        } catch (error) {
+          console.error('Profil/akses pengguna tidak valid:', error);
+          stopRealtimeListeners();
+          window.state.isLoggedIn = false;
+          window.state.userProfile = null;
+          updateAuthUI(null, null);
+          await signOut(auth).catch(signOutError => console.error('Gagal mengakhiri sesi tanpa profil aktif:', signOutError));
+          showAlert(error.message || getAuthErrorMessage(error), 'error');
         }
       }, (error) => {
         console.error('Gagal memantau status Firebase Auth:', error);
         window.state.isAuthReady = true;
         window.state.isLoggedIn = false;
         window.state.currentUser = null;
+        window.state.userProfile = null;
         stopRealtimeListeners();
-        updateAuthUI(null);
+        updateAuthUI(null, null);
         showAlert(getAuthErrorMessage(error), 'error');
       });
     } else {
       window.state.isAuthReady = true;
-      updateAuthUI(null);
+      updateAuthUI(null, null);
     }
 
     window.handleAuthAction = async function() {
@@ -1363,10 +1504,8 @@
       }
 
       try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-        window.closeLoginModal();
-        document.getElementById('formLoginStaf')?.reset();
-        showAlert(`Selamat datang, ${userCredential.user.email || 'Staf'}!`, 'success');
+        await signInWithEmailAndPassword(auth, email, pass);
+        // Login baru dinyatakan berhasil setelah profil users/{uid} lolos pemeriksaan.
       } catch (error) {
         console.error('Gagal login Firebase Auth:', error);
         showAlert(getAuthErrorMessage(error), 'error');
@@ -1379,16 +1518,137 @@
     };
 
     /* ==========================================================================
+       MANAJEMEN PENGGUNA - operasi administrasi dilakukan melalui Cloud Functions.
+       ========================================================================== */
+    function renderUserDirectory() {
+      const tbody = document.getElementById('usersTableBody');
+      if (!tbody) return;
+      const users = window.state.userDirectory || [];
+      if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Belum ada dokumen pengguna.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = users.map(item => {
+        const uid = String(item.uid || '');
+        const role = String(item.role || '-');
+        const locked = role.toLowerCase() === 'admin' || uid === window.state.currentUser?.uid;
+        const active = item.aktif === true;
+        const safeUid = encodeURIComponent(uid);
+        const safeEmail = encodeURIComponent(String(item.email || ''));
+        const actions = locked
+          ? '<span class="text-slate-300">Akun terlindungi</span>'
+          : `<button type="button" onclick="window.setManagedUserActive(decodeURIComponent('${safeUid}'), ${!active})" class="text-amber-700 hover:text-amber-900 mr-3">${active ? 'Nonaktifkan' : 'Aktifkan'}</button>
+             <button type="button" onclick="window.deleteManagedUser(decodeURIComponent('${safeUid}'))" class="text-red-600 hover:text-red-800">Hapus</button>`;
+        return `<tr>
+          <td class="px-4 py-3 font-semibold text-slate-800">${escapeHtml(String(item.nama || '-'))}</td>
+          <td class="px-4 py-3">${escapeHtml(String(item.email || '-'))}</td>
+          <td class="px-4 py-3">${escapeHtml(role)}</td>
+          <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-[10px] font-bold ${active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}">${active ? 'Aktif' : 'Nonaktif'}</span></td>
+          <td class="px-4 py-3 text-center whitespace-nowrap">
+            <button type="button" onclick="window.sendUserPasswordReset(decodeURIComponent('${safeEmail}'))" class="text-blue-700 hover:text-blue-900 mr-3">Reset password</button>
+            ${actions}
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    window.loadUserDirectory = async function() {
+      if (!requireAdminLogin()) return;
+      const tbody = document.getElementById('usersTableBody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuat akun...</td></tr>';
+      try {
+        const snapshot = await getDocs(collection(db, 'users'));
+        window.state.userDirectory = snapshot.docs.map(userDoc => ({ uid: userDoc.id, ...userDoc.data() }))
+          .sort((a, b) => String(a.nama || a.email || '').localeCompare(String(b.nama || b.email || ''), 'id'));
+        renderUserDirectory();
+      } catch (error) {
+        console.error('Gagal memuat daftar pengguna:', error);
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-red-600">Daftar pengguna gagal dimuat. Periksa Firestore Rules dan hak Admin.</td></tr>';
+        showAlert(`Gagal memuat akun: ${getAuthErrorMessage(error)}`, 'error');
+      }
+    };
+
+    window.handleCreateUser = async function(event) {
+      event.preventDefault();
+      if (!requireAdminLogin()) return;
+      const nama = document.getElementById('newUserName')?.value.trim() || '';
+      const email = document.getElementById('newUserEmail')?.value.trim().toLowerCase() || '';
+      const password = document.getElementById('newUserPassword')?.value || '';
+      const role = document.getElementById('newUserRole')?.value || 'Staff';
+      const button = document.getElementById('createUserButton');
+      if (!nama || !email || password.length < 10) {
+        showAlert('Nama, email, dan password minimal 10 karakter wajib diisi.', 'error');
+        return;
+      }
+      if (button) button.disabled = true;
+      try {
+        await adminCreateUserCallable({ nama, email, password, role });
+        document.getElementById('formCreateUser')?.reset();
+        showAlert(`Akun ${email} berhasil dibuat dengan role ${role}.`, 'success');
+        await window.loadUserDirectory();
+      } catch (error) {
+        console.error('Gagal membuat akun pengguna:', error);
+        showAlert(`Gagal membuat akun: ${error.message || getAuthErrorMessage(error)}`, 'error');
+      } finally {
+        if (button) button.disabled = false;
+      }
+    };
+
+    window.setManagedUserActive = async function(uid, aktif) {
+      if (!requireAdminLogin()) return;
+      if (!confirm(`Yakin ingin ${aktif ? 'mengaktifkan' : 'menonaktifkan'} akun ini?`)) return;
+      try {
+        await adminSetUserActiveCallable({ uid, aktif: Boolean(aktif) });
+        showAlert('Status akun berhasil diperbarui.', 'success');
+        await window.loadUserDirectory();
+      } catch (error) {
+        console.error('Gagal mengubah status akun:', error);
+        showAlert(`Gagal mengubah status: ${error.message || getAuthErrorMessage(error)}`, 'error');
+      }
+    };
+
+    window.deleteManagedUser = async function(uid) {
+      if (!requireAdminLogin()) return;
+      if (!confirm('Akun Authentication dan profil Firestore pengguna ini akan dihapus. Lanjutkan?')) return;
+      try {
+        await adminDeleteUserCallable({ uid });
+        showAlert('Akun pengguna berhasil dihapus.', 'success');
+        await window.loadUserDirectory();
+      } catch (error) {
+        console.error('Gagal menghapus akun pengguna:', error);
+        showAlert(`Gagal menghapus akun: ${error.message || getAuthErrorMessage(error)}`, 'error');
+      }
+    };
+
+    window.sendUserPasswordReset = async function(encodedEmailOrEmail) {
+      if (!requireAdminLogin()) return;
+      const email = String(encodedEmailOrEmail || '');
+      if (!email) return;
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showAlert(`Email reset password dikirim ke ${email}.`, 'success');
+      } catch (error) {
+        showAlert(`Gagal mengirim reset password: ${error.message || getAuthErrorMessage(error)}`, 'error');
+      }
+    };
+
+    /* ==========================================================================
        TAB SWITCHING LOGIC
        ========================================================================== */
     window.switchTab = function(tabId) {
-      const views = ['dashboard', 'dataJemaah', 'kelolaPaket', 'laporan', 'setting'];
+      if (tabId === 'users' && !requireAdminLogin()) return;
+      if (!isCurrentUserActive()) {
+        document.getElementById('loginCover')?.classList.remove('hidden');
+        return;
+      }
+      const views = ['dashboard', 'dataJemaah', 'kelolaPaket', 'laporan', 'setting', 'users'];
       const titles = {
         dashboard: 'Dashboard',
         dataJemaah: 'Data Jemaah',
         kelolaPaket: 'Kelola Paket',
         laporan: 'Laporan Paket Umroh',
-        setting: 'Pengaturan Aplikasi'
+        setting: 'Pengaturan Aplikasi',
+        users: 'Manajemen Pengguna'
       };
 
       const inactiveClass = 'nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition';
@@ -1415,6 +1675,7 @@
       if (tabId === 'dashboard') renderDashboard();
       if (tabId === 'dataJemaah') renderJemaahTable();
       if (tabId === 'laporan') renderLaporanList();
+      if (tabId === 'users') window.loadUserDirectory();
 
       window.closeSidebar();
     };
@@ -2043,7 +2304,7 @@
     };
 
     window.deleteJemaah = async function(id) {
-      if (!requireStaffLogin()) return;
+      if (!requireAdminLogin()) return;
       if (confirm('Apakah Anda yakin ingin menghapus data jemaah ini?')) {
         try {
           await deleteDoc(doc(db, "jemaah", id));
@@ -2153,7 +2414,7 @@
     };
 
     window.deletePaket = async function(id) {
-      if (!requireStaffLogin()) return;
+      if (!requireAdminLogin()) return;
       if (confirm('Apakah Anda yakin ingin menghapus paket ini?')) {
         try {
           await deleteDoc(doc(db, "paket", id));
@@ -2622,12 +2883,9 @@
       paketsAktif.forEach(p => {
         const count = getJemaahsForPaket(p.namaPaket).length;
         const aksiHtml = p.id ? `
-          <button onclick="editPaket('${p.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="Edit Paket" aria-label="Edit paket">
-            <i class="fa-solid fa-pen-to-square"></i>
-          </button>
-          <button onclick="deletePaket('${p.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus Paket" aria-label="Hapus paket">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+          ${['admin', 'staff'].includes(getCurrentRole()) ? `<button onclick="editPaket('${p.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="Edit Paket" aria-label="Edit paket"><i class="fa-solid fa-pen-to-square"></i></button>` : ''}
+          ${getCurrentRole() === 'admin' ? `<button onclick="deletePaket('${p.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus Paket" aria-label="Hapus paket"><i class="fa-solid fa-trash"></i></button>` : ''}
+          ${getCurrentRole() === 'viewer' ? '<span class="text-slate-300">Hanya baca</span>' : ''}
         ` : '<span class="text-slate-300">-</span>';
 
         tbodyAktif.innerHTML += `
@@ -2693,11 +2951,16 @@
         const departureDate = departureDateByPackage.get(packageKey) || '';
         const hasDeparted = Boolean(departureDate && departureDate <= today);
 
-        const editAction = hasDeparted ? '' : `
+        const editAction = hasDeparted || !['admin', 'staff'].includes(getCurrentRole()) ? '' : `
           <button onclick="editJemaah('${j.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="Edit">
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
         `;
+        const deleteAction = getCurrentRole() === 'admin' ? `
+          <button onclick="deleteJemaah('${j.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        ` : '';
         const printAction = `
           <button onclick="printRegistrationLetter('${j.id}')" class="text-emerald-700 hover:text-emerald-900 p-1" title="Cetak Surat Pendaftaran" aria-label="Cetak surat pendaftaran">
             <i class="fa-solid fa-print"></i>
@@ -2722,9 +2985,7 @@
             <td class="px-4 py-3 text-center space-x-1 whitespace-nowrap">
               ${editAction}
               ${printAction}
-              <button onclick="deleteJemaah('${j.id}')" class="text-red-500 hover:text-red-700 p-1" title="Hapus">
-                <i class="fa-solid fa-trash"></i>
-              </button>
+              ${deleteAction}
             </td>
           </tr>
         `;
@@ -3033,7 +3294,7 @@
     };
 
     window.exportPackageXLSX = function(packageName) {
-      if (!requireStaffLogin()) return;
+      if (!requireAuthenticated()) return; 
       const dataToExport = getJemaahsForPaket(packageName);
       if (dataToExport.length === 0) {
         showAlert('Tidak ada data jemaah pada paket ini.', 'error');
@@ -3062,7 +3323,7 @@
     };
 
     window.exportPackagePDF = function(packageName) {
-      if (!requireStaffLogin()) return;
+      if (!requireAuthenticated()) return; 
       const dataToExport = getJemaahsForPaket(packageName);
       if (dataToExport.length === 0) {
         showAlert('Tidak ada data jemaah pada paket ini.', 'error');
