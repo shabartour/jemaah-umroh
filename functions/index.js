@@ -9,9 +9,20 @@ const adminAuth = getAuth();
 const adminDb = getFirestore();
 
 const REGION = process.env.FUNCTION_REGION || "asia-southeast1";
+
+// Document AI can live in a different Google Cloud project from Firebase.
+const DEFAULT_PROJECT_ID = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+const DOCUMENT_AI_PROJECT_ID = process.env.DOCUMENT_AI_PROJECT_ID || DEFAULT_PROJECT_ID;
 const DOCUMENT_AI_LOCATION = process.env.DOCUMENT_AI_LOCATION || "asia-southeast1";
+const DOCUMENT_AI_PROCESSOR_ID = process.env.DOCUMENT_AI_PROCESSOR_ID || "";
+
+// Vertex AI project and location are configurable independently from Document AI.
+const VERTEX_PROJECT_ID = process.env.VERTEX_PROJECT_ID || DEFAULT_PROJECT_ID;
 const VERTEX_LOCATION = process.env.VERTEX_LOCATION || "asia-southeast1";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+
+// Gemini 2.5 Flash was retired in October 2026. Gemini 3.5 Flash is GA,
+// supports structured output, and is available in asia-southeast1.
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
 const googleAuth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
 
@@ -124,10 +135,14 @@ exports.scanKtpDocument = onCall({
 }, async (request) => {
   await requireActiveStaff(request);
 
-  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
-  const processorId = process.env.DOCUMENT_AI_PROCESSOR_ID;
-  if (!projectId || !processorId) {
-    throw new HttpsError("failed-precondition", "Layanan OCR belum dikonfigurasi. Administrator perlu mengatur DOCUMENT_AI_PROCESSOR_ID pada Cloud Functions.");
+  if (!DOCUMENT_AI_PROJECT_ID || !DOCUMENT_AI_PROCESSOR_ID) {
+    throw new HttpsError(
+      "failed-precondition",
+      "Konfigurasi OCR belum lengkap. Atur DOCUMENT_AI_PROJECT_ID dan DOCUMENT_AI_PROCESSOR_ID pada GitHub Actions Variables, lalu deploy ulang."
+    );
+  }
+  if (!VERTEX_PROJECT_ID) {
+    throw new HttpsError("failed-precondition", "Konfigurasi Vertex AI belum lengkap. Atur VERTEX_PROJECT_ID lalu deploy ulang.");
   }
 
   const mimeType = clean(request.data?.mimeType, 40).toLowerCase();
@@ -145,7 +160,7 @@ exports.scanKtpDocument = onCall({
 
   try {
     // Tahap 1: Document AI OCR. Foto dikirim langsung ke processor dan tidak disimpan ke Cloud Storage.
-    const processorName = `projects/${projectId}/locations/${DOCUMENT_AI_LOCATION}/processors/${processorId}`;
+    const processorName = `projects/${DOCUMENT_AI_PROJECT_ID}/locations/${DOCUMENT_AI_LOCATION}/processors/${DOCUMENT_AI_PROCESSOR_ID}`;
     const documentUrl = `https://${DOCUMENT_AI_LOCATION}-documentai.googleapis.com/v1/${processorName}:process`;
     const ocrResponse = await googleFetch(documentUrl, {
       method: "POST",
@@ -167,7 +182,7 @@ exports.scanKtpDocument = onCall({
       "TEKS OCR KTP:",
       ocrText
     ].join("\n");
-    const vertexUrl = `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${VERTEX_LOCATION}/publishers/google/models/${GEMINI_MODEL}:generateContent`;
+    const vertexUrl = `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${VERTEX_PROJECT_ID}/locations/${VERTEX_LOCATION}/publishers/google/models/${GEMINI_MODEL}:generateContent`;
     const geminiResponse = await googleFetch(vertexUrl, {
       method: "POST",
       body: JSON.stringify({
