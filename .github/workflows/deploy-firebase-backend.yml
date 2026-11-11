@@ -33,6 +33,30 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_UMROH_APP_DATABASE }}
 
+      - name: Prepare OCR runtime configuration
+        shell: bash
+        env:
+          DOCUMENT_AI_PROJECT_ID: ${{ vars.DOCUMENT_AI_PROJECT_ID }}
+          DOCUMENT_AI_PROCESSOR_ID: ${{ vars.DOCUMENT_AI_PROCESSOR_ID }}
+          DOCUMENT_AI_LOCATION: ${{ vars.DOCUMENT_AI_LOCATION }}
+          VERTEX_PROJECT_ID: ${{ vars.VERTEX_PROJECT_ID }}
+          VERTEX_LOCATION: ${{ vars.VERTEX_LOCATION }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+        run: |
+          set -euo pipefail
+          cat > functions/.env.umroh-app-database <<EOF
+          DOCUMENT_AI_PROJECT_ID=${DOCUMENT_AI_PROJECT_ID:-umroh-app-database}
+          DOCUMENT_AI_PROCESSOR_ID=${DOCUMENT_AI_PROCESSOR_ID:-}
+          DOCUMENT_AI_LOCATION=${DOCUMENT_AI_LOCATION:-asia-southeast1}
+          VERTEX_PROJECT_ID=${VERTEX_PROJECT_ID:-umroh-app-database}
+          VERTEX_LOCATION=${VERTEX_LOCATION:-asia-southeast1}
+          GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash}
+          EOF
+          chmod 600 functions/.env.umroh-app-database
+          if [[ -z "${DOCUMENT_AI_PROCESSOR_ID:-}" ]]; then
+            echo "::warning::DOCUMENT_AI_PROCESSOR_ID is not configured. OCR will return a setup error until the GitHub Actions variable is added."
+          fi
+
       - name: Install Cloud Functions dependencies
         run: npm install --prefix functions
 
