@@ -574,51 +574,74 @@
     </section>
 
     <!-- ==================== VIEW 5: SETTING ==================== -->
-    <section id="view-setting" class="hidden space-y-6 max-w-3xl mx-auto">
-      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-        <div>
-          <h2 class="text-lg font-bold text-slate-800">Pengaturan Aplikasi & Profil</h2>
-          <p class="text-xs text-slate-500">Kelola identitas travel agen, profil staf, serta preferensi sistem.</p>
+    <section id="view-setting" class="hidden space-y-5 max-w-4xl mx-auto">
+      <div class="rounded-2xl bg-gradient-to-r from-emerald-900 to-slate-900 p-5 sm:p-6 text-white shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-white/10 text-amber-300 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-sliders"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold">Pengaturan Akun & Aplikasi</h2>
+            <p class="text-xs text-emerald-50/80 mt-1">Informasi sesi, keamanan akun, dan status sistem manajemen jemaah.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <i class="fa-solid fa-user-circle text-emerald-700"></i>
+            <h3 class="font-bold text-sm text-slate-800">Akun yang Sedang Digunakan</h3>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase tracking-wide font-semibold text-slate-400">Nama Pengguna</p>
+            <p id="settingUserName" class="text-sm font-semibold text-slate-800 mt-1">-</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase tracking-wide font-semibold text-slate-400">Email Login</p>
+            <p id="settingUserEmail" class="text-sm text-slate-700 mt-1 break-all">-</p>
+          </div>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1.5 text-[10px] font-bold">
+              <i class="fa-solid fa-shield-halved"></i><span id="settingUserRole">-</span>
+            </span>
+            <span id="settingUserStatus" class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 text-[10px] font-bold">Status akun: -</span>
+          </div>
+          <p id="settingRoleDescription" class="text-[11px] leading-relaxed text-slate-500">Hak akses mengikuti role akun yang ditetapkan Administrator.</p>
         </div>
 
-        <form id="formSettingApp" onsubmit="handleSaveSetting(event)" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Travel Agen</label>
-              <input type="text" id="settingTravelName" value="PT. SHABAR TOUR" required
-                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Email Staf / Administrator</label>
-              <input type="email" id="settingAdminEmail" value="admin@shabartour.id" required
-                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <i class="fa-solid fa-lock text-emerald-700"></i>
+            <h3 class="font-bold text-sm text-slate-800">Keamanan Akun</h3>
           </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Telepon Kantor</label>
-              <input type="text" id="settingPhone" value="0231-123456" 
-                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Kota / Lokasi Kantor</label>
-              <input type="text" id="settingCity" value="Cirebon, Jawa Barat" 
-                     class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
-          </div>
-
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Kantor Lengkap</label>
-            <textarea id="settingAddress" rows="2" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none">Jl. Raya Kedawung No. 87, Cirebon</textarea>
+            <p class="text-sm font-semibold text-slate-800">Ubah Password</p>
+            <p class="text-xs text-slate-500 leading-relaxed mt-1">Kirim tautan pengaturan ulang password ke email akun yang sedang login. Buka email tersebut untuk membuat password baru.</p>
           </div>
+          <button id="settingPasswordResetButton" type="button" onclick="window.handleSettingsPasswordReset()" class="w-full bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold px-4 py-2.5 rounded-lg text-xs shadow-sm transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-envelope"></i>Kirim Link Reset Password
+          </button>
+          <p class="text-[10px] leading-relaxed text-slate-400">Jangan membagikan tautan reset password kepada orang lain.</p>
+        </div>
+      </div>
 
-          <div class="pt-4 border-t border-slate-200 flex justify-end">
-            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-lg text-xs shadow transition flex items-center">
-              <i class="fa-solid fa-floppy-disk mr-2"></i>Simpan Pengaturan
-            </button>
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-2 mb-3">
+          <i class="fa-solid fa-circle-info text-emerald-700"></i>
+          <h3 class="font-bold text-sm text-slate-800">Informasi Sistem</h3>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div>
+            <p class="text-[10px] uppercase tracking-wide font-semibold text-slate-400">Nama Aplikasi</p>
+            <p class="font-semibold text-slate-700 mt-1">Sistem Manajemen Jemaah Umroh</p>
           </div>
-        </form>
+          <div>
+            <p class="text-[10px] uppercase tracking-wide font-semibold text-slate-400">Pengelola</p>
+            <p class="font-semibold text-slate-700 mt-1">PT. SHABAR TOUR</p>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-500 leading-relaxed mt-4 pt-3 border-t border-slate-100">Data jemaah dan paket disimpan di Google Firestore dan disinkronkan otomatis selama sesi akun aktif. Pengaturan hak akses pengguna dikelola Administrator melalui menu Manajemen Pengguna.</p>
       </div>
     </section>
 
@@ -1358,6 +1381,7 @@
         button.setAttribute('aria-label', loggedIn ? 'Logout pengguna' : 'Login pengguna');
       });
       updateRoleUI();
+      renderSettings();
     }
 
     function requireAuthenticated() {
@@ -1675,6 +1699,7 @@
       if (tabId === 'dashboard') renderDashboard();
       if (tabId === 'dataJemaah') renderJemaahTable();
       if (tabId === 'laporan') renderLaporanList();
+      if (tabId === 'setting') renderSettings();
       if (tabId === 'users') window.loadUserDirectory();
 
       window.closeSidebar();
@@ -2425,12 +2450,63 @@
       }
     };
 
-    window.handleSaveSetting = function(event) {
-      event.preventDefault();
-      const travelName = document.getElementById('settingTravelName').value;
-      const welcomeEl = document.getElementById('welcomeTravelName');
-      if (welcomeEl) welcomeEl.textContent = `Selamat Datang di Portal Admin ${travelName}`;
-      showAlert('Pengaturan aplikasi berhasil disimpan!', 'success');
+    function renderSettings() {
+      const profile = window.state.userProfile || {};
+      const user = window.state.currentUser || auth?.currentUser || null;
+      const role = getCurrentRole();
+      const roleLabels = { admin: 'Admin', staff: 'Staff', viewer: 'Viewer' };
+      const roleDescriptions = {
+        admin: 'Administrator dapat mengelola data jemaah, paket, akun pengguna, serta seluruh fitur aplikasi.',
+        staff: 'Staff dapat melihat, menambah, dan mengubah data jemaah serta paket. Penghapusan dan manajemen akun hanya untuk Admin.',
+        viewer: 'Viewer hanya dapat melihat data dan mencetak surat pendaftaran. Perubahan data tidak diizinkan.'
+      };
+      const email = user?.email || profile.email || '';
+
+      const nameEl = document.getElementById('settingUserName');
+      const emailEl = document.getElementById('settingUserEmail');
+      const roleEl = document.getElementById('settingUserRole');
+      const statusEl = document.getElementById('settingUserStatus');
+      const descriptionEl = document.getElementById('settingRoleDescription');
+      const resetButton = document.getElementById('settingPasswordResetButton');
+
+      if (nameEl) nameEl.textContent = profile.nama || user?.displayName || '-';
+      if (emailEl) emailEl.textContent = email || '-';
+      if (roleEl) roleEl.textContent = roleLabels[role] || 'Belum diketahui';
+      if (statusEl) {
+        statusEl.textContent = `Status akun: ${profile.aktif === true ? 'Aktif' : 'Tidak aktif'}`;
+        statusEl.className = profile.aktif === true
+          ? 'inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1.5 text-[10px] font-bold'
+          : 'inline-flex items-center gap-1.5 rounded-full bg-red-50 text-red-700 border border-red-100 px-3 py-1.5 text-[10px] font-bold';
+      }
+      if (descriptionEl) descriptionEl.textContent = roleDescriptions[role] || 'Hak akses mengikuti role akun yang ditetapkan Administrator.';
+      if (resetButton) resetButton.disabled = !email || !isCurrentUserActive();
+    }
+
+    window.handleSettingsPasswordReset = async function() {
+      if (!requireAuthenticated()) return;
+      const email = String(auth?.currentUser?.email || window.state.currentUser?.email || '').trim();
+      if (!email) {
+        showAlert('Email akun tidak ditemukan. Hubungi Administrator.', 'error');
+        return;
+      }
+
+      const button = document.getElementById('settingPasswordResetButton');
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>Mengirim tautan...';
+      }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showAlert(`Tautan reset password berhasil dikirim ke ${email}.`, 'success');
+      } catch (error) {
+        console.error('Gagal mengirim tautan reset password:', error);
+        showAlert(`Gagal mengirim tautan reset password: ${getAuthErrorMessage(error)}`, 'error');
+      } finally {
+        if (button) {
+          button.disabled = !isCurrentUserActive();
+          button.innerHTML = '<i class="fa-solid fa-envelope"></i>Kirim Link Reset Password';
+        }
+      }
     };
 
     /* ==========================================================================
@@ -2551,8 +2627,6 @@
         const dpText = dpValue !== null && dpValue !== '' && Number.isFinite(Number(dpValue))
           ? 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(dpValue))
           : 'Rp. -';
-        const passportNumber = String(jemaah.noPaspor ?? '').trim();
-        const passportAvailable = Boolean(passportNumber && passportNumber !== '-');
         const checkbox = (checked) => checked ? '☑' : '☐';
         const e = valueOrDash;
 
@@ -2633,7 +2707,10 @@
     </div>
 
     <table class="form-table">
-      <tr><td class="field-label">Nomor NIK</td><td class="colon">:</td><td class="field-value" colspan="4">${e(jemaah.nik)}</td></tr>
+      <tr>
+        <td class="field-label">Nomor NIK</td><td class="colon">:</td><td class="field-value" style="width:27%">${e(jemaah.nik)}</td>
+        <td class="field-label" style="width:15%">No. Paspor</td><td class="colon">:</td><td class="field-value">${e(jemaah.noPaspor)}</td>
+      </tr>
       <tr><td class="field-label">Nama (sesuai KTP)</td><td class="colon">:</td><td class="field-value" colspan="4">${e(jemaah.nama || jemaah.namaLengkap)}</td></tr>
       <tr><td class="field-label">Nama Ayah</td><td class="colon">:</td><td class="field-value" colspan="4">${e(jemaah.namaAyah)}</td></tr>
       <tr>
@@ -2655,14 +2732,15 @@
         <td class="field-label">Paket Umroh</td><td class="colon">:</td><td class="field-value" colspan="4">${e(packageName)}</td>
       </tr>
       <tr>
-        <td class="field-label">Keberangkatan</td><td class="colon">:</td><td class="field-value" colspan="4">${safe(formatLongDateIndonesia(departureDate))}</td>
+        <td class="field-label">Keberangkatan</td><td class="colon">:</td><td class="field-value" style="width:27%">${safe(formatLongDateIndonesia(departureDate))}</td>
+        <td class="field-label" style="width:15%">Program</td><td class="colon">:</td><td class="field-value">${e(packageData?.program || packageData?.durasi || jemaah.program || jemaah.durasi)}</td>
       </tr>
       <tr><td class="field-label">Uang Muka/DP</td><td class="colon">:</td><td class="field-value" colspan="4">${safe(dpText)}</td></tr>
     </table>
 
     <div class="checklist">
       <div class="checklist-title">Persyaratan:</div>
-      <div class="checklist-row"><span>1. Paspor (minimal 2 suku kata)</span><span class="check-pair">${checkbox(passportAvailable)} Ada&nbsp;&nbsp;&nbsp; ${checkbox(!passportAvailable)} Belum</span></div>
+      <div class="checklist-row"><span>1. Paspor (minimal 2 suku kata)</span><span class="check-pair">☐ Ada&nbsp;&nbsp;&nbsp; ☐ Belum</span></div>
       <div class="checklist-row"><span>2. Sertifikat Suntik meningitis dan Polio</span><span class="check-pair">☐ Ada&nbsp;&nbsp;&nbsp; ☐ Belum</span></div>
       <div class="checklist-row"><span>3. Copy KTP dan Kartu Keluarga</span><span class="check-pair">☐ Ada&nbsp;&nbsp;&nbsp; ☐ Belum</span></div>
       <div class="checklist-row"><span>4. Copy Buku Nikah/ Akte Lahir/ Ijazah</span><span class="check-pair">☐ Ada&nbsp;&nbsp;&nbsp; ☐ Belum</span></div>
