@@ -99,6 +99,9 @@
       <button id="tab-kelolaPaket" onclick="switchTab('kelolaPaket')" class="nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition">
         <i class="fa-solid fa-box-archive w-5 text-center"></i><span>Kelola Paket</span>
       </button>
+      <button id="tab-dokumenPortal" onclick="switchTab('dokumenPortal')" class="hidden nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition">
+        <i class="fa-solid fa-folder-open w-5 text-center"></i><span>Dokumen Portal</span>
+      </button>
       <button id="tab-laporan" onclick="switchTab('laporan')" class="nav-tab w-full flex items-center gap-3 px-3 py-3 rounded-xl border-l-[3px] border-transparent text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition">
         <i class="fa-solid fa-file-lines w-5 text-center"></i><span>Laporan</span>
       </button>
@@ -524,7 +527,93 @@
       </div>
     </section>
 
-    <!-- ==================== VIEW 4: LAPORAN & MANIFEST ==================== -->
+    <!-- ==================== VIEW 4: DOKUMEN PORTAL ==================== -->
+    <section id="view-dokumenPortal" class="hidden space-y-5 max-w-6xl mx-auto">
+      <div class="rounded-2xl bg-gradient-to-r from-emerald-900 to-slate-900 p-5 sm:p-6 text-white shadow-lg">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p class="text-[10px] uppercase tracking-[0.18em] font-bold text-amber-300">KONTEN AREA PRIBADI</p>
+            <h2 class="text-xl font-bold mt-1">Kelola Dokumen Portal</h2>
+            <p class="text-xs text-emerald-50/80 mt-1 max-w-2xl">Hubungkan file Google Drive yang sudah diunggah ke paket atau jemaah. File tetap privat dan hanya disajikan melalui backend portal setelah sesi jemaah diverifikasi.</p>
+          </div>
+          <button type="button" onclick="window.loadPortalDocumentsAdmin()" class="shrink-0 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-4 py-2.5 text-xs font-semibold text-white"><i class="fa-solid fa-rotate mr-1.5"></i>Segarkan daftar</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+        <div class="xl:col-span-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 h-fit">
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 id="portalDocumentFormTitle" class="font-bold text-slate-900 text-sm">Tautkan Dokumen Baru</h3>
+              <p class="text-[10px] text-slate-500 mt-1">File diunggah manual ke Google Drive terlebih dahulu.</p>
+            </div>
+            <span class="rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-1 text-[10px] font-bold">Admin / Staff</span>
+          </div>
+          <form id="portalDocumentForm" onsubmit="window.handleSavePortalDocument(event)" class="space-y-3">
+            <input type="hidden" id="portalDocumentEditId" value="">
+            <div>
+              <label for="portalDocumentType" class="block text-xs font-semibold text-slate-700 mb-1">Jenis Dokumen</label>
+              <select id="portalDocumentType" required onchange="window.populatePortalDocumentOwnerOptions()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="itinerary">Itinerary Perjalanan (Paket)</option>
+                <option value="registration_proof">Bukti Pendaftaran (Jemaah)</option>
+                <option value="umrah_letter">Surat Keterangan Umroh (Jemaah)</option>
+                <option value="umrah_certificate">Sertifikat Umroh (Jemaah)</option>
+              </select>
+            </div>
+            <div>
+              <label for="portalDocumentOwner" id="portalDocumentOwnerLabel" class="block text-xs font-semibold text-slate-700 mb-1">Paket Keberangkatan</label>
+              <select id="portalDocumentOwner" required class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="">Memuat daftar…</option>
+              </select>
+              <p id="portalDocumentOwnerHint" class="text-[10px] text-slate-500 mt-1">Itinerary terhubung dengan nama paket yang tersimpan pada data jemaah.</p>
+            </div>
+            <div>
+              <label for="portalDocumentDisplayName" class="block text-xs font-semibold text-slate-700 mb-1">Nama yang Ditampilkan</label>
+              <input id="portalDocumentDisplayName" type="text" required minlength="2" maxlength="120" placeholder="Contoh: Itinerary Umroh 12 Hari" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+              <label for="portalDocumentDriveFileId" class="block text-xs font-semibold text-slate-700 mb-1">Google Drive File ID atau URL</label>
+              <input id="portalDocumentDriveFileId" type="text" required maxlength="500" placeholder="Tempel ID file atau link Google Drive" autocomplete="off" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <p class="text-[10px] text-slate-500 mt-1">Gunakan file PDF di folder sesuai jenis dokumen. Jangan ubah akses file menjadi publik.</p>
+            </div>
+            <div>
+              <label for="portalDocumentSortOrder" class="block text-xs font-semibold text-slate-700 mb-1">Urutan Tampilan</label>
+              <input id="portalDocumentSortOrder" type="number" min="0" max="9999" step="1" value="0" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button id="portalDocumentSaveButton" type="submit" class="flex-1 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white py-2.5 text-xs font-bold shadow-sm"><i class="fa-solid fa-link mr-1.5"></i>Simpan Dokumen</button>
+              <button id="portalDocumentCancelButton" type="button" onclick="window.resetPortalDocumentForm()" class="hidden rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2.5 text-xs font-semibold">Batal</button>
+            </div>
+            <p id="portalDocumentFormMessage" class="text-[11px]" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+
+        <div class="xl:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm">Metadata Dokumen Terdaftar</h3>
+              <p class="text-[10px] text-slate-500 mt-1">Daftar ini hanya untuk Admin/Staff. Pengunjung portal tidak dapat membaca metadata Firestore secara langsung.</p>
+            </div>
+            <span id="portalDocumentCount" class="text-[10px] rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-1 font-bold">0 dokumen</span>
+          </div>
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px]">
+                <tr><th class="px-3 py-3">Jenis / Nama</th><th class="px-3 py-3">Pemilik</th><th class="px-3 py-3">Status</th><th class="px-3 py-3 text-center">Aksi</th></tr>
+              </thead>
+              <tbody id="portalDocumentsTableBody" class="divide-y divide-slate-100">
+                <tr><td colspan="4" class="text-center py-8 text-slate-400">Pilih menu ini untuk memuat metadata dokumen.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-[11px] text-amber-900 leading-relaxed">
+        <strong>Aturan keamanan:</strong> admin/staf hanya mendaftarkan metadata dan ID file. Plugin WordPress akan memeriksa bahwa file berada pada folder Drive yang sesuai dan mengirimkannya hanya kepada jemaah pemilik setelah sesi tervalidasi. Untuk saat ini sertifikat tetap tidak dapat diunduh sebelum status perjalanan selesai dikonfirmasi pada data jemaah.
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 5: LAPORAN & MANIFEST ==================== -->
     <section id="view-laporan" class="hidden space-y-6">
       <!-- Header / hero -->
       <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0b3d32] via-emerald-900 to-slate-900 p-6 sm:p-7 text-white shadow-lg">
@@ -1378,6 +1467,7 @@
       const isAdmin = role === 'admin';
       const canWrite = isAdmin || role === 'staff';
       document.getElementById('tab-users')?.classList.toggle('hidden', !isAdmin);
+      document.getElementById('tab-dokumenPortal')?.classList.toggle('hidden', !canWrite);
       ['floatingAddJemaahBtn', 'dashboardAddJemaahBtn', 'dataAddJemaahBtn', 'packageFormCard'].forEach(id => {
         document.getElementById(id)?.classList.toggle('hidden', !canWrite);
       });
@@ -1698,15 +1788,17 @@
        ========================================================================== */
     window.switchTab = function(tabId) {
       if (tabId === 'users' && !requireAdminLogin()) return;
+      if (tabId === 'dokumenPortal' && !requireStaffLogin()) return;
       if (!isCurrentUserActive()) {
         document.getElementById('loginCover')?.classList.remove('hidden');
         return;
       }
-      const views = ['dashboard', 'dataJemaah', 'kelolaPaket', 'laporan', 'setting', 'users'];
+      const views = ['dashboard', 'dataJemaah', 'kelolaPaket', 'dokumenPortal', 'laporan', 'setting', 'users'];
       const titles = {
         dashboard: 'Dashboard',
         dataJemaah: 'Data Jemaah',
         kelolaPaket: 'Kelola Paket',
+        dokumenPortal: 'Dokumen Portal',
         laporan: 'Laporan Paket Umroh',
         setting: 'Pengaturan Aplikasi',
         users: 'Manajemen Pengguna'
@@ -1736,6 +1828,7 @@
       if (tabId === 'dashboard') renderDashboard();
       if (tabId === 'dataJemaah') renderJemaahTable();
       if (tabId === 'laporan') renderLaporanList();
+      if (tabId === 'dokumenPortal') window.loadPortalDocumentsAdmin();
       if (tabId === 'setting') renderSettings();
       if (tabId === 'users') window.loadUserDirectory();
 
@@ -3215,6 +3308,225 @@
       } catch (error) {
         console.error('Gagal membuat Kode Akses Portal:', error);
         showAlert(`Gagal membuat kode akses portal: ${getAuthErrorMessage(error)}`, 'error');
+      }
+    };
+
+    const PORTAL_DOCUMENT_TYPE_LABELS = {
+      itinerary: 'Itinerary Perjalanan',
+      registration_proof: 'Bukti Pendaftaran',
+      umrah_letter: 'Surat Keterangan Umroh',
+      umrah_certificate: 'Sertifikat Umroh'
+    };
+    let portalDocumentsAdminCache = [];
+
+    function extractGoogleDriveFileId(input) {
+      const value = String(input || '').trim();
+      if (!value) return '';
+      const patterns = [
+        /drive\.google\.com\/file\/d\/([A-Za-z0-9_-]{20,})/i,
+        /[?&]id=([A-Za-z0-9_-]{20,})/i,
+        /^([A-Za-z0-9_-]{20,})$/
+      ];
+      for (const pattern of patterns) {
+        const match = value.match(pattern);
+        if (match?.[1]) return match[1];
+      }
+      return '';
+    }
+
+    window.populatePortalDocumentOwnerOptions = function(selectedValue = '') {
+      const type = document.getElementById('portalDocumentType')?.value || 'itinerary';
+      const select = document.getElementById('portalDocumentOwner');
+      const label = document.getElementById('portalDocumentOwnerLabel');
+      const hint = document.getElementById('portalDocumentOwnerHint');
+      if (!select) return;
+      select.replaceChildren();
+      if (type === 'itinerary') {
+        if (label) label.textContent = 'Paket Keberangkatan';
+        if (hint) hint.textContent = 'Itinerary dihubungkan menggunakan nama paket karena data jemaah menyimpan nama paket, bukan ID dokumen paket.';
+        select.add(new Option('-- Pilih Paket --', ''));
+        getAllPaketGroups().forEach(paket => {
+          const name = normalizePaketName(paket.namaPaket);
+          if (name) select.add(new Option(name, name));
+        });
+      } else {
+        if (label) label.textContent = 'Jemaah';
+        if (hint) hint.textContent = 'Dokumen akan terikat pada ID dokumen jemaah dan tidak dapat diakses jemaah lain.';
+        select.add(new Option('-- Pilih Jemaah --', ''));
+        [...window.state.jemaahs]
+          .sort((a, b) => String(a.nama || a.namaLengkap || '').localeCompare(String(b.nama || b.namaLengkap || ''), 'id'))
+          .forEach(jemaah => {
+            const name = jemaah.nama || jemaah.namaLengkap || 'Jemaah tanpa nama';
+            const packageName = getJemaahPackageName(jemaah);
+            const text = packageName ? `${name} — ${packageName}` : name;
+            select.add(new Option(text, jemaah.id));
+          });
+      }
+      if (selectedValue) select.value = selectedValue;
+    };
+
+    function getPortalDocumentOwnerLabel(item) {
+      if (item.ownerType === 'package') return item.ownerKey || '-';
+      const jemaah = window.state.jemaahs.find(row => row.id === item.ownerKey);
+      return jemaah ? (jemaah.nama || jemaah.namaLengkap || 'Jemaah') : 'Jemaah tidak ada pada cache';
+    }
+
+    function renderPortalDocumentsAdminTable() {
+      const body = document.getElementById('portalDocumentsTableBody');
+      const count = document.getElementById('portalDocumentCount');
+      if (!body) return;
+      if (count) count.textContent = `${portalDocumentsAdminCache.length} dokumen`;
+      if (!portalDocumentsAdminCache.length) {
+        body.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-400">Belum ada metadata dokumen portal. Unggah file ke Google Drive, lalu daftarkan melalui formulir.</td></tr>';
+        return;
+      }
+      body.innerHTML = portalDocumentsAdminCache.map(item => {
+        const typeLabel = PORTAL_DOCUMENT_TYPE_LABELS[item.documentType] || item.documentType || 'Dokumen';
+        const active = item.active === true;
+        const owner = getPortalDocumentOwnerLabel(item);
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="px-3 py-3 min-w-[190px]">
+              <p class="font-semibold text-slate-800">${escapeHtml(item.displayName || '-')}</p>
+              <p class="text-[10px] text-slate-500 mt-1">${escapeHtml(typeLabel)}</p>
+            </td>
+            <td class="px-3 py-3 min-w-[150px]">${escapeHtml(owner)}</td>
+            <td class="px-3 py-3"><span class="inline-flex rounded-full px-2 py-1 text-[10px] font-bold ${active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">${active ? 'Aktif' : 'Nonaktif'}</span></td>
+            <td class="px-3 py-3 text-center whitespace-nowrap">
+              <button type="button" onclick="window.editPortalDocument('${escapeHtml(item.id)}')" class="p-1.5 text-blue-700 hover:text-blue-900" title="Edit metadata" aria-label="Edit metadata"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button type="button" onclick="window.togglePortalDocument('${escapeHtml(item.id)}')" class="p-1.5 text-amber-700 hover:text-amber-900" title="${active ? 'Nonaktifkan' : 'Aktifkan'}" aria-label="${active ? 'Nonaktifkan' : 'Aktifkan'}"><i class="fa-solid ${active ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
+              ${getCurrentRole() === 'admin' ? `<button type="button" onclick="window.deletePortalDocument('${escapeHtml(item.id)}')" class="p-1.5 text-red-600 hover:text-red-800" title="Hapus metadata" aria-label="Hapus metadata"><i class="fa-solid fa-trash"></i></button>` : ''}
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    window.loadPortalDocumentsAdmin = async function() {
+      if (!requireStaffLogin()) return;
+      const body = document.getElementById('portalDocumentsTableBody');
+      if (body) body.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuat metadata dokumen…</td></tr>';
+      try {
+        const snapshot = await getDocs(collection(db, 'portalDocuments'));
+        portalDocumentsAdminCache = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
+          .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0) || String(a.displayName || '').localeCompare(String(b.displayName || ''), 'id'));
+        renderPortalDocumentsAdminTable();
+        window.populatePortalDocumentOwnerOptions(document.getElementById('portalDocumentOwner')?.value || '');
+      } catch (error) {
+        console.error('Gagal memuat metadata portalDocuments:', error);
+        if (body) body.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-red-600">${escapeHtml(getAuthErrorMessage(error))}</td></tr>`;
+      }
+    };
+
+    window.resetPortalDocumentForm = function() {
+      document.getElementById('portalDocumentForm')?.reset();
+      document.getElementById('portalDocumentEditId').value = '';
+      document.getElementById('portalDocumentFormTitle').textContent = 'Tautkan Dokumen Baru';
+      document.getElementById('portalDocumentSaveButton').innerHTML = '<i class="fa-solid fa-link mr-1.5"></i>Simpan Dokumen';
+      document.getElementById('portalDocumentCancelButton')?.classList.add('hidden');
+      const message = document.getElementById('portalDocumentFormMessage');
+      if (message) { message.textContent = ''; message.className = 'text-[11px]'; }
+      window.populatePortalDocumentOwnerOptions();
+    };
+
+    window.editPortalDocument = function(id) {
+      if (!requireStaffLogin()) return;
+      const item = portalDocumentsAdminCache.find(row => row.id === id);
+      if (!item) return;
+      document.getElementById('portalDocumentEditId').value = item.id;
+      document.getElementById('portalDocumentType').value = item.documentType;
+      window.populatePortalDocumentOwnerOptions(item.ownerKey);
+      document.getElementById('portalDocumentDisplayName').value = item.displayName || '';
+      document.getElementById('portalDocumentDriveFileId').value = item.driveFileId || '';
+      document.getElementById('portalDocumentSortOrder').value = Number(item.sortOrder || 0);
+      document.getElementById('portalDocumentFormTitle').textContent = 'Edit Metadata Dokumen';
+      document.getElementById('portalDocumentSaveButton').innerHTML = '<i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Perubahan';
+      document.getElementById('portalDocumentCancelButton')?.classList.remove('hidden');
+      document.getElementById('portalDocumentDisplayName')?.focus();
+    };
+
+    window.handleSavePortalDocument = async function(event) {
+      event.preventDefault();
+      if (!requireStaffLogin()) return;
+      const editId = document.getElementById('portalDocumentEditId').value.trim();
+      const documentType = document.getElementById('portalDocumentType').value;
+      const ownerKey = document.getElementById('portalDocumentOwner').value.trim();
+      const displayName = document.getElementById('portalDocumentDisplayName').value.trim();
+      const driveFileId = extractGoogleDriveFileId(document.getElementById('portalDocumentDriveFileId').value);
+      const sortOrder = Number(document.getElementById('portalDocumentSortOrder').value || 0);
+      const ownerType = documentType === 'itinerary' ? 'package' : 'jemaah';
+      const message = document.getElementById('portalDocumentFormMessage');
+      if (!Object.prototype.hasOwnProperty.call(PORTAL_DOCUMENT_TYPE_LABELS, documentType) || !ownerKey || displayName.length < 2 || displayName.length > 120 || !driveFileId || !Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 9999) {
+        if (message) { message.textContent = 'Periksa jenis dokumen, pemilik, nama tampilan, Drive File ID, dan urutan.'; message.className = 'text-[11px] text-red-600'; }
+        return;
+      }
+      const payload = {
+        schemaVersion: 1,
+        documentType,
+        ownerType,
+        ownerKey,
+        driveFileId,
+        displayName,
+        active: editId ? (portalDocumentsAdminCache.find(row => row.id === editId)?.active === true) : true,
+        sortOrder,
+        updatedAt: serverTimestamp(),
+        updatedBy: window.state.currentUser?.uid || ''
+      };
+      const button = document.getElementById('portalDocumentSaveButton');
+      if (button) { button.disabled = true; button.textContent = 'Menyimpan…'; }
+      try {
+        if (editId) {
+          await updateDoc(doc(db, 'portalDocuments', editId), payload);
+        } else {
+          const newRef = doc(collection(db, 'portalDocuments'));
+          await setDoc(newRef, { ...payload, createdAt: serverTimestamp() });
+        }
+        if (message) { message.textContent = 'Metadata dokumen berhasil disimpan.'; message.className = 'text-[11px] text-emerald-700'; }
+        window.resetPortalDocumentForm();
+        await window.loadPortalDocumentsAdmin();
+        showAlert('Metadata dokumen portal berhasil disimpan.', 'success');
+      } catch (error) {
+        console.error('Gagal menyimpan portalDocuments:', error);
+        if (message) { message.textContent = getAuthErrorMessage(error); message.className = 'text-[11px] text-red-600'; }
+      } finally {
+        if (button) {
+          button.disabled = false;
+          const stillEditing = Boolean(document.getElementById('portalDocumentEditId')?.value);
+          button.innerHTML = stillEditing
+            ? '<i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Perubahan'
+            : '<i class="fa-solid fa-link mr-1.5"></i>Simpan Dokumen';
+        }
+      }
+    };
+
+    window.togglePortalDocument = async function(id) {
+      if (!requireStaffLogin()) return;
+      const item = portalDocumentsAdminCache.find(row => row.id === id);
+      if (!item) return;
+      const nextActive = item.active !== true;
+      if (!confirm(`${nextActive ? 'Aktifkan' : 'Nonaktifkan'} dokumen "${item.displayName || 'Dokumen'}"?`)) return;
+      try {
+        await updateDoc(doc(db, 'portalDocuments', id), {
+          active: nextActive,
+          updatedAt: serverTimestamp(),
+          updatedBy: window.state.currentUser?.uid || ''
+        });
+        await window.loadPortalDocumentsAdmin();
+        showAlert(`Dokumen berhasil ${nextActive ? 'diaktifkan' : 'dinonaktifkan'}.`, 'success');
+      } catch (error) {
+        showAlert(`Gagal mengubah status dokumen: ${getAuthErrorMessage(error)}`, 'error');
+      }
+    };
+
+    window.deletePortalDocument = async function(id) {
+      if (!requireAdminLogin()) return;
+      const item = portalDocumentsAdminCache.find(row => row.id === id);
+      if (!item || !confirm(`Hapus metadata "${item.displayName || 'Dokumen'}"? File asli di Google Drive tidak akan dihapus.`)) return;
+      try {
+        await deleteDoc(doc(db, 'portalDocuments', id));
+        await window.loadPortalDocumentsAdmin();
+        showAlert('Metadata dihapus. File asli di Google Drive tetap tersimpan.', 'success');
+      } catch (error) {
+        showAlert(`Gagal menghapus metadata: ${getAuthErrorMessage(error)}`, 'error');
       }
     };
 
