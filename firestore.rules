@@ -49,6 +49,65 @@ service cloud.firestore {
         ]);
     }
 
+    function validPortalDocument(data) {
+      return data.keys().hasOnly([
+          'schemaVersion',
+          'documentType',
+          'ownerType',
+          'ownerKey',
+          'driveFileId',
+          'displayName',
+          'active',
+          'sortOrder',
+          'createdAt',
+          'updatedAt',
+          'updatedBy'
+        ])
+        && data.keys().hasAll([
+          'schemaVersion',
+          'documentType',
+          'ownerType',
+          'ownerKey',
+          'driveFileId',
+          'displayName',
+          'active',
+          'sortOrder',
+          'createdAt',
+          'updatedAt',
+          'updatedBy'
+        ])
+        && data.schemaVersion == 1
+        && data.documentType in [
+          'itinerary',
+          'registration_proof',
+          'umrah_letter',
+          'umrah_certificate'
+        ]
+        && (
+          (data.documentType == 'itinerary' && data.ownerType == 'package')
+          ||
+          (data.documentType in ['registration_proof', 'umrah_letter', 'umrah_certificate']
+            && data.ownerType == 'jemaah')
+        )
+        && data.ownerKey is string
+        && data.ownerKey.size() >= 1
+        && data.ownerKey.size() <= 180
+        && data.driveFileId is string
+        && data.driveFileId.size() >= 20
+        && data.driveFileId.size() <= 200
+        && data.driveFileId.matches('^[A-Za-z0-9_-]+$')
+        && data.displayName is string
+        && data.displayName.size() >= 2
+        && data.displayName.size() <= 120
+        && data.active is bool
+        && data.sortOrder is int
+        && data.sortOrder >= 0
+        && data.sortOrder <= 9999
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedBy == request.auth.uid;
+    }
+
     match /users/{userId} {
       allow get: if signedIn()
         && (request.auth.uid == userId || isAdmin());
@@ -108,6 +167,25 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid;
 
       // Hanya Admin yang boleh menghapus kode akses.
+      allow delete: if isAdmin();
+    }
+
+    match /portalDocuments/{documentId} {
+      // Metadata hanya dapat dibaca oleh Admin/Staff aplikasi database.
+      // Portal publik tidak membaca koleksi ini; WordPress membacanya server-side.
+      allow get, list: if isStaff();
+
+      allow create: if isStaff()
+        && validPortalDocument(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if isStaff()
+        && validPortalDocument(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+
+      // Hanya Admin dapat menghapus metadata. File Drive tidak ikut dihapus.
       allow delete: if isAdmin();
     }
 
