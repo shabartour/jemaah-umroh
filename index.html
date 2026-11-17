@@ -451,6 +451,22 @@
                      class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
             </div>
 
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 space-y-3">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <h3 class="text-xs font-bold text-emerald-900">Jadwal Manasik Grup</h3>
+                  <p class="text-[10px] text-slate-600 mt-1">Jadwal ini akan terlihat oleh seluruh jemaah dengan nama paket/grup yang sama. Anda dapat menambahkan lebih dari satu sesi.</p>
+                </div>
+                <span class="shrink-0 rounded-full bg-emerald-100 text-emerald-800 px-2 py-1 text-[9px] font-bold">Per grup</span>
+              </div>
+              <div id="manasikScheduleRows" class="space-y-2">
+                <p class="text-[10px] text-slate-500">Belum ada sesi manasik. Tambahkan jadwal jika sudah tersedia.</p>
+              </div>
+              <button type="button" onclick="window.addPaketManasikScheduleRow()" class="w-full rounded-lg border border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-800 py-2 text-[11px] font-bold">
+                <i class="fa-solid fa-plus mr-1"></i>Tambah Sesi Manasik
+              </button>
+            </div>
+
             <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
               <label class="flex items-center gap-2 text-xs font-semibold text-slate-700">
                 <input type="checkbox" id="inputPortalVisible" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
@@ -2382,6 +2398,7 @@
     window.cancelEditPaket = function() {
       const form = document.getElementById('formTambahPaket');
       if (form) form.reset();
+      window.loadPaketManasikSchedules([]);
       const editId = document.getElementById('editPaketId');
       if (editId) editId.value = '';
 
@@ -2414,12 +2431,105 @@
       document.getElementById('inputKuotaKursi').value = Number.isFinite(Number(paket.kuotaKursi)) && Number(paket.kuotaKursi) > 0 ? String(paket.kuotaKursi) : '';
       document.getElementById('inputPortalVisible').checked = paket.portalVisible === true;
       document.getElementById('inputStatusPaket').value = ['draft', 'published', 'closed', 'archived'].includes(paket.statusPaket) ? paket.statusPaket : 'draft';
+      window.loadPaketManasikSchedules(paket.jadwalManasik || []);
 
       document.getElementById('formPaketTitle').textContent = 'Edit Paket Umroh';
       document.getElementById('btnSavePaketText').textContent = 'Simpan Perubahan';
       document.getElementById('btnSavePaketIcon').className = 'fa-solid fa-floppy-disk mr-1.5';
       document.getElementById('btnCancelEditPaket').classList.remove('hidden');
       document.getElementById('inputNamaPaket').focus();
+    };
+
+    window.addPaketManasikScheduleRow = function(schedule = {}) {
+      const container = document.getElementById('manasikScheduleRows');
+      if (!container) return;
+      if (container.querySelector('p')) container.replaceChildren();
+
+      const row = document.createElement('div');
+      row.className = 'manasik-schedule-row rounded-lg border border-slate-200 bg-white p-3 space-y-2';
+      row.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[10px] font-bold uppercase tracking-wide text-emerald-800">Sesi Manasik</span>
+          <button type="button" data-remove-manasik class="text-[10px] font-semibold text-red-600 hover:text-red-800">Hapus sesi</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="block text-[10px] font-semibold text-slate-700">Tanggal
+            <input type="date" data-manasik-field="tanggal" class="mt-1 w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-2 py-2">
+          </label>
+          <label class="block text-[10px] font-semibold text-slate-700">Waktu mulai
+            <input type="time" data-manasik-field="waktuMulai" class="mt-1 w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-2 py-2">
+          </label>
+          <label class="block text-[10px] font-semibold text-slate-700">Waktu selesai (opsional)
+            <input type="time" data-manasik-field="waktuSelesai" class="mt-1 w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-2 py-2">
+          </label>
+          <label class="block text-[10px] font-semibold text-slate-700">Lokasi
+            <input type="text" maxlength="160" data-manasik-field="lokasi" placeholder="Nama masjid / aula" class="mt-1 w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-2 py-2">
+          </label>
+        </div>
+        <label class="block text-[10px] font-semibold text-slate-700">Alamat (opsional)
+          <input type="text" maxlength="240" data-manasik-field="alamat" placeholder="Alamat lengkap lokasi manasik" class="mt-1 w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-2 py-2">
+        </label>
+        <label class="block text-[10px] font-semibold text-slate-700">Catatan (opsional)
+          <textarea rows="2" maxlength="500" data-manasik-field="catatan" placeholder="Contoh: Membawa buku manasik dan alat tulis" class="mt-1 w-full text-xs bg-slate-50 border border-slate-300 rounded-lg px-2 py-2"></textarea>
+        </label>`;
+
+      ['tanggal', 'waktuMulai', 'waktuSelesai', 'lokasi', 'alamat', 'catatan'].forEach((key) => {
+        const input = row.querySelector(`[data-manasik-field="${key}"]`);
+        if (input) input.value = String(schedule?.[key] ?? '');
+      });
+      row.querySelector('[data-remove-manasik]')?.addEventListener('click', () => {
+        row.remove();
+        if (!container.querySelector('.manasik-schedule-row')) {
+          const empty = document.createElement('p');
+          empty.className = 'text-[10px] text-slate-500';
+          empty.textContent = 'Belum ada sesi manasik. Tambahkan jadwal jika sudah tersedia.';
+          container.appendChild(empty);
+        }
+      });
+      container.appendChild(row);
+    };
+
+    window.loadPaketManasikSchedules = function(schedules = []) {
+      const container = document.getElementById('manasikScheduleRows');
+      if (!container) return;
+      container.replaceChildren();
+      const items = Array.isArray(schedules) ? schedules : [];
+      if (!items.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-[10px] text-slate-500';
+        empty.textContent = 'Belum ada sesi manasik. Tambahkan jadwal jika sudah tersedia.';
+        container.appendChild(empty);
+        return;
+      }
+      items.forEach((item) => window.addPaketManasikScheduleRow(item));
+    };
+
+    window.collectPaketManasikSchedules = function() {
+      const container = document.getElementById('manasikScheduleRows');
+      if (!container) return [];
+      const schedules = [];
+      const rows = Array.from(container.querySelectorAll('.manasik-schedule-row'));
+      for (const row of rows) {
+        const value = (key) => String(row.querySelector(`[data-manasik-field="${key}"]`)?.value || '').trim();
+        const item = {
+          tanggal: value('tanggal'),
+          waktuMulai: value('waktuMulai'),
+          waktuSelesai: value('waktuSelesai'),
+          lokasi: value('lokasi'),
+          alamat: value('alamat'),
+          catatan: value('catatan')
+        };
+        if (!Object.values(item).some(Boolean)) continue;
+        if (!item.tanggal || !item.waktuMulai || !item.lokasi) {
+          throw new Error('Setiap sesi manasik yang diisi wajib memiliki tanggal, waktu mulai, dan lokasi.');
+        }
+        if (item.waktuSelesai && item.waktuSelesai < item.waktuMulai) {
+          throw new Error('Waktu selesai sesi manasik tidak boleh lebih awal dari waktu mulai.');
+        }
+        schedules.push(item);
+      }
+      schedules.sort((a, b) => `${a.tanggal} ${a.waktuMulai}`.localeCompare(`${b.tanggal} ${b.waktuMulai}`));
+      return schedules;
     };
 
     window.handleSavePaket = async function(event) {
@@ -2438,6 +2548,13 @@
       const kuotaKursi = kuotaInput === '' ? null : Number(kuotaInput);
       const portalVisible = document.getElementById('inputPortalVisible').checked;
       const statusPaket = document.getElementById('inputStatusPaket').value;
+      let jadwalManasik = [];
+      try {
+        jadwalManasik = window.collectPaketManasikSchedules();
+      } catch (error) {
+        showAlert(error.message || 'Periksa kembali jadwal manasik.', 'error');
+        return;
+      }
 
       if (kuotaKursi !== null && (!Number.isInteger(kuotaKursi) || kuotaKursi < 1)) {
         showAlert('Kuota kursi harus berupa bilangan bulat minimal 1.', 'error');
@@ -2461,6 +2578,7 @@
         kuotaKursi: kuotaKursi,
         portalVisible: portalVisible,
         statusPaket: statusPaket,
+        jadwalManasik: jadwalManasik,
         updatedAt: serverTimestamp()
       };
 
