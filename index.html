@@ -1697,20 +1697,13 @@
        TAB SWITCHING LOGIC
        ========================================================================== */
     window.switchTab = function(tabId) {
-  if (tabId === 'users' && !requireAdminLogin()) return;
-  if (!isCurrentUserActive()) {
-    document.getElementById('loginCover')?.classList.remove('hidden');
-    return;
-  }
-
-  const views = ['dashboard', 'dataJemaah', 'kelolaPaket', 'laporan', 'setting', 'users'];
-
-  const titles = {
       if (tabId === 'users' && !requireAdminLogin()) return;
       if (!isCurrentUserActive()) {
         document.getElementById('loginCover')?.classList.remove('hidden');
         return;
       }
+
+      const views = ['dashboard', 'dataJemaah', 'kelolaPaket', 'laporan', 'setting', 'users'];
 
       const titles = {
         dashboard: 'Dashboard',
