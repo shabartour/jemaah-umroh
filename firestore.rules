@@ -1,5 +1,4 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -34,36 +33,84 @@ service cloud.firestore {
     }
 
     function isStaff() {
-      return activeUser() && roleIs(['Admin', 'admin', 'Staff', 'staff']);
+      return activeUser()
+        && roleIs(['Admin', 'admin', 'Staff', 'staff']);
     }
 
     function canReadBusinessData() {
       return activeUser()
-        && roleIs(['Admin', 'admin', 'Staff', 'staff', 'Viewer', 'viewer']);
+        && roleIs([
+          'Admin',
+          'admin',
+          'Staff',
+          'staff',
+          'Viewer',
+          'viewer'
+        ]);
     }
 
-    // Profil hanya dapat dibaca oleh pemilik akun; daftar profil hanya oleh Admin.
-    // Semua penulisan profil wajib melalui Cloud Functions/Admin SDK.
     match /users/{userId} {
       allow get: if signedIn()
         && (request.auth.uid == userId || isAdmin());
+
       allow list: if isAdmin();
+
       allow create, update, delete: if false;
     }
 
     match /jemaah/{jemaahId} {
       allow read: if canReadBusinessData();
+
       allow create, update: if isStaff();
+
       allow delete: if isAdmin();
     }
 
     match /paket/{paketId} {
       allow read: if canReadBusinessData();
+
       allow create, update: if isStaff();
+
       allow delete: if isAdmin();
     }
 
-    // Koleksi yang belum didefinisikan ditolak secara default.
+    match /portalAccess/{jemaahId} {
+      // Client tidak boleh membaca hash atau salt kode akses.
+      allow get, list: if false;
+
+      // Admin dan Staff tetap boleh membuat atau memperbarui kode akses.
+      allow create, update: if isStaff()
+        && request.resource.data.keys().hasOnly([
+          'version',
+          'salt',
+          'hash',
+          'iterations',
+          'active',
+          'updatedAt',
+          'updatedBy'
+        ])
+        && request.resource.data.keys().hasAll([
+          'version',
+          'salt',
+          'hash',
+          'iterations',
+          'active',
+          'updatedAt',
+          'updatedBy'
+        ])
+        && request.resource.data.version == 1
+        && request.resource.data.salt is string
+        && request.resource.data.salt.size() == 24
+        && request.resource.data.hash is string
+        && request.resource.data.hash.size() == 64
+        && request.resource.data.iterations == 210000
+        && request.resource.data.active is bool
+        && request.resource.data.updatedBy == request.auth.uid;
+
+      // Hanya Admin yang boleh menghapus kode akses.
+      allow delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
