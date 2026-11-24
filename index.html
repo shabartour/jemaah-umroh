@@ -641,53 +641,6 @@
       </div>
 
 
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-list-check text-emerald-700"></i>
-            <div>
-              <h3 class="font-bold text-sm text-slate-800">Checklist Perlengkapan Jemaah</h3>
-              <p class="text-[11px] text-slate-500 mt-1">Kelola item yang tampil pada Portal Layanan Jemaah.</p>
-            </div>
-          </div>
-          <span class="text-[10px] text-slate-400">Sumber: Firestore</span>
-        </div>
-        <div id="checklistAdminFormCard" class="hidden rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
-          <form id="formChecklistItem" onsubmit="window.handleSaveChecklistItem(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-            <input type="hidden" id="checklistItemId" value="">
-            <div class="sm:col-span-2">
-              <label for="checklistItemLabel" class="block text-xs font-semibold text-slate-700 mb-1">Nama Perlengkapan</label>
-              <input id="checklistItemLabel" type="text" required maxlength="180" placeholder="Contoh: Paspor dan dokumen perjalanan" class="w-full text-xs bg-white border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
-            <div>
-              <label for="checklistItemGroup" class="block text-xs font-semibold text-slate-700 mb-1">Kategori</label>
-              <select id="checklistItemGroup" required class="w-full text-xs bg-white border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="Dokumen">Dokumen</option><option value="Pakaian">Pakaian</option><option value="Ibadah">Ibadah</option><option value="Kesehatan">Kesehatan</option><option value="Kebutuhan pribadi">Kebutuhan pribadi</option><option value="Elektronik">Elektronik</option><option value="Lainnya">Lainnya</option>
-              </select>
-            </div>
-            <div>
-              <label for="checklistItemSortOrder" class="block text-xs font-semibold text-slate-700 mb-1">Urutan Tampil</label>
-              <input id="checklistItemSortOrder" type="number" min="0" max="9999" step="1" value="10" required class="w-full text-xs bg-white border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
-            <div class="sm:col-span-2 flex flex-wrap justify-end gap-2">
-              <button id="checklistCancelEditButton" type="button" onclick="window.cancelEditChecklistItem()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold">Batal</button>
-              <button id="checklistSaveButton" type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-xs font-semibold"><i class="fa-solid fa-plus mr-1"></i>Simpan Item</button>
-            </div>
-          </form>
-        </div>
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <p id="checklistAdminCount" class="text-[11px] text-slate-500">0 item checklist</p>
-          <button id="checklistSeedDefaultsButton" type="button" onclick="window.seedDefaultChecklistItems()" class="hidden text-[10px] font-semibold text-emerald-800 border border-emerald-200 rounded-lg px-3 py-2 hover:bg-emerald-50">Gunakan 12 Item Checklist Awal</button>
-        </div>
-        <div class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-left text-xs text-slate-600">
-            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold text-[10px]"><tr><th class="px-3 py-3">Perlengkapan</th><th class="px-3 py-3">Kategori</th><th class="px-3 py-3">Urutan</th><th class="px-3 py-3">Status</th><th class="px-3 py-3 text-center">Aksi</th></tr></thead>
-            <tbody id="checklistAdminTableBody" class="divide-y divide-slate-200"><tr><td colspan="5" class="text-center py-6 text-slate-400">Memuat checklist...</td></tr></tbody>
-          </table>
-        </div>
-        <p class="text-[10px] leading-relaxed text-slate-400">Admin dan Staff dapat menambah, mengubah, serta mengaktifkan/nonaktifkan item. Penghapusan permanen hanya untuk Admin. Checklist yang dicentang jemaah tersimpan pada browser/perangkat masing-masing.</p>
-      </div>
-
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
           <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
@@ -1140,7 +1093,6 @@
     let firebaseInitError = null;
     let unsubscribePaket = null;
     let unsubscribeJemaah = null;
-    let unsubscribeChecklist = null;
 
     // Data wilayah Indonesia (Provinsi -> Kabupaten/Kota -> Kecamatan -> Desa/Kelurahan).
     const WILAYAH_API_BASE = 'https://www.emsifa.com/api-wilayah-indonesia/v2';
@@ -1398,7 +1350,6 @@
     window.state = {
       pakets: [],
       jemaahs: [],
-      checklistItems: [],
       isLoggedIn: false,
       isAuthReady: false,
       currentUser: null,
@@ -1444,7 +1395,7 @@
       const isAdmin = role === 'admin';
       const canWrite = isAdmin || role === 'staff';
       document.getElementById('tab-users')?.classList.toggle('hidden', !isAdmin);
-      ['floatingAddJemaahBtn', 'dashboardAddJemaahBtn', 'dataAddJemaahBtn', 'packageFormCard', 'checklistAdminFormCard'].forEach(id => {
+      ['floatingAddJemaahBtn', 'dashboardAddJemaahBtn', 'dataAddJemaahBtn', 'packageFormCard'].forEach(id => {
         document.getElementById(id)?.classList.toggle('hidden', !canWrite);
       });
       if (!isAdmin && document.getElementById('view-users') && !document.getElementById('view-users').classList.contains('hidden')) {
@@ -1511,15 +1462,11 @@
     function stopRealtimeListeners() {
       if (unsubscribePaket) unsubscribePaket();
       if (unsubscribeJemaah) unsubscribeJemaah();
-      if (unsubscribeChecklist) unsubscribeChecklist();
       unsubscribePaket = null;
       unsubscribeJemaah = null;
-      unsubscribeChecklist = null;
 
       window.state.pakets = [];
       window.state.jemaahs = [];
-      window.state.checklistItems = [];
-      window.renderChecklistAdmin?.();
       populatePaketDropdowns();
       renderPaketTable();
       renderDashboard();
@@ -1819,7 +1766,7 @@
        ========================================================================== */
     function initRealtimeListeners() {
       if (!db || !window.state.isLoggedIn) return;
-      if (unsubscribePaket || unsubscribeJemaah || unsubscribeChecklist) return;
+      if (unsubscribePaket || unsubscribeJemaah) return;
 
       unsubscribePaket = onSnapshot(collection(db, "paket"), (snapshot) => {
         window.state.pakets = [];
@@ -1890,17 +1837,6 @@
         showAlert(`Gagal memuat data jemaah: ${getAuthErrorMessage(error)}`, 'error');
       });
 
-      unsubscribeChecklist = onSnapshot(collection(db, 'portalChecklistItems'), (snapshot) => {
-        window.state.checklistItems = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
-          .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0)
-            || String(a.group || '').localeCompare(String(b.group || ''), 'id')
-            || String(a.label || '').localeCompare(String(b.label || ''), 'id'));
-        window.renderChecklistAdmin?.();
-      }, (error) => {
-        console.error('Gagal memuat checklist perlengkapan:', error);
-        const tbody = document.getElementById('checklistAdminTableBody');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-red-600">Checklist gagal dimuat. Periksa Firestore Security Rules.</td></tr>';
-      });
     }
 
     /* ==========================================================================
@@ -2694,172 +2630,6 @@
       }
     };
 
-    window.renderChecklistAdmin = function() {
-      const tbody = document.getElementById('checklistAdminTableBody');
-      const count = document.getElementById('checklistAdminCount');
-      const seedButton = document.getElementById('checklistSeedDefaultsButton');
-      if (!tbody) return;
-      const items = Array.isArray(window.state.checklistItems) ? window.state.checklistItems : [];
-      if (count) count.textContent = `${items.length} item checklist`;
-      if (seedButton) seedButton.classList.toggle('hidden', items.length !== 0 || !['admin', 'staff'].includes(getCurrentRole()));
-      if (!items.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada item checklist. Staff/Admin dapat menambahkan item atau menggunakan daftar awal.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = items.map(item => {
-        const id = encodeURIComponent(String(item.id || ''));
-        const active = item.active === true;
-        const status = active
-          ? '<span class="rounded-full bg-emerald-50 text-emerald-700 px-2 py-1 text-[10px] font-bold">Aktif</span>'
-          : '<span class="rounded-full bg-slate-100 text-slate-500 px-2 py-1 text-[10px] font-bold">Nonaktif</span>';
-        const actions = ['admin', 'staff'].includes(getCurrentRole())
-          ? `<button type="button" onclick="window.editChecklistItem(decodeURIComponent('${id}'))" class="text-blue-700 hover:text-blue-900 mr-2" title="Edit item"><i class="fa-solid fa-pen-to-square"></i></button>
-             <button type="button" onclick="window.toggleChecklistItem(decodeURIComponent('${id}'))" class="text-amber-700 hover:text-amber-900 mr-2" title="${active ? 'Nonaktifkan' : 'Aktifkan'}"><i class="fa-solid ${active ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
-             ${getCurrentRole() === 'admin' ? `<button type="button" onclick="window.deleteChecklistItem(decodeURIComponent('${id}'))" class="text-red-600 hover:text-red-800" title="Hapus item"><i class="fa-solid fa-trash"></i></button>` : ''}`
-          : '<span class="text-slate-300">Hanya baca</span>';
-        return `<tr class="hover:bg-slate-50">
-          <td class="px-3 py-3 font-semibold text-slate-800">${escapeHtml(String(item.label || '-'))}</td>
-          <td class="px-3 py-3">${escapeHtml(String(item.group || 'Lainnya'))}</td>
-          <td class="px-3 py-3 tabular-nums">${Number(item.sortOrder || 0)}</td>
-          <td class="px-3 py-3">${status}</td>
-          <td class="px-3 py-3 text-center whitespace-nowrap">${actions}</td>
-        </tr>`;
-      }).join('');
-    };
-
-    window.cancelEditChecklistItem = function() {
-      document.getElementById('formChecklistItem')?.reset();
-      const id = document.getElementById('checklistItemId');
-      if (id) id.value = '';
-      const order = document.getElementById('checklistItemSortOrder');
-      if (order) order.value = '10';
-      const cancel = document.getElementById('checklistCancelEditButton');
-      if (cancel) cancel.classList.add('hidden');
-      const button = document.getElementById('checklistSaveButton');
-      if (button) button.innerHTML = '<i class="fa-solid fa-plus mr-1"></i>Simpan Item';
-    };
-
-    window.handleSaveChecklistItem = async function(event) {
-      event.preventDefault();
-      if (!requireStaffLogin()) return;
-      const id = String(document.getElementById('checklistItemId')?.value || '').trim();
-      const label = String(document.getElementById('checklistItemLabel')?.value || '').trim();
-      const group = String(document.getElementById('checklistItemGroup')?.value || 'Lainnya').trim();
-      const sortOrder = Number(document.getElementById('checklistItemSortOrder')?.value);
-      if (label.length < 2 || label.length > 180 || !group || group.length > 60 || !Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 9999) {
-        showAlert('Periksa nama perlengkapan, kategori, dan urutan tampil.', 'error');
-        return;
-      }
-      const existing = window.state.checklistItems.find(item => item.id === id);
-      const payload = {
-        label, group, sortOrder,
-        active: id ? existing?.active === true : true,
-        updatedAt: serverTimestamp(),
-        updatedBy: window.state.currentUser?.uid || ''
-      };
-      const button = document.getElementById('checklistSaveButton');
-      if (button) button.disabled = true;
-      try {
-        if (id) {
-          await updateDoc(doc(db, 'portalChecklistItems', id), payload);
-          showAlert('Item checklist berhasil diperbarui.', 'success');
-        } else {
-          await addDoc(collection(db, 'portalChecklistItems'), { ...payload, createdAt: serverTimestamp() });
-          showAlert('Item checklist berhasil ditambahkan.', 'success');
-        }
-        window.cancelEditChecklistItem();
-      } catch (error) {
-        console.error('Gagal menyimpan item checklist:', error);
-        showAlert(`Gagal menyimpan checklist: ${getAuthErrorMessage(error)}`, 'error');
-      } finally {
-        if (button) button.disabled = false;
-      }
-    };
-
-    window.editChecklistItem = function(id) {
-      if (!requireStaffLogin()) return;
-      const item = window.state.checklistItems.find(row => row.id === id);
-      if (!item) return;
-      document.getElementById('checklistItemId').value = item.id;
-      document.getElementById('checklistItemLabel').value = item.label || '';
-      document.getElementById('checklistItemGroup').value = item.group || 'Lainnya';
-      document.getElementById('checklistItemSortOrder').value = Number(item.sortOrder || 0);
-      document.getElementById('checklistCancelEditButton')?.classList.remove('hidden');
-      const button = document.getElementById('checklistSaveButton');
-      if (button) button.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i>Simpan Perubahan';
-      document.getElementById('checklistItemLabel')?.focus();
-    };
-
-    window.toggleChecklistItem = async function(id) {
-      if (!requireStaffLogin()) return;
-      const item = window.state.checklistItems.find(row => row.id === id);
-      if (!item) return;
-      const nextActive = item.active !== true;
-      try {
-        await updateDoc(doc(db, 'portalChecklistItems', id), {
-          active: nextActive,
-          updatedAt: serverTimestamp(),
-          updatedBy: window.state.currentUser?.uid || ''
-        });
-        showAlert(`Item checklist berhasil ${nextActive ? 'diaktifkan' : 'dinonaktifkan'}.`, 'success');
-      } catch (error) {
-        showAlert(`Gagal mengubah status checklist: ${getAuthErrorMessage(error)}`, 'error');
-      }
-    };
-
-    window.deleteChecklistItem = async function(id) {
-      if (!requireAdminLogin()) return;
-      const item = window.state.checklistItems.find(row => row.id === id);
-      if (!item || !confirm(`Hapus item checklist "${item.label}" secara permanen?`)) return;
-      try {
-        await deleteDoc(doc(db, 'portalChecklistItems', id));
-        showAlert('Item checklist berhasil dihapus.', 'success');
-      } catch (error) {
-        showAlert(`Gagal menghapus checklist: ${getAuthErrorMessage(error)}`, 'error');
-      }
-    };
-
-    window.seedDefaultChecklistItems = async function() {
-      if (!requireStaffLogin()) return;
-      if (window.state.checklistItems.length) {
-        showAlert('Daftar checklist sudah berisi item. Tambahkan item secara manual agar tidak terjadi duplikasi.', 'error');
-        return;
-      }
-      const defaults = [
-        { group: 'Dokumen', label: 'Paspor dan dokumen perjalanan' },
-        { group: 'Dokumen', label: 'Bukti pendaftaran dan dokumen dari Shabar Tour' },
-        { group: 'Dokumen', label: 'Salinan identitas dan dokumen penting' },
-        { group: 'Pakaian', label: 'Pakaian ihram dan perlengkapannya (sesuai ketentuan)' },
-        { group: 'Pakaian', label: 'Pakaian harian, pakaian dalam, dan pakaian tidur' },
-        { group: 'Pakaian', label: 'Sandal/sepatu yang nyaman dan kantong sandal' },
-        { group: 'Ibadah', label: 'Perlengkapan ibadah pribadi' },
-        { group: 'Kesehatan', label: 'Obat pribadi dan perlengkapan kesehatan' },
-        { group: 'Kebutuhan pribadi', label: 'Perlengkapan mandi dan perawatan diri' },
-        { group: 'Kebutuhan pribadi', label: 'Tas kecil untuk kebutuhan selama kegiatan' },
-        { group: 'Elektronik', label: 'Ponsel, charger, dan adaptor yang sesuai' },
-        { group: 'Lainnya', label: 'Uang saku dan alat pembayaran' }
-      ];
-      if (!confirm('Tambahkan 12 item checklist awal ke Firestore?')) return;
-      const button = document.getElementById('checklistSeedDefaultsButton');
-      if (button) button.disabled = true;
-      try {
-        await Promise.all(defaults.map((item, index) => addDoc(collection(db, 'portalChecklistItems'), {
-          ...item,
-          sortOrder: (index + 1) * 10,
-          active: true,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          updatedBy: window.state.currentUser?.uid || ''
-        })));
-        showAlert('12 item checklist awal berhasil ditambahkan.', 'success');
-      } catch (error) {
-        console.error('Gagal membuat checklist awal:', error);
-        showAlert(`Checklist awal belum seluruhnya berhasil dibuat: ${getAuthErrorMessage(error)}. Periksa daftar sebelum mengulangi tindakan.`, 'error');
-      } finally {
-        if (button) button.disabled = false;
-      }
-    };
-
     function renderSettings() {
       const profile = window.state.userProfile || {};
       const user = window.state.currentUser || auth?.currentUser || null;
@@ -2890,7 +2660,6 @@
       }
       if (descriptionEl) descriptionEl.textContent = roleDescriptions[role] || 'Hak akses mengikuti role akun yang ditetapkan Administrator.';
       if (resetButton) resetButton.disabled = !email || !isCurrentUserActive();
-      window.renderChecklistAdmin?.();
     }
 
     window.handleSettingsPasswordReset = async function() {
