@@ -108,6 +108,40 @@ service cloud.firestore {
         && data.updatedBy == request.auth.uid;
     }
 
+    function validPortalChecklistItem(data) {
+      return data.keys().hasOnly([
+          'label',
+          'group',
+          'sortOrder',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'updatedBy'
+        ])
+        && data.keys().hasAll([
+          'label',
+          'group',
+          'sortOrder',
+          'active',
+          'createdAt',
+          'updatedAt',
+          'updatedBy'
+        ])
+        && data.label is string
+        && data.label.size() >= 2
+        && data.label.size() <= 180
+        && data.group is string
+        && data.group.size() >= 2
+        && data.group.size() <= 60
+        && data.sortOrder is int
+        && data.sortOrder >= 0
+        && data.sortOrder <= 9999
+        && data.active is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedBy == request.auth.uid;
+    }
+
     match /users/{userId} {
       allow get: if signedIn()
         && (request.auth.uid == userId || isAdmin());
@@ -130,6 +164,26 @@ service cloud.firestore {
 
       allow create, update: if isStaff();
 
+      allow delete: if isAdmin();
+    }
+
+    match /portalChecklistItems/{itemId} {
+      // Checklist hanya dapat dibaca oleh pengguna aplikasi yang aktif.
+      allow get, list: if canReadBusinessData();
+
+      // Admin dan Staff dapat menambah item dengan struktur data yang tervalidasi.
+      allow create: if isStaff()
+        && validPortalChecklistItem(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      // Admin dan Staff dapat mengubah isi/status tanpa mengganti waktu pembuatan.
+      allow update: if isStaff()
+        && validPortalChecklistItem(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+
+      // Penghapusan permanen dibatasi untuk Admin.
       allow delete: if isAdmin();
     }
 
